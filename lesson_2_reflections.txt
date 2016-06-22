@@ -1,0 +1,9 @@
+Q) What happens when you initialize a repository? Why do you need to do it?
+The git init command creates a new Git repository. It can be used to convert an existing,unversioned project to a Git repository..or..initialize a new empty repository ...
+Most of the other Git commands are not avaliable outside of an initialized repository, so this usually is the first command you'll run in a new project.
+Executing git init creates a .git subdirectory in the project root, which contains all of the necessary metadata for the repo. Aside from the .git directory, an existing project remains unaltered.
+An empty repository is created, which contains no commit. It works that way so that it won't automatically include files you actually don't want to keep track of.
+
+Q)How is the staging area different from the working directory and the repository? What value do you think it offers?
+
+* Staging area is the preparation area for files to be committed. Only files in this area are going to be included in the commit executed next time. It helps to divide changes in the working directory into several commits, each of which consists of a group of changes that represent a logical change to the relevant files.
