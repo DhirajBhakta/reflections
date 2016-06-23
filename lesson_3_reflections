@@ -3,4 +3,7 @@ Q) When would you want to use a remote repository rather than keeping all your w
 --Especially when im working (collaborating) with other members of my project team, i need to send my progress
   to the remote repo so that anyone can view and pull my project.
   It also serves as a backup...
-  
+
+Q) Why would you want to always pull changes manuaaly rather than having your Git local repo automatically stay uptodate with your remote repository?
+  I like pulling changes manually because that way, when I'm working on code,
+    it doesn't change without me expecting it.  For example, if I know the new version of some code is broken, I might not want to pull that change until I know that  the bug is fixed.
