@@ -7,3 +7,22 @@ An empty repository is created, which contains no commit. It works that way so t
 Q)How is the staging area different from the working directory and the repository? What value do you think it offers?
 
 * Staging area is the preparation area for files to be committed. Only files in this area are going to be included in the commit executed next time. It helps to divide changes in the working directory into several commits, each of which consists of a group of changes that represent a logical change to the relevant files.
+
+
+
+Q)How can you use the staging area to make sure you have one commit per logical change?
+
+* First add files that are related to the first logical change you want to commit, and after making it sure you have staged all the files, make a commit. Next you stage other files that are related to the second logical change you want to commit, and so on.
+
+Hence each commit is logically separate!
+
+
+Q)What are some situations when branches would be helpful in keeping your history organized? How would branches help?
+
+ When you want to try adding an experimental feature while keeping your software working without breaking.
+To do so, keep your master branch clean of any untested changes, instead make an experimental branch for any new feature that needs experimenting. After the new functionality gets stable enough to go into the master branch, you could merge the experimental branch into the master.
+
+
+Q)What is the result of merging two branches together? Why do we represent it in the diagram the way we do?
+
+* All the commits in the second branch is merged into the first branch, and the resluting merge commit becomes the new head of your current branch. The diagram shown by git log --graph cleary shows the merged commit has two parents, which correspond to the prior heads of each merged branch.
