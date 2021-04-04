@@ -50,6 +50,8 @@ looks like. <br/>
     - Define how the downstream services will interpret your service's output. HTTP status codes 2XX 4XX 5XX to be defined perfectly || proper standardized messages within the output
     - Knowing the difference between a request that was OK and processed correctly, a request that was bad and thus prevented the service from doing anything with it, and a request that
     might be OK but we can’t tell because the server was down is key to ensuring we can fail fast and track down issues. If our services play fast and loose with these rules, we end up with a more vulnerable system.
+    - Refrain from making microservice interfaces being too chatty --> will lead to performance issues.
+
 - sit with the team regularly and pair program to get a sense of how the team works ( effective than having a call or reviewing code)
 - Understand Company's **Strategies**
     - Eg: goal is to decrease time to market on new features.
@@ -61,6 +63,13 @@ looks like. <br/>
     - Eg: All logging should happen centrally
     - Eg: REST/HTTP is the standard integration style
     - Due to their technical nature, practises tend to change more than principles
+- After defining the standards, principles and practises, make it easy for the developers to follow them.. dont make it a burden.
+    - Write a real-world _exemplar_ service (which is actually running in PROD in the company) which follows all the principles, practises. New devs love imitation.
+    - You can write the _boilerplate_ for each microservice, or something that generates the boilerplate. Eg; `arc-react-tools`, `arc-react-boilerplate`, `phoenix` as tomcat wrapper, `arda` as flask boilerplate
+        - Common stuff like health checking, exposing metrics exposing HTTP endpoints etc can be inside this boilerplate
+        - If you write the boilerplate and make it mandatory, you also need to worry about how to _upgrade_ this boilerplate in already running microservices !
+- If you are working in an organization that places lots of restrictions on how developers can
+do their work, then microservices may not be for you.
 
 
 
@@ -91,3 +100,7 @@ looks like. <br/>
 - Every _check-in_ is a release candidate.
   
 ## Hexagonal Architecture 
+pass
+
+## Onion Architecture
+Has a lot of layers, and makes you cry when you try to cut through it.
