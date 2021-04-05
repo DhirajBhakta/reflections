@@ -245,12 +245,135 @@ Downsides of Choreography
 <br>
 ** On the other hand, asynchronous event collaboration helps us adopt a choreographed approach, which can yield significantly more decoupled services—something we want to strive for to ensure our services are independently releasable.
 
+___ 
+===========> Request Response Collaboration <===========================
 ### RPC
-- Remote Procedure Calls
-- " Make the process of executing code on a remote machine as simple and straight-forward as calling a local function. "
-> RPCs are based on the observation that procedure calls are a well known and well understood mechanism for transfer of control and data within a program running on a single computer. Therefore, it is proposed that this same mechanism be extended to provide for transfer of control and data across a communication network.
+- Make the process of executing code on a remote machine as simple and straight-forward as calling a local function. "_Make a remote call look like a local call_"
+- Core idea of RPC is to hide the complexity of remote calls ,and make it look just like local call
 
 ![](https://prakhar.me/images/rpcs.jpg)
+ - Developer writes the Interface definition for a service using IDL [Interface Definition Language](https://stackoverflow.com/a/670681). WSDL and .proto are examples for IDL
+ - Stub generators generate client and server stubs for this service.
+ - Ex: In SOAP, there is a [WSDL interface](https://docs.jboss.org/author/display/MODE50/Web%20Service%20Definition%20Language%20(WSDL)%20files.html)
+ - Ex: In protobuf, there are [.proto files](https://en.wikipedia.org/wiki/Protocol_Buffers#Example)
+
+ Advantages
+ - can onboard very quickly. zero effort in generating a wsdl file for a service interface.
+ 
+ Downsides
+ - RPC comes with a restrictions on interoperability
+ - Java RMI, unlike SOAP and protobuf, tightly couples the technology
+    - Limits which tech can be used in client and server stubs
+ - RPC is brittle
+
+```
+import java.rmi.Remote;
+import java.rmi.RemoteException;
+
+public interface CustomerRemote extends Remote {
+
+ public Customer findCustomer(String id) throws RemoteException;
+
+ public Customer createCustomer(String firstname, String surname, String emailAddress)
+  throws RemoteException;
+}
+```
+^ you made a RPC interface for this service like this.<br>
+Now what if you want to add an extra method?<br>
+You would have to regenerate client stubs
+
+You also cannot remove some attributes from schema, cas unmarshalling would break at client side (even if the client was not using that attribute!!)
+
+
+### REST 
+- Alternative to RPC for service interfaces
+- Concept of a `Resource`
+  - The `Resource` shown externally is completely decoupled from how it is stored internally
+- Client can 
+  - Create a resource (POST)
+  - Request a resource (GET)
+  - Update a resource (PATCH)
+- [Richardson Maturity Model](https://martinfowler.com/articles/richardsonMaturityModel.html) for developing rest services
+- HTTP itself defines some useful capabilities that play very well with the REST style. (HTTP Veribs, error codes)
+
+HATEOS
+- Hypermedia As The Engine of Application State
+- Every Response of a REST call will contains _links_ to other related resources. - Checkout [HAL](http://stateless.co/hal_specification.html) specification
+- Helps you avoid coupling between client and server.
+  - You can now change the URLs of resources as you wish, as it would be dynamically communicated to the clients via _related resources_ links. Client now doesnt have to hardcode the resource links in his system
+  - > As a client, I don’t need to know which URI scheme to access to buy the album, I just
+need to access the resource, find the buy control, and navigate to that. 
+- By following the links, the client gets to progressively discover the API,
+which can be a really handy capability when we are implementing new clients.
+- Downside is that navigation of these controls can be quite chatty
+
+Beware of REST "Convinience libraries"
+- some frameworks actually make it very easy to
+simply take database representations of objects, deserialize them into in-process
+objects, and then directly expose these externally. I remember at a conference seeing
+this demonstrated using Spring Boot and cited as a major advantage. The inherent
+coupling that this setup promotes will in most cases cause far more pain than the
+effort required to properly decouple these concepts.
+
+Takeaways:
+- Delay the implementation of proper persistence for the microservice, until the interface had stabilized enough.  
+-  It is too easy for the way we store domain entities in a backing store to overtly influence the models we send over the wire to collaborators. 
+
+Downsides of REST/HTTP
+- A more minor point is that some web server frameworks don’t actually support all the
+HTTP verbs well. That means that it might be easy for you to create a handler for
+GET or POST requests, but you may have to jump through hoops to get PUT or
+DELETE requests to work. Proper REST frameworks like Jersey don’t have this prob‐
+lem, and you can normally work around this, but if you are locked into certain frame‐
+work choices this might limit what style of REST you can use.
+- Performance: SLOW!, gRPC is way fast. HTTP is not good for low latency requirements. TCP is boss!
+- For server-to-server communications, if extremely low latency or small message size
+is important, HTTP communications in general may not be a good idea. You may
+need to pick different underlying protocols, like User Datagram Protocol (UDP), to
+achieve the performance you want, and many RPC frameworks will quite happily run
+on top of networking protocols other than TCP.
+---
+============>Asynchronous Event Based Collaboration<=====================<br>
+-PUB/SUB-<br>
+Traditionally, message brokers like RabbitMQ give you 
+  - A way to _emit_ events
+  - A way to _subscribe_ to events
+
+Upsides
+  - Resilient and scalable
+  - Nice loosely coupled event driven architectures!
+
+Downsides
+  - Adds complexity to your development.
+  - Additional infra is needed, Additional expertise is needed
+  - Needs a lot of effort on good logging and monitoring
+  - Good logging and tracing: consider the use of correlation IDs, which allow you to trace requests across process boundaries
+  - Consider a long running async request/respons
+    - what to do when the response comes back?
+    - does it come back to the same node that initiated the request?
+    - what if that node is down?
+    - Do I need to store the response elsewhere so i can respond accordingly
+  - Different way of thinking for devs who are accustomed to intra-process synchronous message calls
+
+
+### Do not DRY microservices
+- Don’t violate DRY within a microservice
+- But be relaxed about violating DRY across all services. 
+- Having a shared library, forces all consumers of that library to change when changes need to be pushed to that shared library
+
+The evils of too much coupling between services are far worse than the problems caused by code duplication.
+
+## Client Libraries
+- Libraries that consume the APIs of your service.
+- Better to create them to avoid code duplication and increase onboarding speed.
+- But, people who wrote the service should stay away from writing client libraries.
+    - Server logic starts leaking into client libraries!
+    
+
+
+
+
+
 
 
 

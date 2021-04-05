@@ -22,6 +22,7 @@ What I want to become?
 
 ## Concepts to master
 - Docker
+- CCNA
 - ElasticSearch
 - Athena
 - redis
@@ -30,9 +31,16 @@ What I want to become?
 
 ## Books to read 
 - Building Microservices
+- Learn Docker in a month of lunches
+- Lern Kubernetes in a month of lunches.
+- Docker in Action
+- Docker networking and service discovery
+- The Phoenix Project
+- CCNA official cert guide
 - Domain Driven Design -EricEvans
 - Lessons Learnt in Software Testing ( Best book for QA )
-- lolol
+- Enterprise Integration Patterns
+- Patterns of Enterprise Application Architecture
 
 
 
