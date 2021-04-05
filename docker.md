@@ -32,7 +32,7 @@ Docker helps you build,test, deploy without caring about the platform
     **Containers run in their own virtual network**. So they can communicate with each other without being exposed to the outside world
 
 
-## Tips
+## Baby steps
 `sudo usermod -aG docker $your_user"`
 docker needs "root" permissions, because it uses cgroups and namespaces. So instead of using sudo, you can add yourself to the docker group.
 
@@ -101,6 +101,7 @@ It is the Application binaries + dependencies + Metadata about the image + how t
     - can be as huge as Ubuntu distro with apt, Apache, PHP, everything installed
 
 ## Image and its Layers
+[Union File System](https://www.terriblecode.com/blog/how-docker-images-work-union-file-systems-for-dummies/)
 - Images are made using the `Union File System` Concept
 - `docker history <image name>`
     - Shows the layers of changes made in the image
@@ -357,6 +358,9 @@ Bind Mounts
  - `volumes` section:
  - `networks` section:
 
+ ### docker-compose and the bridge network
+ docker-compose automatically creates a new bridge network and attaches the given containers to that network so that theyre able to communicate with each other
+
  ### `docker-compose up`
  Set up volumes/networks and start all containers
 
@@ -373,6 +377,7 @@ Bind Mounts
   ```
 
   instead of just providing the `image` attr, we specify the `build` attribute with the `dockerfile` and then provide an `image` attr to build the custom image
+  - when both `build` and `image` attrs are present the semantics/purpose changes. It becomes " i want to build a custom image using this dockerfile "
 
 
 
@@ -383,9 +388,133 @@ Bind Mounts
 
     
 
+# Orchestration
+New problems with growing number of containers (microservices).
+- how to we deploy/maintain hundreds or thousands of containers across one or dozens of instances?
+- How do we automate container lifecycle?
+- how can we easily scale out/in/up/down?
+- How can we ensure our containers are re-created if they fail?
+- How can we replace containers without downtime (blue/green deployment)?
+- How can we control/track where containers get started?
+- How can we create cross-node virtual networks?
+- How can we ensure only trusted servers run our containers?
+- How can we store secrets, keys, passwords and get them to the right container (and only that container)?
 
+_The goal of the orchestrator is to match desired=actual_
+. More on this later...
+
+## Understand RAFT protocol 
+RAFT = how to ensure consistency in a distributed environment
+
+"Distributed Consensus"
+[The Paper](https://raft.github.io/raft.pdf)<br>
+[Basics](https://raft.github.io/)<br>
+[WOW](http://thesecretlivesofdata.com/raft/)
 
 # Orchestraction -- Docker Swarm
+## What is a swarm?
+Swarm = Multiple docker HOSTS which run in *swarm mode* and act as `managers` and `workers`.
+
+A given docker HOST can act as manager, worker or both
+
+### node?
+-- node is an instance of the Docker Engine participating  in the swarm.
+
+One Host = One IP = One node... One Docker Engine
+
+You can run multiple nodes distributed across multiple physical/cloud servers.
+
+A Node can be a `manager node` or `worker node`
+### manager?
+-- manages membership and delegation
+### worker?
+-- runs swarm `services`
+
+### service?
+-- When you create a service, you define its "optimal state" (number of replicas etc). Docker works to maintain that desired state. If a worker node becomes unavailable, Docker schedules that node's `tasks` on other nodes. 
+
+### task?
+-- A task is a running container which is part of a swarm service and managed by a swarm manager
+ 
+ docker swarm commands are not enabled by default in docker CLI
+ - `docker swarm`
+ - `docker node`
+ - `docker service`
+ - `docker stack`
+ - `docker secret`
+
+ Run `docker swarm init` to enable swarm mode ---> Creates a single node swarm!
+
+ ```
+ Note that docker swarm does not use the traditional docker APIs to orchestrate. Instead it has its own Swarm APIs for all this distributed mumbo jumbo
+ ```
+
+ ## Manager and Worker nodes
+ ![](https://docs.docker.com/engine/swarm/images/swarm-diagram.png)
+ - Manager nodes have an internal distributed state store `Raft store`
+ - "_Manager is a Worker with permissions to control the swarm_"
+ - Workers are constantly reporting to the Managers and asking for new work. lol
+ - Managers also evaluate if what a worker is told to do and what its actually doing matches or not
+
+![](https://i0.wp.com/www.docker.com/blog/wp-content/uploads/swarm-node-breakdown.png?resize=975%2C596&ssl=1)
+
+ 
+ ## What is a service?
+ - `Service` is an _image_ of a microservice.
+ - When you create a  service, you specify which container image to use and which commands to execute inside the containers;
+    - you also specify the number of `replicas`
+
+ ![](https://docs.docker.com/engine/swarm/images/services-diagram.png)
+
+ When you deploy the service to the swarm, the `swarm manager` accepts your service definition as the <u>Desired State</u> for the service. Then it schedules the service on nodes in the swarm as one or more replica `tasks`. The tasks run independently of each other on nodes in the swarm
+
+ ###  What is a task?
+ Task is the atomic unit of scheduling in the swarm. Each taks is a "slot" the scheduler fills by spawning a container.
+ ```
+ You declare a desired service state by
+  - creating a service
+  - updating a service
+
+The orchestrator realizes the desired state by scheduling tasks.
+
+If any container crashes/fails health check, the orchestator creates a new replica task that spawns a new container.
+ ```
+ - one task = one container
+ - `task` is a "slot" where the scheduler places a container.
+ - If the container fails health checks/terminates, then the task terminates
+
+### Create a service <DEMO> (single node swarm)
+- `docker service create alpine ping 8.8.8.8`
+- `docker service ls`
+- `docker service ps <service name>`
+- `docker service update <service name> --replicas 3`
+- `docker service ps <service name>`
+- Now you can find the docker containers using `docker ps` and forcibly kill some containers
+- `docker service ps <service name>`
+
+### Create a multi node swarm 
+Not possible to automate this 
+
+
+
+ ## `docker swarm init`
+ - Lots of PKI and security automation
+    - Root Signing Cert created for our Swarm
+    - Cert issued for first Manager node
+    - Join tokens created
+
+ -  RAFT database created to store root CA, configs and secrets
+    - Encrypted by default on disk
+    - No need for another key/value system/db to host orchestration/secrets
+    - Replicates logs among Managers via mutual TLS in "control plane"
+
+### `docker node ls`
+
+ ## `docker node ls`
+ ## `docker node ls`
+ ## `docker node ls`
+
+
 
 # Orchestraction -- Kubernetes 
 
