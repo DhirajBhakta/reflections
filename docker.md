@@ -102,7 +102,9 @@ It is the Application binaries + dependencies + Metadata about the image + how t
 
 ## Image and its Layers
 [Union File System](https://www.terriblecode.com/blog/how-docker-images-work-union-file-systems-for-dummies/)
+--[more here](https://blog.knoldus.com/unionfs-a-file-system-of-a-container/)
 - Images are made using the `Union File System` Concept
+![](https://www.datalight.com/assets/blog-images/OverlayFS_Image.png)
 - `docker history <image name>`
     - Shows the layers of changes made in the image
     - History of image layers
@@ -256,6 +258,12 @@ $ docker run -rm -it centos curl search:9200
 ### Bridge, None and Host networks
 ![](https://miro.medium.com/max/5312/1*WKiEgPXO8XXppoqgr7ZVQA.png)
 ![](https://miro.medium.com/max/958/1*zpuunpO0HSjA1R5OdJH2gg.png)
+
+### Overlay Network
+This will be explained in detail in swarm section
+- Pertains to multi host (multi-node) network
+- Its a "bridge" network across nodes
+![](https://blog.octo.com/wp-content/uploads/2017/08/bridge-overlay.png)
 
 
 
@@ -510,9 +518,81 @@ Not possible to automate this
 
 ### `docker node ls`
 
- ## `docker node ls`
- ## `docker node ls`
- ## `docker node ls`
+ ## Multi host Overlay Network
+ Overlay Network = Bridge Network over multiple nodes ( swarm-wide bridge network)
+ Overlay Network: Connects multiple Docker daemons together to create a flat virtual network across hosts where you can establish communication between a swarm service and a standalone container, or between two standalone containers on different Docker daemons. This strategy removes the need to do OS-level routing between these containers.
+ - For container-to-container communication within a single swarm
+ - NOT related to incoming requests from outside the swarm
+ - A Service can be connected to more than one network ( zero, one, or more) 
+    - for isolation
+ `docker network create --driver overlay myoverlaynw`
+ Overlay networks are best when you need containers running on different Docker hosts to communicate, or when multiple applications work together using swarm services.
+
+ Some Common Sense stuff
+ - replicas dont need to talk to each other within a service :facepalm:
+    - Dont waste time inspecting for overlay network when you create a service over multiple nodes.
+
+## Routing Mesh (The Ingress Network)
+Try this,
+- create 2 nodes (EC2 or whatever)
+- `docker swarm init` on one node, --> Make it the manager. Make the other node the worker.
+- `docker service create -p 80:9200 elasticsearch:2` on the manager
+- Now you KNOW that there is just ONE container running on ONE of the nodes
+- `curl <IP of node1>` . Do you get some elasticsearch result?
+- `curl <IP of node2>` . Do you get some elasticsearch result? YES!! , HOWW??
+
+This is because of the **Global Traffic Router** or the **Swarm Routing Mesh**  (Also called the _Ingress_ Network)
+- This is actually a Overlay Network (Find it in `docker network ls`, named as "ingress")
+- It routes incoming (ingress) packets for a service to the proper task
+- Spans all nodes in the swarm
+- Uses 'IPVS' of Linux Kernal to do this
+- Load Balances swarm services across their tasks
+- This is a Layer3 Load Balancer(IP+Port layer[TCP]) Not Layer 4[DNS]
+    - l4 load balancer usecase: multiple websites on the same server on the same port!
+    - [good resource on HA and load balancer!](https://www.nginx.com/resources/glossary/)
+- 2 ways
+    - just blindly expose the IPs of the nodes (or their DNS names)
+    - Creates a VIP(virtual IP) in the same subnet as the nodes, and gives it a DNS = service name! VIP acts as the load balancer and distributes the load across all the tasks
+
+
+![](https://dker.ru/static/images/docs/engine/swarm/images/ingress-routing-mesh.png "type1")
+
+![](https://docs.docker.com/engine/swarm/images/ingress-lb.png)
+
+
+## Multi Service App <DEMO>
+- [Docker's Distributed Voting App](https://github.com/dockersamples/example-voting-app)
+![](assets/swarm-01.png)
+- Create the Overlay Networks first
+    - `$ docker network create -d overlay backend`
+    - `$ docker network create -d overlay frontend`
+- Create the Microservices
+    - `docker service create --name vote --network frontend -p 80:80 --replicas 2 bretfisher/examplevotingapp_vote`
+    - `docker service create --name redis --network frontend redis:3.2`
+    - `docker service create --name worker --network frontedn --network backedn bretfisher/examplevotingapp_worker:java`
+    - `docker service create --name db --network backedn  -e POSTGRES_HOST_AUTH_METHOD=trust postgres:9.4`
+    - `docker service create --name result --network backedn -p 5000:80 bretfisher/examplevotingapp_result`
+
+ ## Docker Stacks &mdash; docker-compose for swarm!
+ - `docker stack` is to `docker service` what `docker-compose` is to `docker-run`
+ - `docker stack deploy` better than `docker service create`
+ - Stacks accept compose files as their "declarative" definition for services, networks and volumes
+ - One stack = One swarm only
+ - **version 3 or higher** in the yml file
+ - `docker stack deploy -c <yml file> <name of the stack>`
+    - Creates the objects in the scheduler --> which will create the tasks --> which will create the containers.
+ - If you make changes to the yml file, just re-run the `docker stack deploy` command
+
+
+### `docker stack ls`
+### `docker stack ps <stack name>`
+### `docker stack services <stack name>`
+
+
+
+ ## Docker Stacks
+ ## Docker Stacks
+ ## Docker Stacks
 
 
 
@@ -532,12 +612,12 @@ Not possible to automate this
 
 
 # --MyQuestions--
-1. What exactly is a container
-2. What exactly is a image
+1. What exactly is a container(understand unionfs)
+2. What exactly is a image(understand unionfd)
 3. How networking works in docker
 4. How much memory/CPU/hdd does a container take by default? can this be tuned?
 5. containerd & runc?
-6. namespaces & cgroups?
+6. namespaces & cgroups & unionfs?
 7. ARG values vs ENV values ? confused about envs everywhere!
 7. Deeper understanding of what is meant by a `port`?
     - Open port/Closed port
@@ -549,4 +629,11 @@ Not possible to automate this
     - subnets and masks
     - iptables
 8. xargs command, master it
+9. who should do the `docker build`
+    - should not do it on production, because it will consume resources.
+10. Why Cant i just upload Dockerfile, instead of `docker push` into registries?
+11. Why Cant i just share Dockerfile to QA, TEST, devops guys instead of the image?
+    - same as before
+12. netcat, nc, telnet, lsof, nmap..all ways to find local/remote open ports
+
 

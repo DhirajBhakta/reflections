@@ -1,7 +1,17 @@
+## What I wanna do over this weekend!
+0. TCP RFC!
+1. Finish Docker Mastery Course!
+    - Get more deeper on Docker
+3. Hashicorp Vault -- Aadhaar Vault
+4. Networking tools!
+2. clear the cloud on `netstat` `lsof` `ss` and ofcourse, `nmap` 
+
+
 
 # Personal
 What I want to become?
 - #1 Architecture Devil 
+- #2 [Julia Evans](http://jvns.ca/about/) v2
 - #2 good at Networks & related tools
 - #3 Clean/Scalable Coding Principles 
 - #4 Typing speed + Vim + VScode power user
