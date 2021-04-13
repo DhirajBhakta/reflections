@@ -62,6 +62,9 @@ What I want to become?
 - [Netflix 2](https://medium.com/@narengowda/netflix-system-design-dbec30fede8d)
 
 ## Lessons learnt 
+
+#### Personal
+- Almost always, a big problem is made up of multiple small problems. Aim to direct your energy in splitting these out and do divide and conquer. This applies to studying complicated topics as well. Just make sure not to silence the questions popping up in your head like "XYZ? what is XYZ? why did the author even talk about XYZ here? how is it related here? how does this fit into the bigger picture?". Note these down and explore the answers to these questions in depth
 - Strictly use a Tracking tool to track every single book you read, every single tech you're studying. [Asana](https://asana.com/) works like a charm.
 - Summarize your notes(in Markdown preferably) for every book/every concept you study and commit it to your repo
 - DO NOT read a tech book in one shot in one weekend. Space it over a month atleast!

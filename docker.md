@@ -6,6 +6,12 @@ Containers &mdash; Once-in-a-decade huge shift!
 - Host to Container (Serverless)
     - Serverless functions run on stateless containers in cloud.
 
+![](assets/container_evolution.svg)
+
+
+//TODO :Good stuff out [Here](https://training.play-with-docker.com/)
+
+
 # Why Docker?
 ![](https://i0.wp.com/www.docker.com/blog/wp-content/uploads/e30e4afc-dc02-4e98-b878-2cd173807944-1.jpg?fit=960%2C540&ssl=1)
 Docker helps you build,test, deploy without caring about the platform
@@ -181,6 +187,20 @@ volumes from native host or other containers"
 Each command in Dockerfile creates a new layer. Each layer contains the filesystem changes of the image between the state before the execution of the command and the state after the execution of the command.
 Since Docker CACHES every single layer during build, and uses them in subsequent builds,
 _you should keep the instructions that change the most at the bottom of the dockerfile_
+
+#### Dockerfile Maturity Model
+Dockerfile is the most basic and most important foundational layer that you need to get right. Dont obsess over orchestration, CICD in first go, but let your Dockerfile evolve to its best
+1. Make it start
+2. Make it log all things to stdout/stderr
+    - Putting it in a logfile is an ANTIPATTERN!!!
+3. Make it documented in file
+4. Make it work for others
+5. Make it lean
+6. Make it scale
+7. Version your images!
+8. Version your dependencies too! dont pull the latest apt-get deps
+9. Environments(dev, qa, uat, prod, etc etc) will always be infinite. You should NOT have to build images for each environments, but config should be provided at runtime `docker run`. So there should be just ONE image
+    - Single Dockerfile with default ENVs, and overwrite per-environment with ENTRYPOINT scripts
 
 
 ## Building images from Dockerfile
@@ -581,28 +601,69 @@ This is because of the **Global Traffic Router** or the **Swarm Routing Mesh**  
  - **version 3 or higher** in the yml file
  - `docker stack deploy -c <yml file> <name of the stack>`
     - Creates the objects in the scheduler --> which will create the tasks --> which will create the containers.
- - If you make changes to the yml file, just re-run the `docker stack deploy` command
+ - If you make changes to the yml file, just re-run the `docker stack deploy` command.When we do a "docker stack deploy" on an existing stack, it will deploy the changes as service updates.
 
 
 ### `docker stack ls`
 ### `docker stack ps <stack name>`
 ### `docker stack services <stack name>`
 
-
-
- ## Docker Stacks
- ## Docker Stacks
- ## Docker Stacks
+Its OKAY
 
 
 
-# Orchestraction -- Kubernetes 
+# Orchestration -- Kubernetes 
+...Go to the dedicated md page for this -___-
 
 # Swarm v/s K8s
 
 # Dockerfile reviews 
 
-# Cleaning up
+# The Perfect Full App Lifecycle with #docker-compose#
+You can do everything with just one compose file
+
+Needed Files:
+1. docker-compose.yml  ( defaults for all other environments)
+2. docker-compose.override.yml  ( defaults for all other files)
+3. docker-compose.test.yml  
+4. docker-compose.prod.yml  
+
+### Development Environment
+Local `docker-compose up` 
+
+_Picks up the override file and patches it on top of default file automatically and picks it up_
+
+_Use Bind mounts to your src dir like a maniac during development_
+### CI Environment
+Remote `docker-compose -f docker-compose.yml -f docker-compose.test.yml -d up`
+
+Note: You can use `extends` attr in compose file
+### Production Environment
+Remote `docker-compose -f docker-compose.yml -f docker-compose.prod.yml -d config`
+
+_This creates a new docker-compose file_
+
+## Docker Healthchecks
+- Supported in Dockerfile, docker-compose, docker run , swarm
+- Docker will exec the command in the container . ex: `curl localhost/health`
+- Expects 0(OK) or 1 (BAD)
+- HEALTH states
+    - starting
+    - healthy
+    - unhealthy
+- Note that Docker will not take any action on unhealthy containers, but Services will
+
+eg: `docker run -d --health-cmd="pg_isready -U postgres || exit 1"  postgres`
+
+## Docker Registry
+#### When you want to push image to a specific registry
+- First rename the image tag to have host:port/ as prefix
+eg : `docker tag minas-morgul localhost:5000/minas-morgul`
+
+    then do `docker push` :-> it will push to the locally hosted docker registry :)
+
+    Note that you can run your own registry in localhost. Just `docker pull registry` and checkout its instructions.
+
 
 ### `docker system df` -- occupancy stats
 

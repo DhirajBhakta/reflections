@@ -1,0 +1,25 @@
+# Deployments are part of the apps version 1 API spec.
+apiVersion: apps/v1
+kind: Deployment
+# The Deployment needs a name.
+metadata:
+ name: hello-kiamol-4
+# The spec includes the label selector the Deployment uses
+# to find its own managed resources—I’m using the app label,
+# but this could be any combination of key-value pairs.
+spec:
+ selector:
+ matchLabels:
+ app: hello-kiamol-4
+ # The template is used when the Deployment creates a Pod
+ template.
+ # Pods in a Deployment don’t have a name,
+ # but they need to specify labels that match the selector
+ # metadata.
+ labels:
+ app: hello-kiamol-4
+ # The Pod spec lists the container name and image
+ spec.
+ containers:
+ - name: web
+ image: kiamol/ch02-hello-kiamol
