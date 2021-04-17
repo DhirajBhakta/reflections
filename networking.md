@@ -25,6 +25,9 @@
 
 # Tools
 
+## &#9874; nslookup
+## &#9874; curl 
+
 ## &#9874; `ping <host>`
 - ICMP 
 - IP Layer (Network Layer) (Layer 3)

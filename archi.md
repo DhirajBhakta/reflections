@@ -24,8 +24,47 @@ looks like. <br/>
 
  - We create stuff thats designed to flex, adapt and evolve to user's changing requirements and as our understanding of the domain deepen, _unlike engineers and architects who already have a knowledge base of 1000+ years and create something static_
  - Pointless for the "architect" to create diagram after diagrams, pages and pages of documentation envisioning to create the __perfect__ system without taking into account the fundamentally unknowable future.
- - Our requirements shift faster than for engineers and architects. Event the tools and approaches shift faster
+ - Our requirements shift faster than for engineers and architects. Even the tools and approaches shift faster
  - Our products are NOT never-changing-artifacts
+
+
+ #### Importance of Soft Skills!
+
+ This is not obvious. Soft Skills are almost as important as your tech skills. They feed into your tech skills and empower you to get better at tech ultimately.
+
+ You will NOT be sitting alone in a basement typing away in console. Shake away this stereotype. You WILL be dealing with humans, and humans are pretty more complex to deal with than any bug you've fixed. There will be times when you just want to be left alone to work productively, away from the nasty interruptions from mail/people/irritating DMs/"hey do you have a minute"/"hey can I get on a call with you" ... gritting your teeth wont do you any good.
+
+ A company is a not that great place to be in, and feel chauvinistic about your work. Nearly everyone is there for the money, and you cannot convince them otherwise, and **you should not!**. We arent voluntarily there to achieve something collectively. Regardless of how they shiny HRs will sell you their "ideologies", "mission", "vision"... you'll realize this is just garbage, and noone really follows them. Nearly everyone treats it like a "forced" nine-to-five, and this atmosphere will turn you off sooner or later. .._Which is why you must attempt to have a taste of working in startups_, more on that later. You dont work solo, you work in a team. So please try to bring down your over enthusiastic drive in a project to achieve superhuman goals &mdash; there are other people working in the same team who would not want to work as fast, and would feel resentment towards you for creating an atmosphere of forced "over work". It might be "passion" for you..just for YOU, not them. Channel your energy in picking up new tech skills, digging deep into any topics of interest...anything that just involves you. These team members arent gonna be around with you forever in your career, so its wiser to channel your over enthusiastic energy towards something that reaps long term benefits.  
+ 
+ Its pretty hard to swallow that " No job is worth dying for", especially after how hard you've worked to get here. If it is too much to do and the company is not hiring more hands to solve the problem. Do not put it on your own shoulders to try to work harder and longer. It will only end up with you getting burnt out. Be smart about when it is time to go home. You can lose years for the stupidity of shouldering a problem that not yours to handle alone. Just think about the hours lost ( say 3 hours per day x 365 = ~1000 hours a year. Infact, if youre clever about it you can spend 6 hours daily honing your skills , gaining mastery over new topics every 2 years! Just think about the sunk cost)
+
+A lot of the time your tech skills will be secondary. Social skills are prime. Dont be that person who knows a lot, works a lot, but is very difficult to work with. For every such person who actually manages to succeed, there are 1000s of other such people whose careers were shattered on the rocks...._just because theyre difficult to work with_.
+
+You wont always get a chance to do things PERFECTLY. Sometimes you have to accept tech debt, in favour of business' interests. Keep harmony in the team. 
+ - Working peacefully in a team
+ - handling friction within teammates
+ - Negotiating for your salary
+ - Staying professional, not getting emotional
+ - Finding ways to cope with ideas of your teammatchauvinistices(higher up or lower down) that you do not agree with.
+ - Get good at quickly judging competence of your people, their styles, and come up with tailored approach to deal with them
+ - How to speak to them without making them defensive
+
+
+#### T shaped skillset _techinically_
+![](https://miro.medium.com/max/924/1*3jJEfx1B2xX86Uc1_e0r1Q.png)
+
+> You can never understand everything. But you should push yourself to understand the system
+    - _Ryan Dhal, nodejs_
+- A little bit about everything. Broads idea of the field. The big picture
+- Become an expert in one thing. Be really really good, with unimaginable depth.
+
+#### Act like a professional
+If you want to be taken seriously, you must act like a professional
+- no gossips, backstabbing
+-  
+
+
+
 
 ## Role of the Architect
  - An architect cannot and should not _overspecify_ things to the last detail. Rather make the framework where changes can smoothly happen.
@@ -104,3 +143,6 @@ pass
 
 ## Onion Architecture
 Has a lot of layers, and makes you cry when you try to cut through it.
+
+## Links 
+[Notes to myself on software engineering](https://medium.com/s/story/notes-to-myself-on-software-engineering-c890f16f4e4d)

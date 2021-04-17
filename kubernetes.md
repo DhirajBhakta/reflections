@@ -60,9 +60,11 @@ and [this](https://www.cncf.io/phippy/) too XD
 
 ![](assets/components-of-kubernetes.svg)
 
-##### Control Plane
+##### Control Plane &mdash; The Masters/Managers
+    - Includes ETCD, API server, scheduler, control manager
 The container **orchestration layer** that exposes the Kubernetes API and interfaces to define, deploy, and manage the lifecycle of containers.
-They detect and respond to cluster events (for example, starting up a new pod when a deployment's replicas field is unsatisfied).
+They detect and respond to cluster events (for example, starting up a new pod when a deployment's replicas field is unsatisfied).<br>
+They are actually containers themselves.
 
 ###### Kubernetes API?
 `kubectl` uses this API under the hood.<br>
@@ -70,7 +72,7 @@ To <u>Query and manipulate</u> the state of **objects** in Kubernetes <br>
 Objects? := Pod || Deployment || Namespaces etc
 
 ##### Node 
-A Worker machine. ( host/machine/Ec2/VM etc )<br>Every Node runs a "kubelet".
+A Worker machine. ( host/machine/Ec2/VM etc ) with defined CPU and RAM<br>Every Node runs a "kubelet".
 
 ######  Kubelet?
  It makes sure that containers are running in a Pod (in that node).<br>
@@ -79,21 +81,30 @@ A Worker machine. ( host/machine/Ec2/VM etc )<br>Every Node runs a "kubelet".
 Smallest deployable units of computing that you can create and manage in Kubernetes.<br>
 Pod = group of one or more containers(taht are relatively tighly coupled).<br>
 
-
-1. `Kubernetes` : The whole orchestration system. A.K.A "K8s", "Kube"
-2. `Cluster` : A cluster is a set of individual servers/nodes/hosts which have all been configured with a container runtime like Docker, and then joined together into a single logical unit with Kubernetes. The cluster, as one logical unit, runs your application. In normal usage you forget about the underlying nodes and you treat the cluster as a single entity. You can add Nodes to expand the capacity of your cluster.
+---
+A cluster is a set of individual servers/nodes/hosts which have all been configured with a container runtime like Docker, and then joined together into a single logical unit with Kubernetes. The cluster, as one logical unit, runs your application. In normal usage you forget about the underlying nodes and you treat the cluster as a single entity. You can add Nodes to expand the capacity of your cluster.
 
 A Kubernetes cluster consists of a set of worker machines, called nodes, that run containerized applications. Every cluster has at least one worker node.
 The worker node(s) host the Pods that are the components of the application workload. The control plane manages the worker nodes and the Pods in the cluster. In production environments, the control plane usually runs across multiple computers and a cluster usually runs multiple nodes, providing fault-tolerance and high availability.
 
+---
 
-2. `Kubectl` : CLI to configure Kubernetes. Talks to the cluster via Kubernetes API
-3. `Node`:  Single Server(Host) in the Kubernetes cluster . H/w with CPU and RAM. Smallest Unit of Computing Hardware.
-4. `Kubelet`: Kubernetes Agent running on nodes
-5. `Control Plane`: Set of containers that manage the cluster. A.K.A "Master"
-    - Includes ETCD, API server, scheduler, control manager
+## Big Picture 
+You care only about your application. You just want it deployed... in one logical unit that abstracts everything underneath....**The Cluster**
 
+You just want to _define_ the application in a YAML file (manifest), and let Kubernetes handle the rest.
 
+#### "The rest"?
+- Say a `node` in the cluster just died, and killed off some containers with it
+    - Kubernetes will see this and starts replacement containers on the host
+- Say a container became "unhealthy"
+    - Kubernetes will restart it.
+- Say a `component` is under high load/stress.
+    - Kubernetes will start extra copies of the component in new containers.
+
+**Your Job** :-> Define the Dockerfile and the kubernetes YAML file properly. You specify WHAT you want to happen
+
+**Kubernetes Job** -> Make sure `CURRENT STATE == DESIRED STATE` ( a self healing app ). It figures out HOW to make it happen.
 
 ## Principal Principles
 #### [Controller Model](https://kubernetes.io/docs/concepts/architecture/controller/)
@@ -130,23 +141,6 @@ label selector. If you edit the labels on the Pod, the Deployment no longer
 recognizes it.
 
 
-
-## Big Picture 
-You care only about your application. You just want it deployed... in one logical unit that abstracts everything underneath....**The Cluster**
-
-You just want to _define_ the application in a YAML file (manifest), and let Kubernetes handle the rest.
-
-#### "The rest"?
-- Say a `node` in the cluster just died, and killed off some containers with it
-    - Kubernetes will see this and starts replacement containers on the host
-- Say a container became "unhealthy"
-    - Kubernetes will restart it.
-- Say a `component` is under high load/stress.
-    - Kubernetes will start extra copies of the component in new containers.
-
-**Your Job** :-> Define the Dockerfile and the kubernetes YAML file properly. You specify WHAT you want to happen
-
-**Kubernetes Job** -> Make sure `CURRENT STATE == DESIRED STATE` ( a self healing app ). It figures out HOW to make it happen.
 
 ## Kubernetes does NOT run conatiners !
 1. Kubernetes does not run containers -, it delegates it to node runtimes like docker, containerd, etc
