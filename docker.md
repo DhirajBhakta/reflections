@@ -672,6 +672,11 @@ eg : `docker tag minas-morgul localhost:5000/minas-morgul`
     - docker container prune
 
 
+## HACKS
+```bash
+# If you ran out of disk space for data-root for docker
+do you want to have the containers in /home/youruser, then you can create /home/youruser, cp /var/lib/docker to /home/youruser/ (with --preserve=ownership), remove /var/lib/docker and symlink /home/youruser/docker to /var/lib/
+```
 # --MyQuestions--
 1. What exactly is a container(understand unionfs)
 2. What exactly is a image(understand unionfd)

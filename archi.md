@@ -27,6 +27,15 @@ looks like. <br/>
  - Our requirements shift faster than for engineers and architects. Even the tools and approaches shift faster
  - Our products are NOT never-changing-artifacts
 
+ ### On "How to learn new things"
+ 1. Imitate the best until you get consistent results
+ 2. Understand why things work the way they do
+ 3. Learn to assign higher and lower values to different mindsets/aproaches/tech
+ 4. Create variations on best of ideas
+ 5. Innovate
+
+ If you observe the normal way people learn, its usually the opposite. They learn very little and jump right on to do creative stuff. Some things work with trial and error, and you learn a thing or two...but youre just picking grains of sand on a desert
+
 
  #### Importance of Soft Skills!
 
@@ -58,10 +67,21 @@ You wont always get a chance to do things PERFECTLY. Sometimes you have to accep
 - A little bit about everything. Broads idea of the field. The big picture
 - Become an expert in one thing. Be really really good, with unimaginable depth.
 
+Why have the breadth? Oftentimes you'll notice havoc "somewhere" in the system but do not know where! Othertimes, you'll sorta know _okay, its some networking issue_ , _oh it seems be some OS issue_ . DO NOT BE THIS GUY! Knowing a little bit of everything isnt impossible. You can do some priliminary investigation of the problem yourself without waiting on some other guy/team and claiming it to be a blocker.
+
+At the very least, have enough knowledge to communicate to the specialized team the problem you're facing in the most detail as you possibly can.
+"Help me ! this is not working" is very VERY annoying
+
+be the T shaped developer. Do not be in a position where you have absolutely no clue about the subject being talked about. If you find yourself in such scenarios, feel the damn guilt and go read the fundamentals within a week.
+
+Ignorance = incompetence = reeks disgust
+
+’ve been in more than one organization where the various groups within IT feel very frustrated with each other. Conflicting priorities and overly rigid or excessively porous boundaries lead to conflict, which causes bad feelings or, worse, lots and lots of meetingswhere everything gets painfully negotiated and still more processes get piled on everyoneuntil absolutely all progress chokes on ceaseless paperwork.
+
+Who’s responsible for fixing or, better still, preventing this mess?You are.So is your coworker.So is the person you’ve sworn an unbreakable blood oath of eternal vengeance against.Managers cannot improve interpersonal reactions. Managers can impose formalstructure, and bad management can make things even worse, but even a good managercan’t make two clashing personalities work together without imposing lots of formality.But if an argument just keeps looping over and over the same ground, it’s time tochange the rules.The quickest way to change a person’s reactions to you is by earning their respect. Thequickest way to earn an IT person’s respect is to demonstrate intelligence and competence.
 #### Act like a professional
 If you want to be taken seriously, you must act like a professional
 - no gossips, backstabbing
--  
 
 
 

@@ -1,10 +1,40 @@
-## What I wanna do over this weekend!
-0. TCP RFC!
-1. Finish Docker Mastery Course!
-    - Get more deeper on Docker
-3. Hashicorp Vault -- Aadhaar Vault
-4. Networking tools!
-2. clear the cloud on `netstat` `lsof` `ss` and ofcourse, `nmap` 
+## Whats Left
+- Linux
+    - Everything is a file shit
+        - debunking filedescriptors
+    - understand filesystems
+    - Understand Processes, /proc
+    - What exactly is mounting
+    - correct usage of ps command
+    - tmux will open my eyes for boosting minas_morgul
+- LInux Depth threads
+    - Networking ...Michael W lucas book
+    - Processes
+    - Filesystem
+    - ssh ...Michael W lucas book
+    - tmux...& psuedo terminals ........book
+    - Linux Kernel
+        - wtf is a microkernel. checkout Tanenbaum v Linus debate on kernels vs microkernels
+- Shell scripting / everyday tasks
+    - grep egrep awk bash perl and al that
+
+- TheLinuxBible (1 month)
+
+- Watch later Linux videos
+- Install arch linux for a final time to understand everything
+
+
+
+## Productive boost
+#### Inner game
+1. daily ritual exercise + music + meditation (1 hour)
+- meditate for clarity.. every single day.
+Reminding yourself of the goal clearly/ tweaking your goal little by little is important during this meditation
+
+2. Have the Opportunity Cost Mindset
+
+3. 60-60-30
+ focus like a god for 2 hours, workout for 30 mins, relax
 
 
 
@@ -15,6 +45,14 @@ What I want to become?
 - #2 good at Networks & related tools
 - #3 Clean/Scalable Coding Principles 
 - #4 Typing speed + Vim + VScode power user
+
+Market myself as 
+- Frontend Engr
+- Backend Engr
+- Devops Engr
+- Linux Geek
+- The Best T shaped developer 
+    - I actually still dont know what to become an expert in
 
 
 ## Broad Goals 
@@ -41,6 +79,10 @@ What I want to become?
 
 ## Books to read 
 - Building Microservices
+- ssh by Michael W Lucas
+- Networking by Michael W Lucas
+- tmux book
+- tutorialinux YT channel
 - Learn Docker in a month of lunches
 - Lern Kubernetes in a month of lunches.
 - Docker in Action
