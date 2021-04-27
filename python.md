@@ -137,8 +137,89 @@ Why? : to organize and group the modules
 Modules help avoid collisions between global variable names, packages help avoid collisions between module names.
 
 ### Case1 : plain folder, and modules inside it
+No __ init__.py = No Package initialization
 
 ![](assets/python-01.png)
+
+Note that there is no "__ init__.py" file.
+&#128161; => **Its not compulsory to have an __ init__.py in all packages**
+
+This is also possible
+```py
+import pkg.mod
+pkg.mod.test_function()
+```
+```py
+import pkg.mod as mod
+mod.test_function()
+```
+```py
+from pkg.mod import test_function
+test_function()
+```
+```py
+from pkg.mod import test_function as imported_function
+imported_function()
+```
+
+The only thing you cannot do is
+```py
+import pkg
+```
+
+### Case 2.1: Folder with __ init__.py, and other modules 
+Uses Package initialization
+
+`__ init__.py`? => this file is executed whenever 
+1. the package is imported 
+2. one of the modules of the package is imported
+
+This can be the place where you write "package initialization code".
+
+**A module inside the package can also import the attrs defined in __ init__.py** (Global values at the package level)
+HIGHLY NOT RECOMMENDED!
+
+![](assets/python-02.png)
+
+But still, you havent reached the ideal `from pkg import X, Y ,Z` where X, Y ,Z are objs in modules, which is what we will solution next
+
+### Case 2.2: Folder with __ init__.py which manually imports all modules' contents inside it
+Uses Package Initialization
+
+Infact ABUSES package initialization to quickly import all the modules' contents into itself
+
+```py
+# __init__.py of pkg
+
+from .mod1 import *
+from .mod2 import *
+from .mod3 import *
+```
+now you reached the ideal `from pkg import X, Y ,Z` where X, Y ,Z are objs in modules
+
+## Subpackages
+Same rules of packages, nothing special. You just get creative
+
+![](assets/python-03.png)
+
+Notice the absence of __ init__.py here. its not compulsory :)
+![](assets/python-04.png)
+
+This just demonstrated how you can import from another sub package, being in another sub package.
+Also showed how to use `..`
+
+This last pic is probably the most important one among all for understanding modules/packages
+
+
+
+
+
+
+
+
+
+
+
 
 
 
