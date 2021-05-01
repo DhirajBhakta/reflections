@@ -147,6 +147,7 @@ UserAgent =========== A =========== B =========== C =========== OriginServer
 ## Proxy
 
 ===============_Acts as the real client_====================
+
 ![](assets/proxy-01.png)
 
 Program which <u>acts as both a server and a client</u> for the purpose of **making requests on behalf of other clients**. 
@@ -161,6 +162,7 @@ A "non-transparent proxy" is a proxy that modifies the request or response in or
 
 ## Gateway (Reverse Proxy)
 ===============_Acts as the real server_=====================
+
 ![](assets/gateway-01.png)
 
 a gateway receives requests as if it were the origin server for the requested resource; the requesting client may not be aware that it is communicating with a gateway.
@@ -182,25 +184,6 @@ A "tunnel" acts as a blind relay between two connections without
 
 # HTTP Cache
 
-
-
-
-
-### What is a URI schemes?
-http:// and https:// are URI schemes
-
-## HTTP verbs
-
-### GET
-### POST
-### PUT
-### PATCH
-### DELETE
-### 
-### CONNECT
-
-
-### MIME
 
 
 # AHA moments
