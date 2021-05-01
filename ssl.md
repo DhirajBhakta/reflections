@@ -142,7 +142,6 @@ Security provided by SSL certificates is based on a Chain of Trust that originat
 
 Furthermore, the Certificate Authorities are very strict with their guidelines and to guard their Root Certificates from getting compromised, they use an Intermediate Certificate which helps in issuing the user’s end-entity or leaf certificate.
 ![](assets/chainoftrust-02.png)
-> The above image is wrong in the fact that **private keys are used to digitally sign something**,  not public key
 
 Moreover, Digital Certificates are verified via a chain of trust which is a list of certificates in an order. This contains End-Entity Certificate (Leaf Certificate), Intermediate Certificate and Root Certificate, where the root certificate authority (CA) is the trust anchor for the digital certificates.
 
@@ -155,9 +154,6 @@ Moreover, Digital Certificates are verified via a chain of trust which is a list
 ### Do this activity !important!!!!!
 https://medium.com/@superseb/get-your-certificate-chain-right-4b117a9c0fce
 
-
-## The SSL Certificate
-- contains server's public key
 
 
 
