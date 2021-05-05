@@ -11,6 +11,7 @@ Containers &mdash; Once-in-a-decade huge shift!
 
 //TODO :Good stuff out [Here](https://training.play-with-docker.com/)
 
+even better [here](https://medium.com/@saschagrunert/demystifying-containers-part-i-kernel-space-2c53d6979504)
 
 # Why Docker?
 ![](https://i0.wp.com/www.docker.com/blog/wp-content/uploads/e30e4afc-dc02-4e98-b878-2cd173807944-1.jpg?fit=960%2C540&ssl=1)

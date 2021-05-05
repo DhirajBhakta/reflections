@@ -533,6 +533,30 @@ Checkout [this article](https://scoutapm.com/blog/restricting-process-cpu-usage-
 #### `who` and `w` &mdash; Monitor users
 Show who is logged in and what they are doing.
 
+## Admin level stuff
+
+### `chroot` &mdash; fake root
+Change the "apparent" root for the current running process and their children.
+
+The programs cannot access files and commands outside that tree. 
+
+This modified environment is called "chroot jail"
+
+- Should be used for processes that dont run as root
+
+Why all this? =>
+You create a directory tree where you copy/link all the system files needed for a process to run. Then you `chroot` to change the root dir to this new dir tree. the processes run here will only look for binaries within this tree . They also cannot read/write outside this tree. They dont have a clue that world exists outside this jain. If you really want to use files/binaries from outside(and the libs used by those binaries), you can use bind mounts.
+
+As a matter of fact, `arch-chroot` does exactly this. Its a wrapper on `chroot`. We use `arch-chroot` while installing archlinux. (its a part of `arch-install-scripts` package)...Before it runs `chroot` internally, it will mount API filesystems like /proc and all so that they're available in the chroot jail
+
+[practical](https://www.unixmen.com/chroot-jail/)
+
+[Fixing your system](https://superuser.com/questions/111152/whats-the-proper-way-to-prepare-chroot-to-recover-a-broken-linux-installation)
+
+[Fixing your system - vid](https://www.youtube.com/watch?v=43dpS35Hzq8)
+
+
+
 
 # Saved Movement Shortcuts
 
@@ -595,3 +619,6 @@ Repeat steps 2 to 5.
 - what is ncurses? 
 - what actually happens when i ctrl+c or ctrl+z? ctrl+d?
 - What does modprobe do? what are kernel modules? waht are kernel drivers? dmesg ? lspci -k ? 
+- what are systemcalls?
+
+- `ldd` command -- list the libraries required by a binary ( understand bin vs lib) see [this](https://www.unixmen.com/chroot-jail/)

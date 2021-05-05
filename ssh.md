@@ -75,6 +75,10 @@ Lets start by using an alternate config...cuz..who wants to mess with the origin
 #### Running sshd in debug mode (-d)
 Will be able to see in detail whats happening (during daemon startup, during client connection). BUT, only ONE client will be able to connect. Just one session. after that sshd will die. So use it just for debugging once. (Run this on alternate port -p 2222)
 
+#### Jailing the users with `chroot` 
+[check this](https://www.redhat.com/sysadmin/set-linux-chroot-jails)
+So when someone logs in, they land in their own sandboxed  chroot jail.. will not be able to read/write outside this chroot environment
+
 ## SSH Tunnels &mdash; Local Port Forwarding
 Access private resources on the cloud without exposing the port publicly
 
