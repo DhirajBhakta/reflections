@@ -62,6 +62,8 @@ Most distributions offer pre-compiled packages of most common tools, such as RPM
 
 
 
+
+Before we proceed into Linux, [this](https://wiki.osdev.org) is the god reference 
 ## Package managers
 [How package managers work](https://opensource.com/article/18/7/evolution-package-managers)
 ![](https://i2.wp.com/itsfoss.com/wp-content/uploads/2020/10/linux-package-manager-explanation.png?w=800&ssl=1)
@@ -513,6 +515,232 @@ Checkout [this article](https://scoutapm.com/blog/restricting-process-cpu-usage-
 
 ### Using `ps` properly
 
+## Boot
+### BIOS &mdash; Basic Input Output System
+
+## Disks
+
+### Block Storage Device
+First know the difference between [FileStorage, BLockStorage, ObjectStorage](https://www.redhat.com/en/topics/data-storage/file-block-object-storage)
+
+Block Storage Devices, or simply "Block Devices" examples
+- HDD
+- SSD
+- flashdrives 
+
+Its called a **block device** because the kernel interfaces with the h/w by referencing FIXED size BLOCKS.
+- Block storage - Oldest form of data storage
+- stored & referenced in CHUNKS - fixed length BLOCKS
+- for this reason of being stored in a primal fashion, block storages **need** an application to manage them (virtualize over them, make abstractions over them) and present them to the Operating system (which knows only shit like / /dev /boot /home /root)
+- primal BLOCKS = massive scope to build upon
+    - <u>Each block exists independently and can be formatted with its own data transfer protocol and operating system</u> — giving users complete configuration autonomy. 
+    -  does not concern itself with investigative file-finding duties as the file storage systems, **block storage is a faster storage system**. 
+    - (speed + configuration flexibility) => makes block storage ideal for raw server storage or rich media databases.
+
+
+Once it is setup (after formatting+mounting), you can use it as an extension of your filesystem tree ( maybe to extend /home). Remember how you [added a "Disk"](https://cloud.google.com/compute/docs/disks/add-persistent-disk) in Google Cloud to an existing Compute Instance? Also AWS EBS works similarly when you want to add EBS volumes to Existing EC2 machines
+
+![](assets/storage-01.png)
+
+
+Big Picture...
+
+_Before being able to do shit like `mv file1 file2`, you should mount the partition. Before mounting, you should have **formatted** the partition, before formatting, you should **partition**ed the device_ See [this](https://askubuntu.com/questions/841497/how-to-mount-a-partition)
+
+/dev/sda is a device<br>
+/dev/sda1 is the partition
+
+One mounts a partion, not a device(for disks)
+
+A filesystem is just one big tree. Then why bother about "N disks"? well...you may want to spread your tree across multiple disks...because your single disk is too small to hold the entire tree...(well its kinda not the only motivation to have multiple disks, but ok). Each of these disks have filesystem on it.(Really?? did you just assume that they were already formatted??)
+ You create the single tree view of the filesystem by **mounting** the filesystems on different devices at a point in the tree called a mount point.
+
+ now, when you cannot affort N disks, you **partition** a single disk to achieve the same behavior.
+
+ Usually, the kernel starts this mount process by mounting the filesystem on some hard drive partition as /. You can mount other hard drive partitions as /boot, /tmp, or /home. You can mount the filesystem on a floppy drive as /mnt/floppy, and the filesystem on a CD-ROM as /media/cdrom1, for example. You can also mount files from other systems using a networked filesystem such as NFS. There are other types of file mounts, but this gives you an idea of the process. **While the mount process actually mounts the filesystem on some device, it is common to simply say that you “mount the device,” which is understood to mean “mount the filesystem on the device.”**
+
+ ![](assets/storage-04.png)
+
+ **Sector**?<br>
+ Sector is the smallest physical storage unit on a disk (sector size=512bytes).
+
+ ![](https://1.bp.blogspot.com/-A1aht6e1zFs/XFlvbIGEeMI/AAAAAAAAGbg/p8D50NwdQk0SmUzgZ0DkCkyTgZEEPLf0ACLcBGAs/s1600/1.png)
+
+ On a hard disk, data is stored in thin, concentric bands. A drive head, while in one position can read or write a circular ring, or band called a **track**. There can be more than a thousand tracks on a 3.5-inch hard disk. Sections within each track are called sectors. 
+
+ Tracks are numbered, starting at 0 (the outermost edge of the disk), and going up to the highest numbered track, typically 1023, (close to the center).
+
+ Similarly, sectors are numbered, starting from 0 to 250069646 (in my example above)
+
+ Why "**clusters**" of sectors? Your files tend to be much greater than 512 bytes right? data is easily accessed if they are stored next to each other. so "clusters" of contiguous sectors are allocated to store files. Now what happens if the file size outgrows the cluster size? then the next available cluster is taken up. But if continguous clusters are not available, then a free cluster somewhere else, maybe in some other track is taken up .
+
+ ![](https://getdata.com/img/scr_RMF/disk-sectors.jpg)
+
+ Files stored in this non-contiguous manner are said to be **fragmented**. This can significantly slow down the reads.. imagine how much the head has to move around just to read parts of the file in different clusters. Cluster size can be changed to optimize file storage. _A larger cluster size reduces the potential for fragmentation, but increases the likelihood that clusters will have unused space_.
+
+ [Block vs sector](https://stackoverflow.com/questions/12345804/difference-between-blocks-and-sectors)
+
+**`dd` : you can directly read sectors using this command**
+
+
+
+### What are Disk Partitions?
+break up a drive into multiple drives when youre too poor to buy many hard disks 	:hurtrealbad: .  A partition is a section of a storage drive that can be treated in much the same way as a drive itself.
+
+A "volume" is usually a logical drive (partition)
+
+**`fdisk` does the partitioning**
+
+
+Why do it?
+- Restriction of access
+- Restriction of growth
+- Performance
+    - eg: dedicated partition for swap  massively boosts perf
+    - eg: dedicated partition for /root
+    - eg: dedicated partition for /home
+    ![](https://managementmania.com/uploads/article_image/image/5580/hdd-hard-disk-drive-example.PNG)
+    The outermost rings of the disk can be accessed the fastest. The Disk spins at a constant angular velocity, but the linear velocity of the outermost ring (relative to the read/write head) is the highest at the outside. This is why perhaps boot partitions tend to be on the outside. Even inodes prefer to stay outside
+
+    Also data that is not modified often can be put in a separate partition, to avoid them getting involved in defragmentation process of regularly accessed partitions
+
+- Efficiency
+    - say you have large number of small files. Then youre better off with BLOCK SIZE of say 512bytes instead of the default 1KB. So you should partition your big disk such that one of them can be formatted with a smaller block size
+
+- backup & recovery
+    - recover a corrupt filesystem
+- You can boot multiple OSes from a single USB stick!!
+
+_partitioning is not compulsory. People do install OSes without ever partitioning. But dual boot systems need to be partitioned_
+
+#### Partition tables &mdash; MBR v GPT
+
+For the act of partitioning, you need to choose what "kind" of partition table you want (scheme). 
+
+##### MBR - old scheme
+
+This scheme allocates 512 bytes at the beginning of the device to hold the **Bootloader code** (which launches the OS)+ **partition table**(which holds metadata of each partition)
+
+Remember that sector size of a disk =512bytes. So MBR allocates the FIRST sector of the disk for holding ^
+![](assets/storage-02.webp). 
+
+
+- MBR supports only till 2TB
+- MBR supports only 4 **primary** partitions ( the final one can be made an "extended partition" which can be further split into 23 "logical"partitions, so totally 26..logical partitions nevertheless)
+- MBR is usually paired with Legacy BIOS ( both are old af )
+
+It's very easy to ruin the MBR sector of the drive, making it impossible to boot up again. Then you'll either need to create a recovery USB (liveUSB) and try to repair the MBR, or completely wipe the drive and reinstall the operating system.
+
+##### GPT - new scheme
+GUID Partition Table.
+
+![](assets/storage-03.webp)
+
+Protective MBR is just empty so that old systems that do not understand GPT dont cry
+
+- GPT supports 128 partitions
+- GPT supports 9.7 billion TBs. lol lol lol
+- GPT is paired with UEFI 
+
+
+
+
+
+
+
+
+
+
+
+
+##### `lsblk`
+##### `fdisk`
+##### `mkfs`
+##### `mount`
+
+## BIOS
+[Greatest article](https://www.happyassassin.net/posts/2014/01/25/uefi-boot-how-does-that-actually-work-then/) ever written on booting process
+> BIOS is the first thing you see on your monitor when you boot your PC
+
+* Are all devices that are connected..work properly?
+* Do we have all the REQUIRED devices, like RAM..
+* Load the OS
+
+Every PC deals with 3 kinds of s/w
+- OS
+- Software  
+- BIOS (firmware)
+
+<u>BIOS first runs device health checks, and then passes control to the bootloader stored in the first sector (MBR) of the storage disk, the bootloader loads the OS</u>The BIOS is a small program that controls the computer from the time it powers on until the time the operating system takes over. The BIOS is firmware, and thus cannot store variable data. So all configs are stored in CMOS. ( configs include the params for starting up)
+- date & time
+- bootsequence
+- fan speed etc...
+
+<u>BIOS is stored on ROM </u>
+
+<u>BIOS configs(variables) are stored in CMOS</u>. CMOS is just another small RAM chip. Then why not store it in RAM itself? RAM chips lose info stored in them when PC is turned off. CMOS Li battery keeps this small RAM always powered on..to keep the BIOS settings
+
+
+#### Responsibilities (in sequence)
+- P.O.S.T - Power On Self Test
+- Load interrupt handlers
+- Load Device Drivers
+- Initialize other BIOS ( BIOS of peripheral devices)
+- Determine which devices are bootable
+- Initiate bootstrap sequence
+
+
+##### POST - Power on Self test
+BIOS checks if the video card works. Most video cards have a small BIOS of their own which initializes memory and graphics processor on the card. If they done, there would a video driver info on another ROM on the motherboard that the BIOS can load.
+
+Then BIOS checks if its a cold boot or reboot. If coldboot,  BIOS verifies the RAM by doing a read/write test of each memory address.
+
+BIOS checks PS/2 ports( & USB ports) to look for keyboards, mouse.
+
+BIOS checks for the PCI bus, if found, checks all the PCI cards
+
+If any error is found => series of beeps or some text on screen. Any error here signifies a hardware issue.
+
+
+
+##### Bootstrap sequence
+BIOS pulls BIOS config from CMOS
+
+BIOS wil cycle through all listed storage disks and looks for a bootloader (first sector of a disk). If found, BIOS hands over the control to the bootloader. (GRUB is one such bootloader). The bootloader then loads the kernel into the memory. The kernel runs the init process.
+
+Know that the BIOS doesnt have a clue what a bootloader is , or what an operating system is, or  what a partition is.... all it knows is HOW to load a bootloader. thats it
+
+
+
+
+
+
+
+
+## UEFI
+"Extensible Firmware Interface"
+
+What is "extensible" exactly?
+
+BIOS were desinged with very old h/w in mind. 
+
+UEFI booting is completely different that BIOS
+
+### Problems with BIOS
+BIOS is so simple &mdash; firmware(BIOS) knows only about "disks" and one magic location per disk (first sector, the MBR) where the bootloader code **might** reside
+- **You cannot boot from anything except disks**. What if you wanted to boot from a remote server?
+- **no native multi-boot support**. It has to be rubbishly handled by the bootloader..because, well..all BIOS knows is to load the bootloader and die. Even if bootloaders handle it, theres no good convention on how to do this ( standardization RIP)
+- **MBR's first sector 512 bytes is not enough for modern bootloaders**. So what people do is write the core part of the bootloader in MBR and write it beyound the 512 bytes!  This causes huge confusions regd where the first partition starts ( standardization RIP)
+
+UEFI's solution to the last point is a special partition - EFI system partition
+
+
+Unlike BIOS, UEFI does understand a little bit about OS, bootloaders and disk partitions
+
+stores config in an `.efi` file instead of CMOS. This file is stored on a special partition called EFI System Partition on the HDD itself. This partition also contains the bootloader.
+
+BIOS could only support drivers stored in its ROM, but UEFI has discrete driver support
+- User friendly GUI, mouse support to navigate
 
 
 ## cron
