@@ -161,32 +161,8 @@ Sort of similar to /tmp  as its ephemeral too
 ### /home
 No explanation needed
 
-## But What exactly is a "[Filesystem]()"?
-![](https://opensource.com/sites/default/files/filesystem_diagram.png)
 
-#### Filesystem Examples
-What are all these 
-btrfs,cramfs,ext2,ext3,ext4,fat,gfs2,hfsplus,minix,msdos,ntfs,reiserfs,vfat,xfs
-
-#### Virtual Filesytem Examples
-
-
-> lsblk is great for getting an overview of the physical devices mounted on the system, but it will miss any virtual filesystem mounts — most commonly, in-memory filesystems mounted as type 'tmpfs', of which modern Linux systems typically contain several.
-
-> /tmp and /dev/shm will be kept in memory for performance reasons on most systems (which is why /var/tmp should always be used instead of /tmp for large temporary files), and systemd installations will have /run and one or more /run/user/$UID mounted in memory as well.
-
->df or df -h will provide a nicely-formatted listing of all mounts including virtual filesystems, or on distributions which provide it, I've come to prefer the output of di.
-
-
-## What exactly is "mounting"?
-pass
-
-
-
-
-
-
-
+Go to the bottom to understand Disks--> Formatting(making a filesystem) --> mounting
 #### How to find ANY file 
 ```bash
  find /path/to/dir -name "*partoffilename*"
@@ -719,6 +695,7 @@ Know that the BIOS doesnt have a clue what a bootloader is , or what an operatin
 
 ## UEFI
 "Extensible Firmware Interface"
+Go [here](http://jdebp.uk./FGA/efi-boot-process.html) for detailed boot process with UEFI
 
 What is "extensible" exactly?
 
@@ -732,15 +709,133 @@ BIOS is so simple &mdash; firmware(BIOS) knows only about "disks" and one magic 
 - **no native multi-boot support**. It has to be rubbishly handled by the bootloader..because, well..all BIOS knows is to load the bootloader and die. Even if bootloaders handle it, theres no good convention on how to do this ( standardization RIP)
 - **MBR's first sector 512 bytes is not enough for modern bootloaders**. So what people do is write the core part of the bootloader in MBR and write it beyound the 512 bytes!  This causes huge confusions regd where the first partition starts ( standardization RIP)
 
-UEFI's solution to the last point is a special partition - EFI system partition
+UEFI's solution to the last point is a special partition - EFI system partition(basically FAT). The UEFI firmware, unlike BIOS, is capable of reading some filesystem formats (FAT32). Note the shift from "512byte at the start"/magicspace of the disk ....to a dedicated disk partition to hold bootloader code!!! Check the **EFI System** partition (sda1) in my system
+![](assets/storage-04.png)
+
+But wait...mounting partitions is done by OS, OS is not yet loaded. Does UEFI know how to mount partitions? ..**yes**
+
+Mind=Blown. UEFI mounts a "partition" just to load a bootloader, but who understands the partitions and partition tables? = GPT. er... see the disconnect?
+
+BIOS expects MBR to store both bootloader and partition table in sector0(512 bytes). UEFI expects GPT to maintain partitions ,and expects bootloader code to be INSIDE a partition. wow
+
+the Bootloader programs are just `.efi` files in the EFI System partition(special partition type). The EFI executable programs are standalone programs, ..dont need OS to run...machine firmware services are enough.
 
 
-Unlike BIOS, UEFI does understand a little bit about OS, bootloaders and disk partitions
+But how does the firmware know which order to use the bootloaders, and how does it allow us to override the default settings? &mdash; `efibootmanager`
+```
+[root@system directory]# efibootmgr -v
+BootCurrent: 0002
+Timeout: 3 seconds
+BootOrder: 0003,0002,0000,0004
+Boot0000* CD/DVD Drive  BIOS(3,0,00)
+Boot0001* Hard Drive    HD(2,0,00)
+Boot0002* Fedora        HD(1,800,61800,6d98f360-cb3e-4727-8fed-5ce0c040365d)File(\EFI\fedora\grubx64.efi)
+Boot0003* opensuse      HD(1,800,61800,6d98f360-cb3e-4727-8fed-5ce0c040365d)File(\EFI\opensuse\grubx64.efi)
+Boot0004* Hard Drive    BIOS(2,0,00)P0: ST1500DM003-9YN16G        .
+[root@system directory]#
+```
+![](assets/storage-05.png)
+
+
 
 stores config in an `.efi` file instead of CMOS. This file is stored on a special partition called EFI System Partition on the HDD itself. This partition also contains the bootloader.
 
 BIOS could only support drivers stored in its ROM, but UEFI has discrete driver support
 - User friendly GUI, mouse support to navigate
+
+## GRUB
+GRand Unified Bootloader
+
+We talked a lot about "bootloader"s in MBR(sector0) and in EFI System Partitions present as EFI executables...We also know "bootloaders" load the OS into RAM
+
+GRUB2 is an example of a bootloader. Others include
+- GRUB 
+- LILO (Linux Loader)
+- systemd-boot
+- BURG
+- syslinux...etc
+
+As a bootloader, it should be agnostic to the OS it loads. You should be able to instruct the bootloader to load a specific OS by just specifying the kernel's file name & the partition where it resides ( and not be forced to specify its physical position and shit). 
+
+**"/boot/[vmlinuz-linux](http://www.linfo.org/vmlinuz.html)" is the location of the Linux kernel executable**, and we specify this path in grub's config. this file is actually compressed, and its "bootable". once loaded by grub into memory, it will remain in the memory till poweroff
+
+**/boot/initrd-linux.img** is the location of [initial ram disk](https://landley.net/writing/rootfs-intro.html)
+
+You might see "initramfs-linux.img" and "initrd" being used intechangeably
+
+[**ramdisk vs ramfs**](https://landley.net/writing/rootfs-intro.html)
+
+What is a ramdisk?
+
+initramfs is a small filesystem
+- which is embedded in the linux kernel image
+- it helps the kernel to mount the root file system
+
+look at the sequence of handing over the control<br>
+UEFI -> bootloader -> kernel & initramfs -> PID1
+
+But what does the PID1(init or systemd) need ? atleast a filesystem. thats why we have initramfs as a placeholder for the eventual root filesystem
+
+
+
+
+
+
+
+![](assets/grub-01.png)
+
+
+
+
+## The summarized Linux Boot Process (BIOS vs UEFI)
+![](https://cdn.thegeekdiary.com/wp-content/uploads/2016/05/RHEL-CentOS-7-Boot-process-systemd.png)
+![](https://www.incibe-cert.es/extfrontinteco/img/Image/BLOG/2015Julio/bootkits/bios_vs_uefi.png)
+
+## Filesystems & formatting
+
+The term "Filesystem" is loosely used to mean one of three things
+ 1. The linux directory structure (/)
+ 2. A specific type of data storage format, such as EXT3, EXT4, BTRFS, XFS, and so on.
+
+
+ 
+  Linux supports almost [100 types of filesystems](https://opensource.com/article/18/4/ext4-filesystem), each of these filesystem types uses its own metadata structures to define how the data is stored(along with stuff like data_created, date_modified, size, location, name etc) and accessed.
+
+  ![](https://opensource.com/sites/default/files/filesystem_diagram.png)
+
+  Implementing a filesystem is a two-part process.
+ 1. **Linux virtual filesystem.** this provides a single set of commands for the kernel, and developers, <u>to access all types of filesystems</u>. The virtual filesystem software calls the specific device driver required to interface to the various types of filesystems. 
+ 2. **The filesystem-specific device drivers** are the second part of the implementation. The device driver interprets the standard set of filesystem commands(exposed by Virtual FS) to ones specific to the type of filesystem on the partition or logical volume.
+
+
+## Mounting
+What exactly is mounting?
+
+In early days people used to "physically mount" a tape or removal disk pack onto an appropriate drive ...thats how the word stuck. 
+
+These days, ffter being "physically placed" on the drive, the **the filesystem has to be logically mounted by the OS** to make the contents accessible by the OS, other apps etc
+
+**A mount point** is just a directory somewhere (deeply) under the root (a dir created as a part of root filesystem)
+
+so filesystems can be mounted on mountpoints of the root filesystem
+
+/ is a mountpoint<br>
+/home is a mountpoint<br>
+/boot is a mountpoint<br>
+/mnt/point1 is a mountpoint<br>
+/mnt/point2 is a mountpoint<br>
+
+filesystems can ALSO be mounted on mountpoints of non-root filesystems as well!
+for ex: i can mount something on /home/mnt/point1
+
+
+**The Linux root filesystem is mounted on the root directory (/) very early in the boot sequence.** Other filesystems are mounted later, by the Linux startup program(systemd). Mounting of filesystems during the startup process is managed by the **filesystems table**, [/etc/fstab](https://wiki.archlinux.org/title/fstab) configuration file. 
+
+Note that if you use an existing directory full of files as a mountpoint, its original contents will be hidden and will be visible only after you unmount whatever you mounted there.
+
+- Use `lsblk` to list the block devices and their mount points
+    - But it will miss virtual filesystem mounts like tmpfs
+- Use `df -h` for complete mount info ( incl virtual)
 
 
 ## cron
