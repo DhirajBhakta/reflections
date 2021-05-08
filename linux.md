@@ -793,9 +793,11 @@ But what does the PID1(init or systemd) need ? atleast a filesystem. thats why w
 
 ## Filesystems & formatting
 
-The term "Filesystem" is loosely used to mean one of three things
+The term "[Filesystem](http://www.linfo.org/filesystem.html)" is loosely used to mean one of three things
  1. The linux directory structure (/)
  2. A specific type of data storage format, such as EXT3, EXT4, BTRFS, XFS, and so on.
+
+ for now, EXT4 is de-facto root filesystem format in linux
 
 
  
@@ -806,6 +808,8 @@ The term "Filesystem" is loosely used to mean one of three things
   Implementing a filesystem is a two-part process.
  1. **Linux virtual filesystem.** this provides a single set of commands for the kernel, and developers, <u>to access all types of filesystems</u>. The virtual filesystem software calls the specific device driver required to interface to the various types of filesystems. 
  2. **The filesystem-specific device drivers** are the second part of the implementation. The device driver interprets the standard set of filesystem commands(exposed by Virtual FS) to ones specific to the type of filesystem on the partition or logical volume.
+
+`mkfs` command creates a filesystem on a device ( given a filesystem format ; default ext4), after which you will be able to create hierarchy of directories inside that device.
 
 
 ## Mounting
@@ -828,6 +832,8 @@ so filesystems can be mounted on mountpoints of the root filesystem
 filesystems can ALSO be mounted on mountpoints of non-root filesystems as well!
 for ex: i can mount something on /home/mnt/point1
 
+![](assets/mounting-01.jpg)
+
 
 **The Linux root filesystem is mounted on the root directory (/) very early in the boot sequence.** Other filesystems are mounted later, by the Linux startup program(systemd). Mounting of filesystems during the startup process is managed by the **filesystems table**, [/etc/fstab](https://wiki.archlinux.org/title/fstab) configuration file. 
 
@@ -836,6 +842,104 @@ Note that if you use an existing directory full of files as a mountpoint, its or
 - Use `lsblk` to list the block devices and their mount points
     - But it will miss virtual filesystem mounts like tmpfs
 - Use `df -h` for complete mount info ( incl virtual)
+
+
+## Inodes
+What?
+They are datastructures that hold **metadata** of all files. 
+
+2 cases where you cannot create any more files
+- Disk space exhaustion
+- Inode count exhaustion
+
+The number of inodes is fixed. you cannot exceed that. _So, you may not run out of disk space but you CAN run out of inodes, and may not be able to create any files!_ 
+
+The **metadata** held by inodes include
+- size
+- physical location (addresses of blocks)
+- file owner & group
+- access permissions
+- timestamps
+- reference counts of how many hardlinks point to this inode
+
+(note that name of the file and contents of the file is not "metadata")
+![](https://pc-freak.net/images/what-is-inode-find-out-which-filesystem-or-directory-eating-up-all-your-system-inodes-linux_inode_diagram.gif)
+
+Where?
+
+Inodes are stored in the Filesystem itself.
+In some filesystems like ext4, inodes are created at the time of filesystem creation... in xfs, inodes are created on the fly.
+
+
+Why?
+
+**When a file is created,** it is assigned a filename and a unique inode number. Its the directory's responbility to hold the filenames and corresponding inode numbers
+
+Why couldnt inodes be stored in the directory itself (instead of mapping)? then it makes the directory bigger, makes it difficult to move a file from one dir to another..(instead of just updating the pointer, you need to move the entire metadata arount)
+
+To read the data in a file, given a name...the OS must first query its directory about its inode number, then go to the inode, get the address blocks that contain the data, and then read it from there
+
+Note: Directories are special files whose data blocks are tables of name-to-inode mappings
+
+**`stat` command gives you inode info for a file.** This gives you clue regd how `ls -l` works.. it actually goes to the containing directory, get the name-to-inode mappings, `stat`s every name..and thats how it prints all the metadata you see in `ls -l`
+
+
+### Hardlinks &mdash; New names for the name inode
+
+Many-to-one mapping is possible when it comes to mapping multiple names to the same inode number, thus the same file. Infact, two different directories can contain same filename-to-inode mapping, thus the same file.
+Thus, on Unix, a file can have many names, even across different directories. You may use any of the several names of a file to find the inode for the file. Unix calls these names "pointers" or "links" to the file.
+
+The permissions you need to change the name of a file are contained in the inode corresponding to the directory that contains the name. The permissions you need to change the data in the file itself are contained in the inode corresponding to the file. These are two different inodes, and each inode may be owned by a different userid.
+
+Users Pat and Leslie can each own directories containing a name-inode map (a name) for a file whose inode is owned by Chris. Chris can control access to the file data. Pat and Leslie can only manipulate the name-inode maps in their directories. They can change their names for the file in their directories; but, they can't affect the file data itself.
+
+Decoupling of the file(and its name) and its metadata enables hardlinks.
+
+_Every file on the Linux filesystem starts with a single hard link_
+
+`ln` command makes **additional** hard links.
+
+`rm` removes the link(just like removing files).
+
+When the `link count` of a file goes to zero, no directory points to that inode, Linux is free to reclaim diskspace of the inode and its associated data blocks.
+
+**`rm` DOESNT clear the data blocks. It just removes the links... its only when all links are gone that the data blocks are cleared**
+
+Since linking is a directory operation (think about it, all youre doing is adding an entry to the name-inode mapping inside datablocks belonging to the directory), you need write access on the directory.
+
+**only files can be hardlinked, not directories**, think of it, had you been able to hardlink a directory then a dir would be present in more than one dir..then `..` would be ambiguous. **Every dir must have a unique parent dir**. This is also done to prevent loops and cycles in filesystem.
+
+#### `.` and `..` are hardlinks to dirs
+Everytime you create a subdir, the link count of the parent dir goes up by 1. Why? because `..` is a hardlink.
+Originally, when the parent dir is created (no subdirs at this point), it will have linkcount=2 (itself + `.`) . By the time it has 5 subdirs, it will have linkcount=2+5=7
+
+### Softlinks &mdash; symlinks..symbolic links
+Softlinks are Special files which point to existing file
+
+Softlinks are links to the filename.<br/>
+Hardlinks are links to the inode
+
+Say you created a file f1, and hardlinks f2 and f3 to the same underlying inode. It doesnt matter if you delete f1, or rename f1 to g1...you will still be able to read f2 and f3
+
+
+Say you created a file f1, and symlinks f2 and f3 to f1. you delete/rename f1...f2 and f3 are dead. - - - -**dangling softlink**
+
+Symlinks have their own inodes, which reference datablocks having the contents in the lines of "please look up the file name _"/abc/def" because im just a symlink to that file"_..ofc not in stupid english, but using flags and stuff...but contents nevertheless
+
+
+
+### Hardlinks v Softlinks
+![](https://i.stack.imgur.com/ka2ab.jpg)
+Hardlinks are faster.
+
+Harlinks help you create backup
+
+
+
+
+
+
+
 
 
 ## cron
@@ -943,5 +1047,5 @@ Repeat steps 2 to 5.
 - what actually happens when i ctrl+c or ctrl+z? ctrl+d?
 - What does modprobe do? what are kernel modules? waht are kernel drivers? dmesg ? lspci -k ? 
 - what are systemcalls?
-
 - `ldd` command -- list the libraries required by a binary ( understand bin vs lib) see [this](https://www.unixmen.com/chroot-jail/)
+- what is a journal? why does systemctl ask me to check journalctl for more logs/details? what is dmesg? is it related to journal?
