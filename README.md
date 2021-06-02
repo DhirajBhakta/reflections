@@ -18,3 +18,6 @@ An attempt to document most important learnings from various books, articles, fo
 - Lessons Learnt in Software Testing ( Best book for QA )
 - Enterprise Integration Patterns
 - Patterns of Enterprise Application Architecture
+
+### quick links
+https://medium.com/hackernoon/the-2018-devops-roadmap-31588d8670cb

@@ -48,7 +48,6 @@ Linus Torvalds didn't have money for buying a UNIX at the time for his Masters t
 #### on linux distros
 Most distributions offer pre-compiled packages of most common tools, such as RPM packages on RedHat and Debian packages (also called deb or dpkg) on Debian, so you needn't be a programmer to install a package on your system. However, if you are and like doing things yourself, you will enjoy Linux all the better, since most distributions come with a complete set of development tools, allowing installation of new software purely from source code. This setup also allows you to install software even if it does not exist in a pre-packaged form suitable for your system.
 
-#### Flavors
 - Debian
     - Ubuntu
     - Linux Mint
@@ -640,7 +639,7 @@ Protective MBR is just empty so that old systems that do not understand GPT dont
 
 * Are all devices that are connected..work properly?
 * Do we have all the REQUIRED devices, like RAM..
-* Load the OS
+* Load the bootloader(which inturn loads the OS)
 
 Every PC deals with 3 kinds of s/w
 - OS
@@ -793,6 +792,8 @@ But what does the PID1(init or systemd) need ? atleast a filesystem. thats why w
 
 ## Filesystems & formatting
 
+Great [book](http://www.nobius.org/dbg/practical-file-system-design.pdf)
+
 The term "[Filesystem](http://www.linfo.org/filesystem.html)" is loosely used to mean one of three things
  1. The linux directory structure (/)
  2. A specific type of data storage format, such as EXT3, EXT4, BTRFS, XFS, and so on.
@@ -810,6 +811,19 @@ The term "[Filesystem](http://www.linfo.org/filesystem.html)" is loosely used to
  2. **The filesystem-specific device drivers** are the second part of the implementation. The device driver interprets the standard set of filesystem commands(exposed by Virtual FS) to ones specific to the type of filesystem on the partition or logical volume.
 
 `mkfs` command creates a filesystem on a device ( given a filesystem format ; default ext4), after which you will be able to create hierarchy of directories inside that device.
+
+#### Some interesting filesystems
+###### [tmpfs](http://wiki.deimos.fr/images/1/1e/Solaris_tmpfs.pdf)
+Appears as a mounted filesystem, but its actually on RAM(Virtual Memory, to be specific)
+
+> Not necessarily kept in RAM, but on Virtual Memory..which can be swapped out into disk as well
+
+On reboot, everything in tmpfs will be lost.
+
+/tmp is actually tmpfs, mostly used as a shared memory space. (tmpfs was initially called shmfs)
+###### [ramfs](http://wiki.deimos.fr/images/1/1e/Solaris_tmpfs.pdf)
+
+##### tmpfs vs traditional ramdisks
 
 
 ## Mounting
@@ -928,11 +942,55 @@ Symlinks have their own inodes, which reference datablocks having the contents i
 
 
 
+
 ### Hardlinks v Softlinks
 ![](https://i.stack.imgur.com/ka2ab.jpg)
 Hardlinks are faster.
 
 Harlinks help you create backup
+
+# Linux Memory Management
+Like it or not, **youre actually not directly addressing the real physical memory addresses**. You're addressing a layer ABOVE it (virtual address space), so that it abstracts out stuff like paging, swap in swap out etc
+
+This layer/interface is handled by the MMU(Memory Management Unit) that sits between the CPU and physical memory.
+
+MMU has a TLB (Translation Lookaside buffer) which just holds the mapping between virtual addresses and actual physical addresses.
+![](assets/memory-mgmt-01.png)
+
+When CPU addresses a virtual address, the MMU consults the TLB. the associated physical addresses may be RAM/disk. If there is no associated physical address, MMU generates a **page fault exception** and interrupts the CPU
+
+### Page Fault
+its a CPU exception, generated when CPU attempts to use an invalid virtual address.
+- No physical address mapping against the virtual address in TLB => virtual address is invalid
+- The process has insufficient permissions for the address
+- The virtual address is valid, but swapped out
+
+![](https://hotsushi.github.io/assets/linux-virtual-memory/abstract.png)
+
+
+Using a disk as an extension of RAM, when youre too poor to buy bigger RAM.
+
+
+
+The part of the disk that's used as virtual memory is called "swap space". The **swap partition** serves as the swap space. But if youre not sure about the swap size you need, you dont have to make a partition for it, a normal **swap file** will suffice
+
+A swap partition(linux swap type) is not a special partition.. it just doesnt have any filesystem at all
+
+A swap file...is just a file. Just make sure its a [file without holes](https://en.wikipedia.org/wiki/Sparse_file) and that it has been made ready to be used as a swap space using `mkswap`
+
+Why?..because a file with holes, aka sparse files, tend to be fragmented, and they keep efficiency in mind..i.e allocate disk blocks only when write is requested. This is BAD for a swap file which doesnt have time for "allocating disk blocks". It would be conveninient to the kernel if the disk blocks are already allocated (dedicated disk block space) for swapping in and out the RAM pages
+
+```
+# create a file without holes
+dd if=/dev/zero of=/extra-swap bs=1024 
+
+# create swap
+mkswap /extra-swap 1024
+```
+
+
+
+
 
 
 
@@ -1047,5 +1105,10 @@ Repeat steps 2 to 5.
 - what actually happens when i ctrl+c or ctrl+z? ctrl+d?
 - What does modprobe do? what are kernel modules? waht are kernel drivers? dmesg ? lspci -k ? 
 - what are systemcalls?
-- `ldd` command -- list the libraries required by a binary ( understand bin vs lib) see [this](https://www.unixmen.com/chroot-jail/)
+- `ldd` command -- list the libraries required by a binary ( understand bin vs lib) ..understanding glibc ./see [this](https://www.unixmen.com/chroot-jail/)
+- statically vs dynamically linked libraries [this](https://cs-fundamentals.com/tech-interview/c/difference-between-static-and-dynamic-linking)
 - what is a journal? why does systemctl ask me to check journalctl for more logs/details? what is dmesg? is it related to journal?
+- What is kernel space userspace  etc?
+- kernel vs distros?
+- did not understand tmpfs ramfs ramdisk concepts
+ ( closely related to inital ramdisk & the chicken and egg problem during booting)
