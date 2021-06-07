@@ -857,6 +857,8 @@ Note that if you use an existing directory full of files as a mountpoint, its or
     - But it will miss virtual filesystem mounts like tmpfs
 - Use `df -h` for complete mount info ( incl virtual)
 
+## dd  | Data Duplicator - Block by Block
+from one device to another device
 
 ## Inodes
 What?
@@ -1096,6 +1098,31 @@ To find out where disk space is being used:
 5. Run ls -l to see which files are using a lot of space. Delete any you don't need.
 Repeat steps 2 to 5.
 ```
+
+# Troubleshooting
+
+### [Bad USB flash drive](https://dottheslash.wordpress.com/2011/11/29/deleting-all-partitions-on-a-usb-drive/)
+
+Lists all the disks/partitions. ( /dev/sdX is the device, /dev/sdX1 is partition)
+```sh
+sudo fdisk -l
+```
+Unmount partitions if any.
+
+Permanently delete all data with 
+```sh
+sudo dd if=/dev/zero of=/dev/sdb bs=1M
+```
+
+**2 choices at this point**
+1. Create a bootable USB (note: NOT for Windows ISOs. Use `woeusb`)
+    ```
+    dd if=arch.iso of=/dev/sdb bs=4M
+    ```
+2. Get back a fully functional flash storage 
+    - delete existing partitions and create one or more new partitions using `fdisk`
+    - Create a filesystem ( just use FAT32 cas its universal )
+
 # Questions
 - "wht" is a TTY and pts/0 and all?
 - [Why cant pipes and filters be used interchangeably?](https://askubuntu.com/a/172989)

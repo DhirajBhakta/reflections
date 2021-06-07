@@ -132,6 +132,65 @@ do their work, then microservices may not be for you.
 
 
 
+
+# Fail Fast Philosophy | Defensive Programming | Assertive Programming
+https://www.martinfowler.com/ieeeSoftware/failFast.pdf
+
+_Lets suppose that the preconditions are not met and if so, fail quickly._
+
+> Write your preconditions/invariants for your function at the top of its body,
+before it does its actual thing. So that, even if its called..it will check its conditions and stop dead if they are not met.
+
+_Suspect all invalid conditions, throw the appropriate exception, ..and do it early...before doing a lot of computations, which will anyway fail_
+
+We are used to (even encouraged to) "continue as if nothing happened", and keep the execution going without blocking any flows. This is just hiding the dirt under the carpet and not solving the real problem.
+...And when issues occur, we are forced to investigate the logs to find where exactly the failure occurred.
+
+The longer it takes for a bug to appear on the surface, the longer it takes to fix and the greater it costs.
+
+Usually the bug goes around and causes a lot of side effects causing 100 other bugs, hiding the root cause. Had you failed fast when the first bug occurred, you could fix it faster.
+
+This **Continue as if nothing happened** approach is the root cause of firefighting during go live.
+
+
+
+### What do we generally do when stuff fails
+- delay the failure
+- fail silently
+- handle the failure and move on
+- **fail fast**
+
+#### What is "Robust" anyway?
+Should you really "automatically" handle all your errors? Should you really bang your head thinking about workarounds? Even if you do..how sure are you that that particular workaround will not cause multiple hard-to-find bugs much later.
+
+Doing exactly the opposite, i.e not handling the errors and letting it fail the system EARLY on actually makes it more robust! That way, atleast you will know very quickly when an error occurs and know exactly where
+
+Bugs that are easer to find and fix = fewer bugs that go into production.
+
+Failing fast is non-intuitive way to make your system more robust.
+
+
+## Robust over Performant
+Code that fails fast, might look like its slow, less performant.
+
+But you rather have a robust system than a performant system 9/10 times.
+Also, dont believe the "It will slow it down" BS unless you have proper profiling results. Check what the true penalty is with a proper benchmark.
+
+_When faced with doubts about performance penalties, the forceful response must be certain evidence of significant degradation._
+
+## Examples
+1. Catch exceptions ONLY when you know what to do with it. Or dont catch at all.
+**We should not** swallow exceptions.
+1. When an env variable required for startup is missing, we should immediately abort the startup and report the issue.
+  **We should not** let the startup happen anyway and continue as if nothing happened.
+
+2. If we get Invalid request parameters, we should fail with 400 BAD_REQUEST.
+**We should not** try to correct the params and continue the request.
+
+
+
+
+
 ## When selecting a new Tech, 
  ### Measure the **Technical Fit**
  [RAD-Cert Philosophy](https://rad-cert.com/Home/Philosophy)
