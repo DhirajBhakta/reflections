@@ -32,6 +32,8 @@ Always use string, number, or boolean for types. Dont use the Boxed alternatives
 - Array (number[], string[])
 - Function
 - any
+- Tuple types
+
 
 ### Object Types
 ```ts
@@ -121,6 +123,23 @@ type DescribableFunction = {
 function doSomething(fn: DescribableFunction) {
   console.log(fn.description + " returned " + fn(6));
 }
+
+/** with generics **/
+interface GenericIdentityFn{
+  <Type>(arg: Type) : Type;
+}
+
+function identity<Type>(arg: Type): Type{
+ return arg;
+}
+
+let myIdentity: GenericIdentityFn = identity;
+
+/** with generics -part2 **/
+interface GenericIdentityFn<Type> {
+  (arg: Type): Type;
+}
+let myIdentity: GeneriIdentityFn<number> = identity;
 ```
 
 
@@ -237,6 +256,51 @@ wtf!??
 greet("world");
 ```
 
+#### Generic Interfaces
+
+```ts
+interface Box<T>{
+  contents: T;
+}
+
+let box: Box<string>;
+```
+
+#### Generic Type Aliases
+
+```ts
+type Box<T>{
+  contents: T;
+}
+```
+#### Generic Functions
+We can avoid function overloading with generic functions
+
+#### Generic Classes
+```ts
+class GenericNumber<T>{
+  zeroValue: T;
+  add: (x: T, y: T ) => T;
+}
+
+let myGenericNumber = new GenericNumber<number>();
+myGenericNumber.zeroValue = 0;
+myGenericNumber.add = function (x, y) {
+  return x + y;
+};
+```
+
+#### ...some more generic types 
+```ts
+type OrNull<Type> = Type | null;
+
+type OneOrMany<Type> = Type | Type[];
+
+type OneOrManyOrNull<Type> = OrNull<OneOrMany<Type>>;
+           
+type OneOrManyOrNullStrings = OneOrManyOrNull<string>;
+```
+
 
 
 ## Type Aliases
@@ -261,7 +325,6 @@ type ColorfulCircle = Colorful & Circle;
 Intersection operator & is to type Aliases what `extend` operator is for Interfaces
 
 
-
 ## Interfaces
 Same as types aliases.
 
@@ -281,6 +344,7 @@ interface AddressWithUnit extends BasicAddress {
   unit: string;
 }
 ```
+
 
 
 
@@ -347,11 +411,13 @@ Now if you go and add `Triangle` to Shape,
 the default case will throw Typescript Error saying `Triangle is not assignable to never`
 
 
+
 ## Other Topics of Interest
 - Enums
 - (!) Non-null Assertion Operator
 - [Literal Inference](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#literal-inference)
 - `readonly` modifier
+- Tuple types
 
 
 
@@ -435,6 +501,37 @@ two = new Three();
 ## Type War | any vs unknown vs never vs void
 
 
+# Mixin Design Pattern
+Think about this for a while
+```ts
+class BeeKeeper {
+  hasMask: boolean = true;
+}
+
+class ZooKeeper {
+  nametag: string = "Mikle";
+}
+
+class Animal {
+  numLegs: number = 4;
+}
+
+class Bee extends Animal {
+  keeper: BeeKeeper = new BeeKeeper();
+}
+
+class Lion extends Animal {
+  keeper: ZooKeeper = new ZooKeeper();
+}
+
+function createInstance<A extends Animal>(c: new () => A): A {
+  return new c();
+}
+
+createInstance(Lion).keeper.nametag;
+createInstance(Bee).keeper.hasMask;kjA
+```
+
 # Snippets
 ```ts
 function start(
@@ -476,3 +573,16 @@ const underWater3: Fish[] = zoo.filter((pet): pet is Fish => {
   return isFish(pet);
 });
 ```
+
+```ts
+function getProperty<Type, Key extends keyof Type>(obj: Type, key: Key) {
+  return obj[key];
+}
+
+let x = { a: 1, b: 2, c: 3, d: 4 };
+
+getProperty(x, "a");
+getProperty(x, "m");
+```
+
+
