@@ -90,10 +90,11 @@ Amazon Resource Name
 # Resources
 - https://aws.amazon.com/blogs/apn/the-5-pillars-of-the-aws-well-architected-framework/
 - https://aws.amazon.com/about-aws/global-infrastructure/
-
+- https://aws.amazon.com/training/ramp-up-guides/
 
 
 ## Bhasad resources
 - https://techcrunch.com/2016/07/02/andy-jassys-brief-history-of-the-genesis-of-aws/
 - https://aws.amazon.com/blogs/aws/15-years-of-aws-blogging/
 
+402754294257-3p8o59hbjmvo876bostb5uoq9uldvcmo.apps.googleusercontent.com

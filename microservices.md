@@ -44,7 +44,21 @@ _Both Libraries and Services act as "Components" to the host system_
   - Gilt has 250+ Microservices
 
 
+# Communication patterns for reliable microservice architecture
+https://www.nginx.com/blog/introduction-to-microservices/
+![](assets/microservices-01.png)
+![](assets/microservices-02.png)
+![](assets/microservices-03.png)
+![](assets/microservices-04.png)
+![](assets/microservices-05.png)
 
+
+https://martinfowler.com/eaaDev/EventNarrative.html
+![](assets/microservices-07.png)
+
+## Event sourcing
+https://docs.microsoft.com/en-us/azure/architecture/patterns/event-sourcing
+https://github.com/cer/event-sourcing-examples/wiki
 ## Questions
 - SRP on steroids will give birth to too many microservices(?) will this cause harm? will it slow down stuff?
 - How is Microservices different from SOA ?

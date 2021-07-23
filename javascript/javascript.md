@@ -98,6 +98,51 @@ Promise.reject(TypeError("Wrong type given, expected a string"));
 	// The chain HAS to have a catch somewhere
 ```
 
+## Events
+
+### Synthetic events
+
+## DOM
+
+### Shadow DOM
+#### "Piercing" Shadow DOM?
+
+
+ 
+
+# UnderTheHood &mdash; Javascript
+...initial days...
+
+JavaScript was not designed by considering the performance in mind. _It had to just work inside a browser and provide API to work with DOM_ . But since many browsers tried to adopt it in their own way, it had to be standardized. (ECMA does this job)
+
+- **Ecmascript specification** tells how javascript should be implemented by the browser
+- Each browser creates a **javascript engine** which runs JS code.
+	- netscape used spidermonkey engine
+	- chrome uses v8 engine
+	- firefox uses spidermonkey engine
+
+![](../assets/js-01.png)
+
+v The complete browser
+![](../assets/js-02.png)
+
+
+### Single threaded
+AT RUNTIME, JS is single threaded.
+
+# Questions
+- what are all the moving parts in the browser
+- JS APIs vs browser APIs. 
+- why isnt heap and stack part of the JS engine(v8)?
+- difference between node envt and browser envt
+- what does it mean to be cross-browser
+	- heck, why are browsers even different?
+
+
+
+
+
+
 
 
 

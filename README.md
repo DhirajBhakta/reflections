@@ -21,3 +21,4 @@ An attempt to document most important learnings from various books, articles, fo
 
 ### quick links
 https://medium.com/hackernoon/the-2018-devops-roadmap-31588d8670cb
+https://medium.com/@ThilinaAshenGamage/the-best-software-architecture-books-of-all-time-b82b63bb853b
