@@ -1,16 +1,52 @@
+# General
+https://youtu.be/cAKYQpTC7MA
+## What makes a good test?
+- Runs fast
+- Doesnt break often (flaky)
+- should serve as a documentation, easy to read and understand
+- good coverage to effort ratio
+- survives major refactoring. So code to an interface....try to..
+- forces you to think about possible issues and edge cases, be empathetic to the user of your function/class
+
+# Spectrum of Tests
+![](../assets/js-testing-01.webp)
+
+## Unit Tests
+Fully Isolated.
+Tests just one function
+
+## Integration Tests
+Testing units along with their dependencies
+
+## End-to-end Tests (Acceptance tests)
+Automate what you would do in a browser manually
+
+## Which one should I focus on? (2 schools of thought)
+- some say write thousands and thousands of unit tests.
+- some say write acceptance tests first.
+## Challenges
+Testing plain JS functions is fine, but testing UI is **hard** <br/>
+ mocking/isolation just reduces test quality and less bugs are caught.
+
+
+## Write Test Templates 
+
+
 # Test tool types
 Test tools can be categorized based on the _functionality_ they offer. Some go ahead and try to offer more than one functionality (eg: jest)
 
 
 ### Test Runners / Test Launchers
-Run your tests on the required environments configured by you...( what browsers to run in, what babel version to use, how to format the output etc)
+Run your tests on the required environments configured by you...( what browsers to run in, what babel version to use, how to format the output etc)...and summarize test results
 
-Eg: Karma
+Eg: Karma, Mocha
 
 ### Assertion Libraries
 Libraries that exposes a clean API that help you assert (lol!) 
 
 `expect(XYZ).to.be(ABC)`
+
+Eg: Chai
 
 ### Libraries that give you good way to structure your tests
 Like cucumber...which helps you arrange your tests in BDD style, just one way of _structuring_ your tests.
@@ -54,6 +90,10 @@ Take a snapshot of current state ( may have its own internal representation of i
 - write in any language, and communicate with the browser (in the end its just REST API afterall)
 ![](../assets/js-testing-01.png)
 
+
+
+# Jest
+pass
 
 # Why so many e2e testing frameworks?
 https://youtu.be/emWHeODwcQY
@@ -117,6 +157,9 @@ Biggest flex:
 
 
 # Playwright
+
+### Playwright Test
+A test runner for end-to-end tests
 - Run each test scenario in a new **browser context** (for test isolation)
 
 ### Questions
@@ -133,3 +176,17 @@ What even??
 
 # Resources
 - https://medium.com/welldone-software/an-overview-of-javascript-testing-7ce7298b9870
+
+# Questions
+- How do you decide what should be in a global store and what should reside in a local store?
+- what exactly is npx
+-  make sense of the below error
+```bash
+(node:2228062) Warning: To load an ES module, set "type": "module" in the package.json or use the .mjs extension.
+(Use `node --trace-warnings ...` to show where the warning was created)
+/home/dhirajbhakta/Development/setu/gs-equitas/tests/trial.spec.ts:3
+import {webkit, devices} from 'playwright';
+^^^^^^
+
+SyntaxError: Cannot use import statement outside a module
+```

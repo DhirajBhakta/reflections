@@ -10,6 +10,48 @@
  - Promise
 
 
+## `this` in JS
+
+
+
+## Rest parameter and Spread operator (...)
+![](https://pbs.twimg.com/media/DklaSVIWwAEdRXE?format=jpg&name=900x900)
+### Rest parameter "rest of the args"
+Collects rest of the args in an array
+```js
+// function definition
+const add = (...args) => args.reduce((x,y)=>x+y, 0)
+
+//usage
+add(1,2,3,4,5,6)  /**21*/
+```
+Note:
+- rest parameters have to be the **last** arg `function sum(a,b,...rest){... ... }`
+- before ES6, `arguments` keyword was used in place of ...rest parameter.
+
+### `arguments` Keyword
+Before ...rest parameters, people used arguments keyword to collect all the args in a "array like object".
+Note that its NOT an array...its an object.
+- arguments cannot be used in arrow functions. Because arrow funcs dont have `this`, hence they dont have `arguments`
+
+### Spread operator  "expand my contents"
+- can be used in function calls
+- can be used to "copy" objects and arrays into another box.
+```js
+const arr1 = [1,2];
+const arr2 = [5,6];
+
+// using spread operator to create bigger arrays
+const arr3 = [...arr1, 3, 4, ...arr2]
+
+// using spread operator in function calls
+sum(...arr3)
+```
+
+
+
+
+
 # Error Handling
 
 ### Error v/s Exception

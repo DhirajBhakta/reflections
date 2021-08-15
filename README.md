@@ -2,6 +2,7 @@
 An attempt to document most important learnings from various books, articles, forums, good and bad interpersonal experiences, shitty debugging sessions and most importantly, the Imposter Syndrome
 
 ### Books lined up for summarization
+- Composing Software by Eric Elliott
 - tmux
 - ssh by Michael W Lucas
 - Networking by Michael W Lucas
@@ -22,3 +23,4 @@ An attempt to document most important learnings from various books, articles, fo
 ### quick links
 https://medium.com/hackernoon/the-2018-devops-roadmap-31588d8670cb
 https://medium.com/@ThilinaAshenGamage/the-best-software-architecture-books-of-all-time-b82b63bb853b
+https://medium.com/javascript-scene/composing-software-the-book-f31c77fc3ddc
