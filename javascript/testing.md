@@ -1,5 +1,8 @@
 # General
 https://youtu.be/cAKYQpTC7MA
+
+
+
 ## What makes a good test?
 - Runs fast
 - Doesnt break often (flaky)
@@ -7,6 +10,93 @@ https://youtu.be/cAKYQpTC7MA
 - good coverage to effort ratio
 - survives major refactoring. So code to an interface....try to..
 - forces you to think about possible issues and edge cases, be empathetic to the user of your function/class
+
+## [What exactly is a JS test?](https://kentcdodds.com/blog/but-really-what-is-a-javascript-test)
+- check whether `expected == output`
+- it is easier to test pure functions 
+- it is difficult to test functions that depend on state
+    - we need the `setup` phase to setup all the state, dependencies before running the actual assertion
+### What is an assertion library `should` `expect` `assert`
+You'd definitely like to do more than just `===` and `!==` and throw errors.
+```js
+   if(expected!==output)
+        throw("expectation failed, expected this, got that")
+```
+Assertion libraries give you a `expect` function which can do much more than just equality checks..say regex checks, and much more. Also saves you from writing "Expected this, got that". 
+
+`Chai` for example, gives you powerful BDD primitives like `should`
+```js
+foo.should.be.a('string');
+foo.should.equal('bar');
+foo.should.have.lengthOf(3);
+tea.should.have.property('flavors')
+  .with.lengthOf(3);
+```
+...TDD style `assert`
+```js
+assert.typeOf(foo, 'string');
+assert.equal(foo, 'bar');
+assert.lengthOf(foo, 3)
+assert.property(tea, 'flavors');
+assert.lengthOf(tea.flavors, 3);
+```
+and the usual default `expect`
+```js
+expect(foo).to.be.a('string');
+expect(foo).to.equal('bar');
+expect(foo).to.have.lengthOf(3);
+expect(tea).to.have.property('flavors')
+  .with.lengthOf(3);
+```
+
+Lets write our own minimalistic assertion library
+```js
+const expect = (actual) => ({
+    toBe(expected) {
+      if (actual !== expected) {
+        throw new Error(`${actual} is not equal to ${expected}`)
+      }
+    },
+  })
+```
+usage:
+```js
+expect(sum(3,7)).toBe(10);
+expect(sum(7,3)).toBe(10)
+```
+
+### What is a testing framework `test` `describe`
+We need a wrapper over assertions to `catch` the errors thrown and present the errors in a neat manner "describing" what failed, and possibly...where exactly,(after parsing stack trace intelligently).
+
+We also need a wrapper to run our tests in a isolated manner. ..And even describe our tests in an isolated manner.
+
+Lets write our own minimalistic testing framework
+```js
+const test = (title, callback) =>{
+    try{
+        callback();
+        console.log(`✓  ${title}`)
+    }catch(err){
+        console.log(`✕  ${title}`)
+        console.log(err)
+    }
+}
+```
+
+usage
+```js
+test('sum adds numbers', () => {
+  expect(sum(3,7)).toBe(10);
+});
+
+test('difference subtracts numbers', () => {
+  expect(difference(17,7)).toBe(10);
+});
+```
+
+Now we need a cli to pick up all these test files (*.spec.js, *.test.js)
+
+
 
 # Spectrum of Tests
 ![](../assets/js-testing-01.webp)
@@ -176,6 +266,7 @@ What even??
 
 # Resources
 - https://medium.com/welldone-software/an-overview-of-javascript-testing-7ce7298b9870
+- https://kentcdodds.com/blog/but-really-what-is-a-javascript-test
 
 # Questions
 - How do you decide what should be in a global store and what should reside in a local store?
