@@ -1,6 +1,12 @@
 ## Reflections on must-know topics
 An attempt to document most important learnings from various books, articles, forums, good and bad interpersonal experiences, shitty debugging sessions and most importantly, the Imposter Syndrome
 
+### currently focussing on following broad topics (in order)
+1. JS and ecosystem incl testing
+2. event driven systems (Kafka)
+3. microservices (Sam newman)
+
+
 ### Books lined up for summarization
 - Composing Software by Eric Elliott
 - tmux

@@ -157,28 +157,62 @@ Promise.reject(TypeError("Wrong type given, expected a string"));
 
 JavaScript was not designed by considering the performance in mind. _It had to just work inside a browser and provide API to work with DOM_ . But since many browsers tried to adopt it in their own way, it had to be standardized. (ECMA does this job)
 
-- **Ecmascript specification** tells how javascript should be implemented by the browser
-- Each browser creates a **javascript engine** which runs JS code.
+### What is Javascript Engine
+How does your computer understand what to do with the plain text js file?
+<u>A JavaScript engine is a program responsible for translating source code into machine code and executing the translation result on a computer’s central processing unit (CPU).</u>
+
+![](http://dolszewski.com/wp-content/uploads/2018/04/javascript-engine.png)
+- **Ecmascript specification** tells how javascript should be implemented by the browser. (spec of the language)
+- Each browser has a **javascript engine** which runs JS code.
 	- netscape used spidermonkey engine
 	- chrome uses v8 engine
 	- firefox uses spidermonkey engine
 
 ![](../assets/js-01.png)
+<div style="background:antiquewhite; padding:2em; border:2px solid">
+The JS engine is totally independent of the runtime(which provides it with additional APIs). This is why v8 is used in both chromium and NodeJS
+</div>
+
+### What is Javascript Runtime Environment?
+The JavaScript engine works inside an environment, which provides additional features to your scripts that you can use at runtime, to communicate with the world surrounding the engine.
+- web APIs (which include DOM APIs)
+
+<div style="background:antiquewhite; padding:2em; border:2px solid">
+DOM APIs are provided by the browser and its NOT part of javascript
+</div>
+
 
 v The complete browser
 ![](../assets/js-02.png)
 
 
-### Single threaded
-AT RUNTIME, JS is single threaded.
+
+#### Single threaded
+Though JS is _executed_ in a single thread,
+
+There does exist thread pool in Javascript Runtime Environment. and the environemnt manages the threads for you, not your worry.
+
+If there’s only one thread responsible for the execution of your code, there has to be some mechanism which manages the order of execution.
+
+Enter event loop
+
+### What is event loop?
+<div style="background:antiquewhite; padding:2em; border:2px solid">
+Event loop is implemented in the runtime environment and is NOT part of javascript
+</div>
+
+![](https://miro.medium.com/max/1838/1*njj1FAVRkpPvE7Kav-9dtQ.gif)
+
+# Resources
+- https://stackoverflow.com/questions/29027845/what-is-the-difference-between-javascript-engine-and-javascript-runtime-environm
 
 # Questions
 - what are all the moving parts in the browser
-- JS APIs vs browser APIs. 
 - why isnt heap and stack part of the JS engine(v8)?
-- difference between node envt and browser envt
-- what does it mean to be cross-browser
-	- heck, why are browsers even different?
+
+#TODO
+event loop more explanation
+
 
 
 
