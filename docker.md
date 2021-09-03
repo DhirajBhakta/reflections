@@ -13,6 +13,13 @@ Containers &mdash; Once-in-a-decade huge shift!
 
 even better [here](https://medium.com/@saschagrunert/demystifying-containers-part-i-kernel-space-2c53d6979504)
 
+# What is a container?
+- Containers share the host kernel
+- Containers use the kernel ability to group processes for resource control through **cgroups**
+- Containers ensure isolation through **namespaces**
+- Containers feel like lightweight VMs (lower footprint, faster), but are not Virtual Machines!
+
+
 # Why Docker?
 ![](https://i0.wp.com/www.docker.com/blog/wp-content/uploads/e30e4afc-dc02-4e98-b878-2cd173807944-1.jpg?fit=960%2C540&ssl=1)
 Docker helps you build,test, deploy without caring about the platform
@@ -678,6 +685,16 @@ eg : `docker tag minas-morgul localhost:5000/minas-morgul`
 # If you ran out of disk space for data-root for docker
 do you want to have the containers in /home/youruser, then you can create /home/youruser, cp /var/lib/docker to /home/youruser/ (with --preserve=ownership), remove /var/lib/docker and symlink /home/youruser/docker to /var/lib/
 ```
+
+# Docker Internals
+Linux kernel features: namespaces and cgroups and all that...
+## Control Groups &mdash; limit what your processes use
+- **limits**, and isolates resources (CPU, memory, n/w , disk I/O) for groups of processes.
+- 
+
+## Namespances  &mdash; limit what your processes see
+
+## Copy-on-write
 # --MyQuestions--
 1. What exactly is a container(understand unionfs)
 2. What exactly is a image(understand unionfd)

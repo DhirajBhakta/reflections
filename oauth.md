@@ -94,12 +94,94 @@ a client application is authorized by a user and receives a token that can then 
 1. Issuing a token
 2. Using that token
 
+
+
 #### Oauth Steps
 1. The Resource Owner indicates to the Client that they would like the Client to act on their behalf (for example, “Go load my photos from that service so I can print them”).
 2. The Client requests authorization from the Resource Owner at the Authorization Server.
 3. The Resource Owner grants authorization to the Client.
 4. The Client receives a Token from the Authorization Server.
 5. The Client presents the Token to the Protected Resource.
+
+### 4 Oauth actors
+- Oauth Client
+- Protected Resource
+- Resource Owner
+- Authorization server
+
+### 3 Oauth Componentts
+- Access Tokens
+- Refresh Tokens
+- Authorization Scopes
+- Authorization Grants
+
+
+![](https://learning.oreilly.com/api/v2/epubs/urn:orm:book:9781617293276/files/OEBPS/Images/02fig09.jpg)
+
+#### Oauth Client
+- **simplest component** in Oauth architecture
+- wants to access the **protected resource** on behalf of the resource owner
+- responsibilities
+    - obtain token from AS
+    - use that token to access the protected resource
+- treats the token as an **opaque string**
+    - client never has to read the contents of the token
+    - but its only job is to "hold" the token as long as it wants to access the protected resource.
+
+#### Protected Resource
+- accessible over HTTP (APIs) <u>ONLY with an access token</u>
+- responsibilities
+    - validate the token (token introspection)
+    - introspect the scopes...
+    - make decisions on how to serve the request
+    - it has the **final say** on whether to honor the token or not.
+
+#### Resource Owner
+- _is a person_
+- Entity that has the authority to delegate access to the client
+- responsibilities
+    - interact with the AS to _authorize_ the client (give consent)
+
+
+#### Authorization Server (AS)
+- **Central component in the Oauth system**
+- responsibilities
+    - Authenticates the resource owner (not specified about the "how" in the Oauth spec, left to impl)
+    - Authenticates the client
+    - provides mechanism for resource owner to authorize the client
+    - issues tokens to the client
+    - exposes token introspection endpoints (optional)
+
+#### Access Token
+- a token which indicates the rights that the client has been _delegated_.
+- issued by the AS
+- issued to the client
+- token format isnt specified in the spec. But it contains
+    - the resource owner
+    - the requested scopes
+- Opacity
+    - Opaque to the client
+    - NOT opaque to AS. AS issues the token 
+    - NOT opaque to the protected resource. It validates the token
+    - i.e both AS and protected resource need to understand the content of the token (unlike client)
+
+#### Refresh Token
+- this token is never sent to the protected resource
+- this token is sent to the AS in exchange for the access token.(whenever access token is no longer valid, when client gets 401)
+- issued by the AS
+- issued to the client
+- Opacity
+    - Opaque to the client
+    
+
+
+
+
+
+
+
+
+
 
 ## Types of Authorization grants (flows)
 - authorization code  grant
@@ -129,8 +211,9 @@ Lets assume that the client is statically configured to know how to talk to the 
 
 The browser automatically parses the "location" attribute of the redirect response from the client and navigates to it ( which turns out to be the URL of the authorization server with. This URL contains certain stuff encoded by the client, like info to identify the client, requested scopes etc )
 
-_Note how the client isnt making the request directly and it doing things via HTTP redirect_
-
+<div style="font-style:italic; background:#454; color:white; padding:1.5em; border :1px solid black">
+Note how the client isnt making the request directly and it doing things via HTTP redirect
+</div>
 
 **Step 2: User authenticates himself**
 - Oauth doesnt dictate the authentication strategy
@@ -146,10 +229,29 @@ _Note how the client isnt making the request directly and it doing things via HT
 
 This redirect URL sent by the AS contains the authorization code as `code` URL query parameter, and the browser immediately navigates to this URL,,,which turns out to be an API of the client application. 
 
-_Bingo! the client got the authorization code, without ever talking directly to the authorization server_
+<div style="font-style:italic; background:#454; color:white; padding:1.5em; border :1px solid black; margin-bottom:2em">
+Bingo! the client got the authorization code, without ever talking directly to the authorization server
+</div>
 
 
 
+**Step 4: The client sends the code + its own creds to AS, in exchange for access token**
+Sending code + (client secret+clientID)|  get back access token
+:-------------------------:|:-------------------------:
+![](https://learning.oreilly.com/api/v2/epubs/urn:orm:book:9781617293276/files/OEBPS/Images/02fig06.jpg)  |  ![](https://learning.oreilly.com/api/v2/epubs/urn:orm:book:9781617293276/files/OEBPS/Images/02fig07.jpg)
+
+The AS validates the clients creds (authenticity)
+
+The AS checks the auth code for things like
+- which client made the initial request
+- which user authorized it
+- the authorization scopes involved
+
+After doing this , it returns access token (+refresh token)
+
+**Step 5: client uses the access token to do things**
+![](https://learning.oreilly.com/api/v2/epubs/urn:orm:book:9781617293276/files/OEBPS/Images/02fig08.jpg)
+The protected resource has the responsibility of validating the access token.
 
 
 
@@ -192,6 +294,8 @@ exchange access tokens used to access API1 for a token to access API2, while sti
 
 ## Note
 - OpenIDConnect is built on top of Oauth2.0
+
+
 
 
 # Questions
