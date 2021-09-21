@@ -129,6 +129,8 @@ _No need to SSH into it_
 
 ## What Exactly is an image?
 
+An Image is just a tar of tars
+
 It is the Application binaries + dependencies + Metadata about the image + how to run the image
 
 - It doesnt have the complete OS! There is no kernel, kernel modules/drivers nothing!
@@ -405,7 +407,9 @@ Bind Mounts
 
 - `services` section
     -
+
   -
+    -
     -
     - ```
         servicename:
@@ -757,7 +761,7 @@ eg : `docker tag minas-morgul localhost:5000/minas-morgul`
 do you want to have the containers in /home/youruser, then you can create /home/youruser, cp /var/lib/docker to /home/youruser/ (with --preserve=ownership), remove /var/lib/docker and symlink /home/youruser/docker to /var/lib/
 ```
 
-# Docker Multistage builds
+# Docker Multistage builds ( Distillation Pattern )
 
 &mdash; to reduce the final image size
 

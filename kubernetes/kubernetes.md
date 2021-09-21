@@ -300,6 +300,26 @@ Watch out!: you might break the relationship between a resource and its controll
 
 ![](https://drek4537l1klr.cloudfront.net/stoneman2/v-7/Figures/01_img_0004.jpg)
 
+### ⛳️ `ReplicaSet`
+
+Mostly same as Deployments (but actually its Deployment minus rollouts rollbacks)
+
+### ⛳️ `StatefulSet`
+
+Mostly same as Deployments (have concept of "replicas")
+
+But each replica has a sticky identity., identity which doesnt go away when a pod is restarted.
+
+### ⛳️ `DaemonSet`
+
+A pod that runs on EVERY node in the cluster.
+
+Say you want to grab all logs from every node and send it to ElasticSearch. &mdash; you use DaemonSets.
+
+### ⛳️ `Job`
+
+Does some work and ,,,exits.
+
 ### ⛳️ `Service`
 
 Kubernetes gives a virtual network
