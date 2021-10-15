@@ -7,6 +7,10 @@
 
 # How RAM works
 
+# SATA? PCI ? PCIe ? NVME ?
+
+# Virtual Memory ? Swapping? Paging?
+
 # How CPU works
 
 # Questions

@@ -371,6 +371,7 @@ Volumes
     ```
 
 Bind Mounts
+![](https://docs.docker.com/storage/images/types-of-mounts-bind.png)
 
  _**very useful for local development**_
 
@@ -386,6 +387,12 @@ Bind Mounts
  ```
  docker run -d -p 80:80 -v $(pwd):/usr/share/nginx/html nginx
  ```
+
+Next one does bind mounts, but tells to leave node modules alone (use node modules inside of the container, and not of the bind mount)
+
+```
+  docker run -v $(pwd):/usr/app -v /usr/app/node_modules --name react-container-with-volumes -it -p 3000:3000 react-app
+```
 
 # Docker Compose
 
@@ -409,6 +416,9 @@ Bind Mounts
     -
 
   -
+    -
+    -
+    -
     -
     -
     - ```

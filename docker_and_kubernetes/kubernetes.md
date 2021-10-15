@@ -1,7 +1,3 @@
-- Learn kubernetes in a month of lunches
-- bret fisher course
-- Github : Kubernetes the hard way
-
 # Container Orchestrator
 
 - You have many nodes
@@ -12,6 +8,17 @@
 - rise of microservices -> rise of container tech
 - increased use of containers
 - managing 1000s of such containers using scripts and self made tools made it complex and irritating
+- scaling , deployment and recovery
+- what if one of the container goes down?
+- checking if one container has crashed across multiple nodes is hard
+- K8s automatically checks the health of every container
+- ensures that theyre always running
+- K8s can spin up multiple containers (horizontally scale) and have a load balancer in front of it
+- easy rollback
+- Not restricted to any cloud provider
+- Automatically configures your infra
+- speeds up deployment
+- allows you to build complex apps
 
 #### What are the tasks of an orchestration tool?
 
@@ -70,19 +77,23 @@ Independence and standardization are the main reasons Kubernetes is so popular. 
   - runs kubernetes processes to run and manage the workers properly
   - It has the following running
     - **the API server** (which is also a container)
+      - Communicates with kubelet on worker nodes
+      - kubectl talks to the API server.
     - **the Scheduler** (where to put the pod?)
       - checks for "tasks"-to create and assign pods from the Controller manager
     - **the Controller manager** (detect crashes of pods, and recover)
       - runs reconciliation loop.
-      - keeps looking at current state - desired states configs and creates tasks(task to create pods) for the schedules to assign to nodes.
+      - keeps looking at current state - desired states configs and creates tasks(task to create pods) for the **scheduler** to assign to nodes.
     - **the etcd** (key value store of cluster state)
       - stores the current state config and desired state config
 - multiple worker Nodes
   - worker node is where actual applications are running
-  - they have the following running
+  - each worker node has the following
     - **Kubelet**
       - Kubelet talks to the containers through the CRI interface (Container Runtime Inteface)
+      - communicates with the master node
     - **Kube Proxy**
+      - allows for n/w communication inside and outside the node.
       - responsible for routing n/w traffic to load balanced services in the cluster. Kubeproxy runs using DaemonSet.
       - Note that many of the kubernetes control plane components are run using kubernetes itself!
     - **Container runtime**
@@ -106,6 +117,16 @@ Basic flow
 - You send that YAML file to the Kubernetes API
 - Kubernetes compares the YAML and what’s already running in the cluster.
   - and tries to get to a desired state
+
+### Kubernetes Resources
+
+- Pods
+- ReplicaSets
+- Deployments
+- Services
+- Ingress
+- Secrets
+- ConfigMap
 
 ### Components
 
@@ -197,6 +218,19 @@ Observe the _"Controller controls resources"_ pattern at play
 
 ### <u>Label system for identification</u>
 
+- Labels are key/value pairs that can be attached to Kubernetes objects such as Pods and ReplicaSets.
+- Labels help grouping Kubernetes Objects.
+- examples
+  - acme.com/app-version
+  - appVersion
+  - app.version
+- `kubectl get deployments --show-labels`
+- add a label to existing deployment `kubectl label deployments alpaca-test "canary=true"`
+- remove label of existing deployment `kubectl  label deployments alpaca-test "canary-"`
+- ![](../assets/kube-11.png)
+- `kubectl get deployments --selector='!canary'`
+- `kubectl get deployments --selector='canary=true'`
+
 Any Kubernetes resource can have labels applied that are simple key-value pairs.
 You can add labels to record your own data.
 Kubernetes also uses labels to loosely couple resources, mapping the relationship between objects like a Deployment and its Pods. The Deployment adds labels to the pods it manages.
@@ -247,12 +281,83 @@ Those YAML files are called application manifests, because they're a **list of a
 - A Pod can container one or more containers.
 - You should run ONE container in a pod. [Sometimes more]()
 - A Pod runs on a single node in the cluster. (all containers in a pod always run on the same machine!)
-- A Pod is the  smallest unit of compute in Kubernetes.
+- **A Pod is the  smallest unit of compute in Kubernetes.**
 - A Pod has its own Virtual IP address.
 - Pods can communicate with each other , even on different nodes, via the virtual network.
 - Containers inside the same pod share the same network interface (NIC) as that of the pod, and can communicate via `localhost`
 - You use a Pod for each component. You may have a website Pod, and an API Pod.
 - Scaling applications = running more Pods
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: client-pod
+  labels:
+    app: client
+spec:
+  containers:
+  - name: client
+    image: laithharb/web-app:v1
+```
+
+- kind: is the kind of resource you wanna create
+- apiVersion: is sort of a folder which has certain resources
+  - v1: Pod, service, secret
+  - apps/v1: Deployment
+- metadata:
+  - name
+  - label: we give labels for a reason. see much below.
+- spec
+  - define multiple containers here
+
+  -
+
+### ⛳️ `Service`
+
+If you create a Pod, then you wont have access to it
+The way to create access is via services: NodePorts, LoadBalancers
+
+Browser -> KubeProxy -> Service -> Pod
+
+Kubernetes gives a virtual network
+Every Pod gets its own private IP address, but Pods are ephemeral, Pods die easily, new Pod will have new IP address.<br>
+`Service` gives a permanent IP, `Service` can be attached to the Pod.
+A service is also a `loadbalancer`
+
+![](../assets/kube-07.png)
+Types of Services
+
+- NodePort (development)
+  - external communication (access from browser for ex)
+- ClusterIP
+  - internal communication between pods
+  - DB to server for example
+- LoadBalancer (production)
+  - external communication (access from browser for ex)
+- Ingress
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: client-srv
+spec:
+  type: NodePort
+  selector:
+    app: client
+  ports:
+    - port: 3000
+      targetPort: 3000
+      nodePort: 30007
+```
+
+- selector: to interact with one of the pods
+
+Service figures out which pod to route the traffic to
+![](../assets/kube-12.png)
+
+External Service and Internal service
 
 ##### Why bother with pods? Why doesnt Kubernetes handle the containers directly (bypassing the pods)?
 
@@ -320,18 +425,7 @@ Say you want to grab all logs from every node and send it to ElasticSearch. &mda
 
 Does some work and ,,,exits.
 
-### ⛳️ `Service`
-
-Kubernetes gives a virtual network
-Every Pod gets its own private IP address, but Pods are ephemeral, Pods die easily, new Pod will have new IP address.<br>
-`Service` gives a permanent IP, `Service` can be attached to the Pod.
-A service is also a `loadbalancer`
-
-![](../assets/kube-07.png)
-
-Service figures out which pod to route the traffic to
-
-External Service and Internal service:
+:
 
 ### ⛳️ `Ingress`
 
@@ -388,6 +482,30 @@ A `template` section has its own metadata and specification
 
 1. [YAML for defining a pod](cfg/kube-01.yaml)
 2. [YAML for definign a deployment](cfg/kube-02.yaml)
+
+## Service Discovery
+
+**Service-discovery tools help solve the problem of finding which processes are listening at which address for which services**
+
+- DNS is the traditional system of service discovery on the internet
+- DNS falls short for Kubernetes :(
+
+ Once your application can dynamically find services and react to the dynamic placement of those applications, you are free to stop worrying about where things are running and when they move.
+
+Service discovery in Kubernetes starts with **Service** Object
+
+- A Service Object is a way to create a named label selector
+- we can use `kubectl expose` to create a service
+
+Kubernetes Service DNS
+
+- great example of Kubernetes building on Kubernetes
+- this DNS service is managed by Kubernetes
+- this DNS service provides DNS names for cluster IPs
+
+ClusterIP: for routing requests WITHIN the cluster.<br/>
+NodePort: allow traffin INTO the cluster.<br/>
+LoadBalancer: configure the cloud to create a new load balancer and direct it at nodes in your cluster.
 
 ## How Kubernetes routes traffic
 
