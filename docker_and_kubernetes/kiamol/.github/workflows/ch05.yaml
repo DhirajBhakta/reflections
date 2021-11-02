@@ -1,0 +1,24 @@
+name: Ch05 Image Builds
+
+on:
+  push:
+    paths:
+      - ".github/workflows/ch05.yaml"
+      - "ch05/docker-images/**"
+  schedule:
+    - cron: "0 5 * * 0"
+
+jobs:
+  ch05:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - uses: azure/docker-login@v1
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+      - name: ch05
+        working-directory: ./ch05/docker-images
+        run: |
+          docker-compose build 
+          docker-compose push
