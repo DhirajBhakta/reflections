@@ -1,3 +1,64 @@
+## [Laws](https://github.com/dwmkerr/hacker-laws)
+
+### 0. Boy Scout Rule `tech-debt` `clean-code` `refactoring`
+Always leave the code cleaner than you found it.
+
+### 1. Broken Windows Theory `tech-debt` `clean-code`
+
+Poor code --> leads to---> more and more poor code.
+
+Tech debt leads to a perception that efforts to improve quality may be ignored or undervalued, leading to more poor code.
+This effect has a cascading effect ---> big ball of mud!
+
+### 2. Dunning-Kruger Effect `estimation`
+
+People with low abilities are more likely to overestimate their abilities for the given task.
+
+The less a person understands a domain, the more they are likely to believe they can easily solve problems in that domain.
+
+Non-technical team members, or less experienced team members are more likely to underestimate the effort required to solve a problem.
+
+### 3. Parkinson's Law `estimation`
+
+Work expands to fill all the time allotted to it.
+
+Teams will be inefficient until deadlines loom near.
+
+### 4. Hofstadter's Law	 `estimation`
+It always takes longer than you expect.
+
+We are inherently bad at estimation, underestimating the effort more often than not.
+
+### 5. Hick's Law `estimation`
+Decision time grows logarithmically to the number of options available, at worst, linear.
+
+We tend to do binary search on ordered choices to reach the best option.
+
+### 6. Kernighan's Law `tech-debt` `clean-code`
+Simple code is preferred over complex code. Debugging is twice as hard as writing code.
+
+### 7. Unix Philosophy `clean-code`
+
+### 8. Chesterson's Fence `refactoring`
+Reforms should not be made until the reasoning behind the existing state of affairs is understood.
+
+>A man comes across a fence crossing the middle of the road. He complains to the mayor that this useless fence is getting in the way, and asks to remove it.
+The mayor asks why the fence is there in the first place. Man says he doesnt know. Mayor says "If you dont know its purpose, I certainly won't let you remove it.
+Go and find out the use of it, and then may I let you destroy it."
+
+### 9. Dead Sea Effect 
+More talented and effective IT engineers are the ones most likely to leave, to evaporate. Those who tend to remain behind are the residue, - the least talented.
+
+### 6. Fitt's Law `ui-ux`
+
+Time required to move to a target area is function of distance to the target divided by width of the target.
+
+Interactive elements should be as large as possible, and distance b/w user's attention area and the interactive element should be as small as possible.
+
+Group commonly used tasks as close as possible.
+
+
+
 ## Something to digest early
 Our industry is a young one. 
 

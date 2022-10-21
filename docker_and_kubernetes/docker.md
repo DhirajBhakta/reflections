@@ -143,6 +143,9 @@ It is the Application binaries + dependencies + Metadata about the image + how t
 
 [Union File System](https://www.terriblecode.com/blog/how-docker-images-work-union-file-systems-for-dummies/)
 --[more here](https://blog.knoldus.com/unionfs-a-file-system-of-a-container/)
+Docker Image format is made up os a series of filesystem layers. Each layer adds, removes, or modifies files from the preceding layer in the filesystem. (Overlay filesystem). The overlay system is used both when packaging up the image and when the image is actually being used
+
+- aufs, overlay, overlay2 are concrete implementations of union filesystem
 
 - Images are made using the `Union File System` Concept
 ![](https://www.datalight.com/assets/blog-images/OverlayFS_Image.png)
@@ -416,6 +419,14 @@ Next one does bind mounts, but tells to leave node modules alone (use node modul
     -
 
   -
+    -
+    -
+    -
+    -
+    -
+    -
+    -
+    -
     -
     -
     -
@@ -771,7 +782,28 @@ eg : `docker tag minas-morgul localhost:5000/minas-morgul`
 do you want to have the containers in /home/youruser, then you can create /home/youruser, cp /var/lib/docker to /home/youruser/ (with --preserve=ownership), remove /var/lib/docker and symlink /home/youruser/docker to /var/lib/
 ```
 
-# Docker Multistage builds ( Distillation Pattern )
+![](https://www.tutorialworks.com/assets/images/container-ecosystem.drawio.png)
+
+### CNI ? - Container Network Interface
+
+- creates a network namespace
+- deletes network namespaces
+
+### CRI ? - Container Runtime Interface
+
+Defines the API between Kubernetes and the container runtime.
+
+### OCI ? - Open Container Initiative
+
+- Define what a container is, so everyone can implement it
+  - image-spec: whats in a container
+  - runtime-spec: how to run a container
+- how to package, annotate, distribute, run...
+- OCI ended the container wars
+
+CRI and OCI are two sides of the same "adapter" - one side standardizes the APIs exposed by the container runtime for use by the orchestrator... the other side standardizes the image format.
+
+## Docker Multistage builds ( Distillation Pattern )
 
 &mdash; to reduce the final image size
 

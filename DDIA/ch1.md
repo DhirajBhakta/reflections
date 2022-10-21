@@ -1,6 +1,8 @@
-# Intro
+## Intro
 
-This books is about Principles of data systems.
+We have RDBMS, NoSQL datastores, stream processors, batch processors, message brokers. <u>Which one is best suited for your application?</u>
+
+This book is about Principles of data systems.
 
 - databases
 - caches
@@ -20,7 +22,7 @@ There are many DB systems with different characteristics, because different appl
 
 A single tool can no longer meet all of the data processing and storage needs. Instead work is broken down into tasks that can be performed by a single tool, and those tools are stitched together using application code
 
-# Reliability
+## Reliability
 
 The system should work correctly even in the face of adversity
 

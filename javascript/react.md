@@ -1,5 +1,7 @@
 ### Library v/s Framework
+
 Simple definition
+
 - a framework is a software where you plug your code into
 - a library is a software that you plug into your code
 
@@ -7,12 +9,81 @@ Simple definition
 
 Angular, Ember.js and ExtJS are frameworks, but React isn't, because it only gives you the means to build components and render them into the DOM.
 
+### class vs className
+
+In the early days of react, "class" of css would collide with native JS `class` keyword which creates a class.
+
+These days you can use "class" directly instead of "className" for css class
+
+### React vs ReactDOM
+
+React is responsible to create react elements `React.createElement` and does reconcilation etc
+
+ReactDOM is responsible for rendering ( patching to actual DOM )
+
+They are separated because reactDOM is specific to web. On native, something else will be used for rendering
+
+### Three tenets of Components
+
+- Component Nesting
+- Component Re-usability
+- Component Configuration
+  - via props
+  - whole purpose of props is to customize the component
+
+## Advanced React Patterns
+
+- ### Context Module Functions
+
+  - The Context Module Functions Pattern allows you to encapsulate a complex set of state changes into a utility function which can be tree-shaken and lazily loaded.
+
+- ### Compound Components
+
+  - The Compound Components Pattern enables you to provide a set of components that implicitely share state for a simple yet powerful declarative API for reusable components.
+
+- ### Flexible Compound Components
+
+  - Compound Components that use **React Context**
+  - Use this more often
+
+- ### Prop Collections and Getters
+
+  - use prop getters more often than prop collections
+
+- ### State Reducer
+
+- ### Control Props
+
+## React Performance
+
+- ### Code Splitting
+
+  - lazily load the code at the time that it is needed
+  - dynamic import syntax
+  - done by Webpack
+  - **Webpack prefetching** using Webpack magic comment in import
+
+- ### React.memo for memoizing components
+
+  - avoid re-renders
+
+- ### useMemo for heavy computation
+
+- ### Web Workers
+
+  - for heavy computation
+  - do this after **useMemo**
+  - use workerize webpack loader
+
 ## React &mdash; [Design](https://github.com/reactjs/react-basic)
+
 The mental model for React.
 .. Things that went into its design..
 
 ### Transformation &mdash; pure functions
+
 Same input should give same output
+
 ```js
 function NameBox(name) {
   return { fontWeight: 'bold', labelContent: name };
@@ -24,6 +95,7 @@ function NameBox(name) {
 ```
 
 ### Abstraction & Composition &mdash; Reusable "components"
+
 Components house components; Functions call functions...
 
 "Reusable" Functions/Components.
@@ -49,30 +121,31 @@ function FancyUserBox(user) {
   ]
 };
 ```
+
 ### State &mdash; Immutable data model
+
 UI components **need** local state.
 Immutability greatly optimizes reconciliation.
 TODO:How?
 
-### Memoization 
+### Memoization
+
 Re-executing pure functions is wasteful. Just cache the outputs of previous inputs and return them.
 
-
-
-## React &mdash; Concrete 
+## React &mdash; Concrete
 
 ### [React Elements](https://reactjs.org/blog/2015/12/18/react-components-elements-and-instances.html)
 
 Creating a React element is cheap (JS obj). Once an element is created, it is never mutated.
+
 - DOM elements
-    - When an element’s **type** is a `string`, it represents a DOM node with that tag name, and props correspond to its attributes. This is what React will render
+  - When an element’s **type** is a `string`, it represents a DOM node with that tag name, and props correspond to its attributes. This is what React will render
 - Component elements
-    - the **type** of an element can also be a `function` or a `class` corresponding to a React component
-    - An element describing a component is also an element, just like an element describing the DOM node. You can mix and match DOM and component elements in a single element tree:
-
-
+  - the **type** of an element can also be a `function` or a `class` corresponding to a React component
+  - An element describing a component is also an element, just like an element describing the DOM node. You can mix and match DOM and component elements in a single element tree:
 
 #### DOM elements
+
 ```html
 <button class='button button-blue'>
   <b>
@@ -80,6 +153,7 @@ Creating a React element is cheap (JS obj). Once an element is created, it is ne
   </b>
 </button>
 ```
+
 ```js
 {
   type: 'button',
@@ -96,6 +170,7 @@ Creating a React element is cheap (JS obj). Once an element is created, it is ne
 ```
 
 #### Component Elements
+
 ```js
 {
   type: Button,
@@ -107,6 +182,7 @@ Creating a React element is cheap (JS obj). Once an element is created, it is ne
 ```
 
 ### Mix and match DOM elements and Component elements
+
 ```js
 const DeleteAccount = () => ({
   type: 'div',
@@ -139,6 +215,7 @@ const DeleteAccount = () => (
   </div>
 );
 ```
+
 <div style="background-color:yellow; padding:1vw; border:3px solid ; border-radius:4px">
 <strong>
 React is like a child asking “what is Y” for every “X is Y” you explain to them until they figure out every little thing in the world
@@ -149,17 +226,13 @@ React is like a child asking “what is Y” for every “X is Y” you explain 
 </div>
 We let React create, update, and destroy instances. We describe them with elements we return from the components, and React takes care of managing the instances.
 
-
-
-
-
-
 ## How React works
+
 - maintains a tree (vDOM, in js) which helps do efficient diff computations on nodes
 - re-constructs your DOM in JavaScript( as vDOM) and push only those changes to the DOM which have actually occurred. vDOM is synced with real DOM through a library such as **ReactDOM**
 
-
 ### JSX  = React.createElement
+
 - JSX is simply syntactic sugar for creating very specific JavaScript objects.
 - `const tag = <h1>Hello</h1>` <==> `const tag = React.createElement("h1", {}, "Hello")`
 - The last param is `children`
@@ -167,6 +240,7 @@ We let React create, update, and destroy instances. We describe them with elemen
 - Once all the JSX is parsed and all the React.createElement calls have been resolved, we land with one giant nested object
 
 ### ReactDOM
+
 Once the giant nested object is resolved(see above section), `ReactDOM` recursively creates actual `div`s and `p`s , the DOM nodes and append them to the real DOM tree.
 
 - react and ReactDOM are decoupled! (react library and the renderer)
@@ -175,23 +249,28 @@ Once the giant nested object is resolved(see above section), `ReactDOM` recursiv
 - React Native doesn't have methods like appendChild...it doesnt have a DOM environment. Instead, for mobiles, we need support for UI directly from OS. But the React library doesn't need to know that, the renderer (React Native) takes care of that.
 
 ### Reconciliation
+
 Complete heavy diffing O(n^3) is much more expensive. So React uses a O(n) heuristic for diffing.
+
 - React assumes that **if a parent has any change, then all its children have changes**
 - hence it destroys all its children and re-creates it
 
 #### The Diffing Heuristic Algorithm O(n)
+
 Compares the two root elements
+
 - Root elements have different types
-    - full rebuild (unmount, remount)
+  - full rebuild (unmount, remount)
 - Root elements have same type, but different attributes
-    - only attributes are updated by say `node.addClass('class1')`
-    - React then recurses over the children
+  - only attributes are updated by say `node.addClass('class1')`
+  - React then recurses over the children
 - React elements are same, but props have changed
-    - no unmount
-    - component updates by calling `render()` again
-    - React then recurses over the children
+  - no unmount
+  - component updates by calling `render()` again
+  - React then recurses over the children
 
 If you provide the `key` prop to children, or in general any react component, possible re-renders could be avoided(in accordance with the above algorithm). for eg:
+
 ```html
 <!--old tree-->
 <ul>
@@ -208,8 +287,9 @@ If you provide the `key` prop to children, or in general any react component, po
 ```
 
 #### Reconciliation is top-down
+
 <div style="background-color:yellow; padding:1vw; border:3px solid ; border-radius:4px">
-This happens when you call ReactDOM.render() or setState(). 
+This happens when you call ReactDOM.render() or setState().
 </div>
 
 ```js
@@ -255,29 +335,38 @@ This happens when you call ReactDOM.render() or setState().
 }
 ```
 
-
-
-
-
 #### React Fiber
+
 is the new reconciliation engine
 
 ## [React Fiber architecture](https://github.com/acdlite/react-fiber-architecture)
+
 ### Incremental Rendering
+
 ability to split rendering work into chunks and spread it over multiple frames.
 
-
 ## React Performance Optimisations
+
 ### Immutability
+
 It is very fast to calculate whether the props have changed if they are immutable, so React and immutability work great together, and can provide great optimizations with the minimal effort.
+
 # React Router &mdash; Client-Side-Routing
+
 ### Why Client side routing?
+
 ...
 ...
 
 ### BrowserRouter
+
 ...
 ...
 
-#Left off at https://github.com/acdlite/react-fiber-architecture and linked articles
-Left off here too https://reactjs.org/docs/optimizing-performance.html
+# Left off at <https://github.com/acdlite/react-fiber-architecture> and linked articles
+
+Left off here too <https://reactjs.org/docs/optimizing-performance.html>
+
+#### Questions
+
+- What is <script type="module"> ??

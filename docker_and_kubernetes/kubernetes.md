@@ -1,10 +1,14 @@
-## Big Picture
+
+# Introduction
+
+K8s exists to simplify the task of building, deploying and maintaining distributed systems.
+Its important to understand the **core challenges of distributed systems** that led to the development of k8s.
 
 You care only about your application. You just want it deployed... in one logical unit that abstracts everything underneath....**The Cluster**
 
 You just want to _define_ the application in a YAML file (manifest), and let Kubernetes handle the rest.
 
-#### "The rest"?
+**"The rest"?**
 
 - Say a `node` in the cluster just died, and killed off some containers with it
   - Kubernetes will see this and starts replacement containers on the host
@@ -15,7 +19,29 @@ You just want to _define_ the application in a YAML file (manifest), and let Kub
 
 **Your Job** :-> Define the Dockerfile and the kubernetes YAML file properly. You specify WHAT you want to happen
 
-**Kubernetes Job** -> Make sure `CURRENT STATE == DESIRED STATE` ( a self healing app ). It figures out HOW to make it happen.
+**K8s' Job** -> Make sure `CURRENT STATE == DESIRED STATE` ( a self healing app ). It figures out HOW to make it happen.
+
+# Terminologies [brief]
+- Container Orchestrator
+- Kubernetes "objects"
+- Kubernetes "controller"
+- Pods
+- Labels and Annotations
+- Services
+- Ingress
+- ReplicaSets
+- Deployments
+- DaemonSets
+- Jobs
+- ConfigMaps
+- Secrets
+- Kubernetes "operator"
+- RBAC
+- Service Mesh
+- Persistent Volume 
+- Persistent Volume Claim
+
+
 
 ## Container Orchestrator
 
@@ -54,6 +80,14 @@ You just want to _define_ the application in a YAML file (manifest), and let Kub
   - storage
   - compute
 
+### What do we mean by "reliable, scalable distributed systems"?
+
+- more and more services are delivered over the network via APIs
+- these APIs are often delivered by a distributed system, the various pieces that implement the API running on different machines, connected via the network and coordinating their actions via n/w communication.
+- These systems must be _highly reliable_, they cannot fail, even if a part of the system crashes or stops working
+- They must  _available_ even during rollouts and other maintainence events
+- They must be _scalable_, so that they can grow their capacity to keep up with increasing usage without radical redesign of the distributed system.
+
 ### ECS, Mesos, Cloudfoundry, Marathon, ...wtf??
 
 These are cloud-specific  orchestrator offerings
@@ -88,9 +122,16 @@ Independence and standardization are the main reasons Kubernetes is so popular. 
 
 #### Declarative Configuration
 
-- IaaC - Infrastructure as a Code
+- IaaC - Infrastructure as a Code : the idea of storing declarative configuration in source control.
+- as opposed to imperative configuration, where the state of the world is defined by the execution of a series of instructions.
 
 ### Self Healing Systems
+
+_continuously_ take actions to ensure that the current state matches the desired state.
+
+- Operator Pattern:
+  - more advanced logic needed to maintain, scale, and heal a specific piece of s/w(like MySQL, or Prometheus) is encoded into an **operator application** that runs as a container inside the cluster.
+  - The code in the operator is responsible for more targeted and advanced health detection and healing that can be achieved via Kubernetes' generic self-healing.
 
 <hr/>
 <hr/>
@@ -817,6 +858,10 @@ example namespaces
 Contexts are used to manage different clusters
 
 `kubectl config use-context my-context` or use `kubectx` instead
+
+## CRD (Custom Resource Definition)
+
+Kubernetes Operators
 
 # Helm
 

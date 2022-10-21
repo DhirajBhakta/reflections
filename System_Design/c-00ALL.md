@@ -9,6 +9,24 @@
   - Header
   - Data
 
+## Horizontal v/s Vertical Scaling
+
+### Horizontal
+
+- Load Balancing required
+- RESILIENT - not a single point of failure
+- Network Calls(RPC) - slow
+- Problem of Data inconsistency
+- Scales well
+
+### Vertical
+
+- No Load Balancing required
+- Single Point of Failure
+- IPC for communication - fast
+- Consistent. No problem of data inconsistency
+- Hardware limit for scaling.
+
 ## Links
 
 <https://www.freecodecamp.org/news/systems-design-for-interviews/>
