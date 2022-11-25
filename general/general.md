@@ -284,5 +284,10 @@ pass
 ## Onion Architecture
 Has a lot of layers, and makes you cry when you try to cut through it.
 
+## Generic Sessions
+#### Scaler: "How to become high quality s/w engineer"
+
+
+
 ## Links 
 [Notes to myself on software engineering](https://medium.com/s/story/notes-to-myself-on-software-engineering-c890f16f4e4d)
