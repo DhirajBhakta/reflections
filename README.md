@@ -9,6 +9,10 @@ An attempt to document most important learnings from various books, articles, fo
 2. event driven systems (Kafka)
 3. microservices (Sam newman)
 
+### [TODO]
+0. Opentracing and Monitoring. Prometheus and Zipkin/Jaegar deep dive. How it fits into the microservices workflow
+
+
 ### Books lined up for summarization
 
 - Composing Software by Eric Elliott

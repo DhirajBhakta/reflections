@@ -1,6 +1,0 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: todo
-  labels:
-    kiamol: ch21-lab

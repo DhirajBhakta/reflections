@@ -1,8 +1,0 @@
-apiVersion: v1
-kind: ResourceQuota
-metadata:
-  name: cpu-quota
-  namespace: kiamol-ch12-cpu
-spec:
-  hard:
-    limits.cpu: 500m

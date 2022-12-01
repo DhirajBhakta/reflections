@@ -1,6 +1,0 @@
-upstreamToProxy: web
-cacheMaxSixe: 1g
-imageExpiresDuration: 6M
-replicaCount: 1
-servicePort: 8080
-serviceType: LoadBalancer
