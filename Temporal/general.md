@@ -1,8 +1,48 @@
+<img src="../assets/temporal.png" height=250/>
+
 - 2004: AWS SQS, AWS SWF
 - 2014: Azure Service Bus, Azure Durable Task
 - 2015: Uber Cherami, Uber Cadence
 - 2019: Temporal (fork of Cadence)
 
+<p>
+    <img src="../assets/temporal-28.png" height=250/>
+    <img src="../assets/temporal-29.png" height=250/>
+</p>
+
+How do you get from the "blender" to the "cake"? Its via **Durable Execution** : 
+<p>
+    <img src="../assets/temporal-30.png" height=200/>
+    <img src="../assets/temporal-31.png" height=200/>
+    <img src="../assets/temporal-32.png" height=200/>
+</p>
+
+In _smoothie_ architecture all you keep doing this..
+- Load state from DB, update it , save it back
+- Load state from DB, update it , save it back
+- Load state from DB, update it , save it back
+
+In _cake_ architecture all you
+- just write sequential code, and it will be durable at every step
+
+What does all this enable? : **Durable Timers, inbuilt retries to external unrealiable services, Queues**
+<p>
+    <img src="../assets/temporal-33.png" height=200/>
+    <img src="../assets/temporal-34.png" height=200/>
+    <img src="../assets/temporal-35.png" height=200/>
+    <img src="../assets/temporal-36.png" height=200/>
+</p>
+
+#### Parallels to Operating systems
+<p>
+    <img src="../assets/temporal-37.png" height=200/>
+    <img src="../assets/temporal-38.png" height=200/>
+    <img src="../assets/temporal-40.png" height=200/>
+    <img src="../assets/temporal-41.png" height=200/>
+    <img src="../assets/temporal-39.png" height=200/>
+</p>
+
+But, we dont really have distributed Operating Systems..
 
 
 #### The new infra "boilerplate"
@@ -56,7 +96,7 @@ _focus on business logic, and delegate all hard stuff to temporal_
 - shields you from unreliability
     - Consistency: When temporal application fails, they recover to a consistent state
 - scalability (10rps - 10krps), extreme transparency, observability 
-    - Visibility : Into Workflow Execution Events loop. Failures, retries, statuses on **Temporal WebUI** or **Temporal CLI (tctl)**
+    - Visibility : Into Workflow Execution Events loop. Failures, retries, statuses on **Temporal WebUI** or **Temporal CLI (tctl)**. Metrics are pushed both from temporal servers and Workers(sdk)
     - Being able to see step by step whats happening, what steps the workflow took.
     - You can also replay failed activities locally using the history...
     - When you want to scale, it might get difficult to scale individual pieces of infra (as they dont scale the same way). Temporal abstracts this away
@@ -72,8 +112,66 @@ _focus on business logic, and delegate all hard stuff to temporal_
     - eg: Datadog used temporal to manage its self managed mysql
 
 
-### Case study - Terraform
-- to provision infrastructure
+
+### Case study - Stripe
+- Theyre building a platform on temporal, not for just one project
+- usecases
+    - batch jobs to deal with bank FTP file uploads
+    - control planes
+    - billing and subscription state mgmt
+    - customer facing data migrations
+- Teams are asked to run worker service for each project
+- Teams get dashboard and metrics out of the box
+<img src="../assets/temporal-42.png"/>
+
+- Fat Client. Theyve hidden temporal SDK and wrapped it for more dev friendliness. Built 3 SDK wrappers. Java Ruby Go
+- Devs are not familiar with workflows
+- Focus is on productivity & safety
+- Theyve documented classic temporal blunders & caught them in inhouse test frameworks
+    - Idempotency of activities
+        - Activity retries..yes. But they dont guarantee exactly once semantics.
+        - in all tests, their test framework automatically runs activities marked with `@ExecuteAtleastOnce` _twice_ to verify idempotency
+    - Replay Safety
+        - workflow must be pure. no side effects
+    - Network fencing
+        - catches all n/w calls in workflows
+        - catches all DB accesses etc
+    - Version safeguards
+        - all workflows and activities have to be passed an additional parameter called `version`
+        - this is to make sure stuff runs in the middle of a deployment/migration
+
+### Case study - Chronosphere
+- They provide hosted observability platform as a company
+- usecase
+    - automated deployment and automated infra provisioning
+    - confirmation messages on slack with signals that can be sent to workflow to alter behavior
+
+
+### Case study - Netflix
+- Used in Spinnaker(CICD Product) and Realtime data infra(flink control plane)
+- 500k/day production workflows, projecting 1M/day soon. Setu Notification service is 70M/day for reference !
+- opentracing, observability
+
+
+
+
+### [Case study - Temporal](https://github.com/dynajoe/temporal-terraform-demo)
+- How temporal uses temporal for its internal infrastructure provisioning (temporal cloud offering specially)
+- They use **terraform-sdk+temporal** for provisioning infra. They wantedto fully automate this process. They were relying on bash scripts and aws APIs at the beginning...
+- every "cluster create" is a long-running Cadence operation. Once complete, it starts a lot of cadence workflows per cluster(event loop) that run forever until cluster is destroyed.
+- **One central event loop per cluster**
+- a "snapshot" triggers an event, the main event loop ensures that no other ops(upgrades etc) are running at the same time, kicks of the snapshot job and then continues...
+- Long (days/weeks) sleeps in main event loop to wake up to renew TLS certs
+
+<img src="../assets/temporal-27.png"/>
+
+- activities
+    - create vpc is an activity
+    - create subnet is an activity
+
+- "activities" here should be
+    - retryable
+    - idempotent
 
 ### Case study - Checkr
 - Company that does background checks..
@@ -271,5 +369,20 @@ LocalTransferQueue approach is used here as well. _visibility records_ is _commi
 To replay, terminate workflows...you _could've_  written your own script. Get Workflow IDs, dump to file, terminate one by one. **This is inherently a workflow on its own**. Temporal calls this **System Workflows**. <u>Temporal is dogfooding its own abilities to provide new feature</u>
 
 
+# [How Temporal Works](https://temporal.io/how-temporal-works)
+
+![](../assets/temporal.jpg)
 
 
+
+
+# Resources
+- [Example temporal application](https://github.com/temporalio/background-checks)
+    - design decisions(temporal related) for this particular app
+    - what business processes are mapped to temporal primitives?
+    - philosophical points... 
+
+# To research
+- [ read code ] How client --> temporal core --> worker messages are sent via protobuf
+- [ read code ] is temporal "queue" a poll on db?
+- Is all this applicable to typical 
