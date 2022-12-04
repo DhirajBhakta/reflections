@@ -1,13 +1,124 @@
-<img src="../assets/temporal.png" height=250/>
+```js
+function subscribe(customerId){
+    onboardToFreeTrial(customerId);
 
-- 2004: AWS SQS, AWS SWF
-- 2014: Azure Service Bus, Azure Durable Task
-- 2015: Uber Cherami, Uber Cadence
-- 2019: Temporal (fork of Cadence)
+    events.onCancellation(
+        processSubscriptionCancellation(customerId);
+        stopWorkflow();
+    }
+
+    wait(60 * time.days);
+    upgradeFromTrialToPaid(customerId);
+    forever {
+        wait(30 * time.days);
+        chargeMonthlyFee(customerId);
+    }
+}
+```
+
+- Domain specific logic (onboardToFreeTrial, ChargeMonthlyFee, UpgradeFromTrialToPaid)
+- Time scheduling with `wait` and `forever`
+- React to external events (user interaction) with `onCancellation` and `stopWorkflow`
+
+<details>
+<summary>Is this pseudocode really implementable?</summary>
+
+We can't run a **function** on the same server for months/years. It would constantly consume resources or crash or reboot.
+
+We get this done via **distributed, asynchronous, event driven approaches.**
+
+<img src="../assets/temporal-76.png" height=250/>
+
+- API GW, **REST APIs**
+- store status in **DB**
+- store renewal schedule of each subscription in **DB**
+- cron job to run periodically -> query DB to check for scheduled items --> get due subscriptions, ---> add tasks to **queue** charge fees for each subscription
+- separate **queue** to handle cancellation requests -> update DB
+- **workers** to process queue **tasks** and execute associated code
+
+</details>
+
+
+# Temporal
+- Temporal is a platform that **guarantees durable execution of your application code**.
+- Allows you to _code as if failures dont even exist_. You focus your code on business logic, and forget about detecting and recovering from failures
+    - n/w outages
+    - server crashes
+
+<details>
+<summary>High level architecture</summary>
+
+<img src="../assets/temporal-77.png"/>
+<p>
+    <img src="../assets/temporal-78.png" height=200/>
+    <img src="../assets/temporal-79.png" height=100/>
+    <img src="../assets/temporal-80.png" height=100/>
+    <img src="../assets/temporal-81.png" height=100/>
+    <img src="../assets/temporal-82.png" height=100/>
+    <img src="../assets/temporal-83.png" height=100/>
+</p>
+<img src="../assets/temporal-84.png"/>
+
+- **Workers**
+    - Compute nodes that run your application code
+    - <u>You compile your workflows and activities into a worker executable</u>
+    - run in background 
+    - listen for new tasks 
+    - stateless | dont keep track of past,future
+    - Workers dont talk to each other directly
+    - Workers coordinate via a **central temporal service**
+- **Central Temporal Service**
+    - keeps track of **workflows**, **activities**
+    - maintains **queue** of tasks for **workers** to pull and process
+    - Internals made up of 
+        - frontend
+        - matching service
+        - history service
+- **DataStore**
+    - Postgres | Cassandra | MySQL
+    - stores
+        - task queues
+        - execution states
+        - activity logs
+    - Your code NEVER interacts with this data store. Its internal to temporal
+- **Temporal Web Console** | **`tctl` Command line tool** (client)
+    - view namespaces | workflows | activities | history
+    - for manual inspection, troubleshooting
+    - `tctl` can trigger a workflow execution
+- **SDK** (client)
+    - use this in your code to trigger a workflow execution
+
+    
+
+
+
+</details>
+
+
+## Motivation
+
+**What led to Temporal?**
+
+We're used to mashing up business logic with failure handling.. business logic signal/noise Ratio is often poor in distributed systems
+
+Consider a hospital management system., **new patient onboarding logic**
+1. Assign Hospital
+2. Assign Doctor
+3. Notify Patient
+4. Finalize onboarding
+
+All these are **functional requirements**, and oftentimes, you are **forced** to mix up **non functional requirements** into the same codebase like
+- Handling failure
+- Failure recovery
+- State(Persistence)
+- Transactions & Rollback (Strongly consistent state)
+- Eventing
+- Timeout
+- Rate limiting...
 
 <p>
-    <img src="../assets/temporal-28.png" height=250/>
-    <img src="../assets/temporal-29.png" height=250/>
+    <img src="../assets/temporal-28.png" height=200/>
+    <img src="../assets/temporal-29.png" height=200/>
 </p>
 
 How do you get from the "blender" to the "cake"? Its via **Durable Execution** : 
@@ -33,6 +144,35 @@ What does all this enable? : **Durable Timers, inbuilt retries to external unrea
     <img src="../assets/temporal-36.png" height=200/>
 </p>
 
+Our "new" infra boilerplate can be made simple with temporal.
+<p>
+    <img src="../assets/temporal-01.png" height=200/>
+    <img src="../assets/temporal-02.png" height=200/>
+</p>
+
+To summarize..
+- We need a runtime for **managing** distributed **application state** at scale
+- Telling s/w how to depend on external things it does not control is hard
+    - activity X **needs to happen** if Y has just happened.
+    - acitvity Z **needs to retry** if the banking service is down.
+- When your app is a huge state machine, it gets hard to track all possible states and take action on each state. **Implementing transactions is very hard, and is like reinventing the wheel**
+    - eg: pytransitions in FD
+- Even after you manage to get all this right, managing all the infra gets tricky
+    - Kafka, Queue, DB, Application
+
+<details>
+<summary><b>...More Motivation & Parallels</b></summary>
+<img src="../assets/temporal.png" height=250/>
+
+- 2004: AWS SQS, AWS SWF
+- 2014: Azure Service Bus, Azure Durable Task
+- 2015: Uber Cherami, Uber Cadence
+- 2019: Temporal (fork of Cadence)
+> **Note**
+> Azure Durable Tasks heavily rely on Azure storage and related azure services
+> Ideally, a durable workflow library **should not** tie into any specific hosting model, programming model, programming langauges or cloud
+
+
 #### Parallels to Operating systems
 <p>
     <img src="../assets/temporal-37.png" height=200/>
@@ -42,47 +182,19 @@ What does all this enable? : **Durable Timers, inbuilt retries to external unrea
     <img src="../assets/temporal-39.png" height=200/>
 </p>
 
-But, we dont really have distributed Operating Systems..
-
-
-#### The new infra "boilerplate"
-
 <p>
-    <img src="../assets/temporal-01.png" height=200/>
-    <img src="../assets/temporal-02.png" height=200/>
-    <img src="../assets/temporal-03.png" height=200/>
+    <img src="../assets/temporal-51.png" height=250/>
+    <img src="../assets/temporal-52.png" height=250/>
 </p>
 
-## Motivation
-- Runtime for **managing** distributed **application state** at scale
-- Telling s/w how to depend on external things it does not control is hard
-    - activity X **needs to happen** if Y has just happened.
-    - acitvity Z **needs to retry** if the banking service is down.
-- When your app is a huge state machine, it gets hard to track all possible states and take action on each state. **Implementing transactions is very hard, and is like reinventing the wheel**
-    - eg: pytransitions in FD
-- Even after you manage to get all this right, managing all the infra gets tricky
-    - Kafka, Queue, DB, Application
+Today's OSes are still h/w abstractions, theyre still single machines, they dont really know about cloud. We would need a layer on top like Kubernetes, but not inherently provided by OS. If it could, we would have a "semantic cloud OS". Temporal could behave as a semantic cloud OS.
 
-Consider a hospital management system., **new patient onboarding logic**
-1. Assign Hospital
-2. Assign Doctor
-3. Notify Patient
-4. Finalize onboarding
+But, we dont really have distributed Operating Systems..
 
-All these are **functional requirements**, and oftentimes, you are **forced** to mix up **non functional requirements** into the same codebase like
-- Handling failure
-- Failure recovery
-- State(Persistence)
-- Transactions & Rollback (Strongly consistent state)
-- Eventing
-- Timeout
-- Rate limiting...
+</details>
 
-<img src="../assets/temporal-06.png"/>
 
-M E S S I
-
-# Why Temporal?
+## Why Temporal?
 
 _focus on business logic, and delegate all hard stuff to temporal_
 
@@ -111,7 +223,39 @@ _focus on business logic, and delegate all hard stuff to temporal_
 - Automated Provisioning: Opens up scope for automating a lot of stuff
     - eg: Datadog used temporal to manage its self managed mysql
 
+### Eg: Bank Transfers
+![](../assets/temporal-00.png)
+```
+def transfer(from:Account, to:Account, ref_id:str, amt:Amount):
+    accounts.withdraw(from, amount, ref_id)   # --------> talks to banking service
+    accounts.deposit(to, amount, ref_id)      # --------> talks to banking service
+```
+- You need to deal with timeouts, retries..
+- You need a write a **state machine** for all kinds of edge cases.
+    - if this, update this to database, if that, update that to database.
+- Many a times, DB becomes a bottleneck...
+- Often, most of your calls involve queues. Involvement of Queues is a repetitive boilerplate
+- There is no "transaction" primitive between DB and Queues.
+    - recovery to consistent state (perfect rollback) is hard
 
+### Eg: Limited time subscription service(3 year phone plan)
+- When user signs up, **send welcome email**, start a free trial for `TrialPeriod`.
+- when `TrialPeriod` expires, start the billing process.
+	- If the user cancels during the trial, **send a trial cancellation email**
+- Billing
+	- As long as you have not exceeded `MaxBillingPeriods`...
+		- **Charge the customer** for `BillingPeriodChargeAmount`
+		- Then wait for next `BillingPeriod`
+		- If the customer cancels during a billing period, **send a subscription cancellation email**
+	- If subscription has ended normally(3 years have passed)(exceeded `MaxBillingPeriods`), **send a subscription ended email**
+- Visibility
+	- At any point, we should be able to **look up** and **change** any customer's 
+		- Amount Charged
+		- Period. (Manual adjustments, refunds)
+
+
+<details>
+<summary>Case Studies</summary>
 
 ### Case study - Stripe
 - Theyre building a platform on temporal, not for just one project
@@ -146,15 +290,6 @@ _focus on business logic, and delegate all hard stuff to temporal_
     - automated deployment and automated infra provisioning
     - confirmation messages on slack with signals that can be sent to workflow to alter behavior
 
-
-### Case study - Netflix
-- Used in Spinnaker(CICD Product) and Realtime data infra(flink control plane)
-- 500k/day production workflows, projecting 1M/day soon. Setu Notification service is 70M/day for reference !
-- opentracing, observability
-
-
-
-
 ### [Case study - Temporal](https://github.com/dynajoe/temporal-terraform-demo)
 - How temporal uses temporal for its internal infrastructure provisioning (temporal cloud offering specially)
 - They use **terraform-sdk+temporal** for provisioning infra. They wantedto fully automate this process. They were relying on bash scripts and aws APIs at the beginning...
@@ -181,59 +316,110 @@ _focus on business logic, and delegate all hard stuff to temporal_
 - Typical transactions: Withdraw/Deposit cycles with banks 
 
 ### Case study - Datadog
+- stats
+    - 1.5years in prod
+    - 100 workers, 30 teams
+    - 100mn workflows / month
+    - 300 worklow types
+    - 90% of workers depend on atleast one other worker...
+- usecases
+    - Deployments & Infra provisioning
+    - Control plane for managed services
+    - Datastore operations (kafka, postgres, cassandra)
+    - code merge queue (developer tooling)
+    - Incident response follow-up
+- problems
+    - Initially, diff teams started using diff temporal sdks...
+    - they built a protobuf sdk
+    - versioning and durability goes hand in hand
+
+- recommendations
+    - stick with a single SDK language to start out
+    - make temporal your internal API
+    - invest in a core temporal enablement team
+
 
 ![](../assets/temporal-05.png)
 
 Datadog sortof managed its own infra. And temporal was the glue to help them do this.
 
+### Case study - Douglas
+- beauty and health retailer in Europe
+- challenges (scaled too fast)
+    - compute : 25k orders/h
+        - solved by horizontal scalability. Microservices+Temporal
+    - storage : 4TB DB
+        - solved by multiple noSQL dbs per microservices. Monolithic db was split
+    - big deployments every two weeks
+        - solved by cicd, and microservice ownership by teams
+- Order management
+    - order placed --> checkout --> processing --> fulfillment dept --> delivery
+
+<p>
+    <img src="../assets/temporal-53.png" height=250/>
+    <img src="../assets/temporal-54.png" height=250/>
+    <img src="../assets/temporal-55.png" height=250/>
+    <img src="../assets/temporal-56.png" height=250/>
+    <img src="../assets/temporal-57.png" height=250/>
+    <img src="../assets/temporal-58.png" height=250/>
 
 
-### Naive example
-```
-def transfer(from:Account, to:Account, ref_id:str, amt:Amount):
-    accounts.withdraw(from, amount, ref_id)   # --------> talks to banking service
-    accounts.deposit(to, amount, ref_id)      # --------> talks to banking service
-```
-- You need to deal with timeouts, retries..
-- You need a write a **state machine** for all kinds of edge cases.
-    - if this, update this to database, if that, update that to database.
-- Many a times, DB becomes a bottleneck...
-- Often, most of your calls involve queues. Involvement of Queues is a repetitive boilerplate
-- There is no "transaction" primitive between DB and Queues.
-    - recovery to consistent state (perfect rollback) is hard
+    <img src="../assets/temporal-59.png" height=250/>
+    <img src="../assets/temporal-60.png" height=250/>
+    <img src="../assets/temporal-61.png" height=250/>
+</p>
 
-![](../assets/temporal-00.png)
+</details>
 
-### Sample requirements
+## Terminologies
 
-_Limited time subscription service(3 year phone plan)_
-- When user signs up, **send welcome email**, start a free trial for `TrialPeriod`.
-- when `TrialPeriod` expires, start the billing process.
-	- If the user cancels during the trial, **send a trial cancellation email**
-- Billing
-	- As long as you have not exceeded `MaxBillingPeriods`...
-		- **Charge the customer** for `BillingPeriodChargeAmount`
-		- Then wait for next `BillingPeriod`
-		- If the customer cancels during a billing period, **send a subscription cancellation email**
-	- If subscription has ended normally(3 years have passed)(exceeded `MaxBillingPeriods`), **send a subscription ended email**
-- Visibility
-	- At any point, we should be able to **look up** and **change** any customer's 
-		- Amount Charged
-		- Period. (Manual adjustments, refunds)
-
-
-## Concepts
-<img src="../assets/temporal-10.png" />
+<img src="../assets/temporal-10.png" height=100/>
 
 Workflow is the orchrestrator; Activity is an executor.
 
 ### Workflow
-Workflows are **resilient programs** that HAVE to run even in the face of failures. **Workflows HAVE to be deterministic**. Workflows can also **react to external events** including **timer expiry** and **timeouts**
+
+
+- Workflows are **resilient programs** that HAVE to run even in the face of failures. 
+- **[Workflows HAVE to be deterministic](https://docs.temporal.io/concepts/what-is-a-workflow-definition/#deterministic-constraints)** They must produce the same output given the same input, implies they cannot interact with the outside world, such as accessing files/nw resources. 
+- Workflows can also **react to external events** including **timer expiry** and **timeouts**. 
+- Workflows can keep running (for years), even if underlying infra fails. Temporal automatically creates its pre-failure state to continue right where it left off.
+- Workflow is a sequence of steps. You define a **Workflow Definition** by writing code. 
+- Every _run_ of that workflow is called **Workflow Execution**
+
+
 
 failures?
 - infra going down..
 - backend going down
 - temporal cluster itself going down
+
+Workflow examples
+- Subscribing to an entertainment service
+- Buying concert tickets
+- Booking a flight
+- Ordering a pizza
+- Filling an expense report
+- Provisioning infra
+
+<p>
+    <img src="../assets/temporal-62.png" height=250/>
+    <img src="../assets/temporal-63.png" height=250/>
+</p>
+
+Characteristics of a Workflow (not temporal Workflow) (take example of filing expense report)
+- Potentially **long running process**
+- Multi step | Has multiple points of **human interaction**
+- Distributed | runs across multiple services/servers at each step
+- If human intervention is required(number of approvals at each step), **it may take days/weeks** to finish
+- There's **conditional logic**
+- They can contain cycles. 
+- Has multiple points of interaction with external systems (3rd party Systems/APIs)
+- Workflows are composable
+    - Reimuburse w/f = Withdraw w/f + Deposit w/f
+
+
+
 
 <img src="../assets/temporal-09.png" />
 
@@ -248,12 +434,263 @@ You can give **signals** to Workfow Intances. Or you can **query** workflow for 
 eg: WorkflowInstance.getNextActivity().execute()
 ```
 
-### Activity
-Activity is meant for arbitrary I/O.
+> **Warning**
+> _Every workflow and activity you create, must be registered with atleast one worker_
 
-Activity Functions can be non-deterministic. These are used to interact with the outside world (unreliable, uncontrollable 3rd party APIs, like Banks...). <u>Activity functions are orchestrated by Workflow functions</u> so, they can be only called within a workflow
+**To start a workflow execution (using tctl)** Assuming you have already created the Workflow definition and the Worker(s) is already running...
+```fish
+tctl workflow start \
+    --workflow_type GreetSomeone \
+    --taskqueue greeting-task-queue \
+    --workflow_id my-first-workflow \
+    --input '"Dhiraj"'
+
+# worflow_type is name of the function for your workflow definition
+# taskqueue must exactly match the one supplied when initializing the worker.
+### else, two different taskqueues would be created (task queues are dynamically created)
+### and workflow execution would never progress
+# workflow_id is optional (defaults to UUID)
+# input to workflow is always in JSON format
+### input_file can be used as an alternative to input
+```
+
+**To start a workflow execution (via code)** Assuming you have already created the Workflow definition and the Worker(s) is already running...
+```go
+import (
+    "context",
+    "log",
+    "app",
+    "os",
+    "go.temporal.io/sdk/client"
+)
+
+func main() {
+    // Temporal client creation
+    // You could've used the same client for Worker code too..
+    e, err := client.Dial(client.Options{})
+    if err != nil {
+        log.Fatalln("Unable to create client", err);
+    }
+    defer  c.Close();
+
+    options := client.StartWorkflowOptions{
+        ID:     "my-first-workflow",
+        TaskQueue: "greeting-tasks"
+    }
+
+    // NON BLOCKING CALL
+    we, err := c.ExecuteWorkflow(context.Background(), options, app.GreenSomeone, os.Args[1])
+    if err != nil {
+        log.Fatalln("Unable to execute Workflow", err);
+    }
+    log.Println("Started Workflow", "WorkflowID:", we.GetID(), "RunID:", we.GetRunID())
+
+    var result string
+    // BLOCKING CALL
+    err = we.Get(context.Background(), &result)
+    if err != nil {
+        log.Fatalln("Unable to get workflow result", err);
+    }
+    log.Println("Workflow result:", result);
+}
+```
+
+
+**To get current status of a workflow execution**
+```fish
+tctl workflow observe --workflow_id my-first-workflow
+```
+<img src="../assets/temporal-67.png"/>
+
+The details show the Event History
+1. first event(WorkflowExecutionStarted) identifies the WorkflowType(GreenSomeone), TaskQueue(greeting-tasks), input value (Dhiraj) and various timeout settings used for this worfklwo.
+2. Next event (WorkflowTaskScheduled) indicates the temporal cluster scheduled a WorfklowTask ..which was then picked up and completed by a worker (WorkflowTaskStarted), (WorkflowTaskCompleted)
+3. Final event(WorkflowExecutionCompleted) confirms end of workflow execution, returning the final value
+
+### Activity
+> **Note**
+> _Any operation that introduces the possibility of failure should be done as a part of an Activity_
+
+Activity is meant for arbitrary I/O, to encapsulate business logic prone to failure.
+
+Activities are retried if they fail.  Temporal has good defaults, but if you want to customize the retry policy...
+<img src="../assets/temporal-68.png"/>
+<img src="../assets/temporal-69.png"/>
+
+- Activity Functions can be non-deterministic. 
+- These are used to interact with the outside world (unreliable, uncontrollable 3rd party APIs, like Banks...). 
+- <u>Activity functions are orchestrated by Workflow functions</u> so, they can be only called within a workflow
+
+> **Warning**
+> _Every workflow and activity you create, must be registered with atleast one worker_
+
+**Activity Definition Example**
+```go
+
+// Makes a call to a microservice
+
+
+import (
+    "context"
+    "errors"
+    "fmt"
+    "io/ioutil"
+    "net/http"
+    "net/url"
+)
+
+func GreetInSpanish(ctx context.Context, name string) (string, error) {
+    base := "http://localhost:9999/get-spanish-greeting?name=%s"
+    url = fmt.Sprintf(base, url.QueryEscape(name))
+
+    resp, err := http.Get(url)
+    if err!=nil{
+        return "", err
+    }
+    defer resp.Body.Close()
+
+    body, err := ioutil.ReadAll(resp.Body)
+    if err!=nil{
+        return "", err
+    }
+
+    translation := string(body)
+    status := resp.StatusCode
+    if status >= 400 {
+        message := fmt.Sprintf("HTTP Error %d: %s", status, translation)
+        return "", errors.New(message)
+    }
+    return translation, nil
+}
+```
+
+**Workflow Definition that requests an Activity Execution example...**
+```go
+func GreetSomeone(ctx workflow.Context, name string) (string , error){
+    options := workflow.ActivityOptions{
+        StartToCloseTimeout: time.Second * 5,
+    }
+    ctx = workflow.WithActivityOptions(ctx, options)
+
+    var spanishGreeting string
+
+    // Workflow does NOT execute the activity directly. It only **schedules** the activity..it is a NON BLOCKING CALL.
+    // However you can wait for the results with `.Get` which is a BLOCKING call
+    err := workflow.ExecuteActivity(ctx, GreenInSpanish, name).Get(ctx, &spanishGreeting)
+    if err!=nil{
+        return "", err
+    }
+
+    return spanishGreeting, nil
+}
+```
+
+
+
+### Temporal Server
+
+Temporal follows a client server model. You need a cluster of temporal servers. Your backend applications will use temporal SDKs(client) to communicate with temporal server
+
+<p>
+    <img src="../assets/temporal-64.png" height=250/>
+    <img src="../assets/temporal-65.png" height=250/>
+</p>
+
+- Temporal server/cluster tracks current state of every execution of your workflows.
+- Maintains history of all Events that occur during workflow executions ( which it used to reconstruct the current state during failure )
+- All this is (incl durable timers, queues) are stored in DB
+- ElasticSearch is optional
+    - gives advanced searching/filtering/sorting on current and recent workflow executions
+- Prometheus + Grafana is optional
+
+_Temporal Server/Cluster does not execute your code_
+
+### Workers
+
+_Workers execute your code_. Workers are **part of your application** and they communicate with Temporal Server/Cluster to manage the execution of workflows
+
+- Worker is provided by the Temporal SDK
+- Worker establishes a persistent connection to Temporal Cluster and polls a Task Queue on the cluster to seek work to perform 
+- <u>Lifetime of a Worker and duration of Workflow Execution are unrelated.</u>
+    - Lifetime of a Worker - forever. Lives until terminated
+    - If a worker handles short workflows, it may execute millions of workflows in its lifetime.
+    - If a worker handles really long workflow, it might get rebooted in the middle, some other worker will pick up where it left off
+
+> **Warning**
+> _You need to restart the worker after every application code change, else they will use the cached version of the workflow deployed earler_
+
+<img src="../assets/temporal-66.png" height=250/>
+
+**Worker Initialization Example**
+```go
+import (
+    "app",
+    "log",
+    "go.temporal.io/sdk/client",
+    "go.temporal.io/sdk/worker"
+)
+
+func main(){
+    // Temporal Client : communicates with Temporal Cluster
+    c, err := client.Dial(client.Options{})
+    if err != nil{
+        log.Fataln("Unable to create client", err);
+    }
+    defer c.Close();
+
+    // Configure worker to "Listen" to a single TASK QUEUE by polling.
+    w := worker.New(c, "greeting-task-queue", worker.Options{})
+
+    // You can register multiple WORKFLOW DEFINITIONS with a single worker
+    w.RegisterWorkflow(app.GreetSomeone)
+    // You can register multiple ACTIVITY DEFINITIONS with a single worker
+    w.RegisterActivity(app.GreetInSpanish)
+
+    // Start the worker; begin long polling on the specified TASK QUEUE
+    // Long lasting connection to the temporal cluster
+    err = w.Run(worker.InterruptCh())
+    if err != nil{
+        log.Fatalln("Unable to start worker", err);
+    }
+    // The worker is running..doesnt imply workflow is running...
+}
+```
+
+**[How Workers, Temporal Server, and the client interact](https://www.youtube.com/watch?v=JxXiF9skT_k)**
+[...and this](https://youtu.be/gMP01CmD-rI)
+
+<p>
+    <img src="../assets/temporal-70.png" height=200/>
+    <img src="../assets/temporal-71.png" height=200/>
+    <img src="../assets/temporal-72.png" height=200/>
+</p>
+<p>
+    <img src="../assets/temporal-73.png" height=200/>
+    <img src="../assets/temporal-74.png" height=200/>
+    <img src="../assets/temporal-75.png" height=200/>
+</p>
+<u>Note that all these source files can be arranged in any way, can be mashed up in a single file too. Regardless of this, in production, you shall compile everything into a single executable and deploy</u>
+
+
+
+### Temporal SDKs
+
+You write Temporal workflows in your application, ,..and this piece of code has to communicate with Temporal server/cluster. This is done via the temporal library (SDK)
+
+### `tctl` - Command line tool
+
+To interact with Temporal server/cluster. you can
+- start workflows / terminate workflows
+- view status/history of workflow executions
+
+
+
+
 
 <hr/>
+
+## Failure Handling
+_Traditional way is to "rollback" to a consistent state. <u> But Temporal follows <b>Forward Recovery</b></u> : fix the underlying problem and move forwards._
 
 # [Workflow Engine Principles](https://temporal.io/blog/workflow-engine-principles)
 
@@ -369,20 +806,142 @@ LocalTransferQueue approach is used here as well. _visibility records_ is _commi
 To replay, terminate workflows...you _could've_  written your own script. Get Workflow IDs, dump to file, terminate one by one. **This is inherently a workflow on its own**. Temporal calls this **System Workflows**. <u>Temporal is dogfooding its own abilities to provide new feature</u>
 
 
+
+
 # [How Temporal Works](https://temporal.io/how-temporal-works)
 
 ![](../assets/temporal.jpg)
 
 
+# Event driven applications with Temporal
 
+The whole idea of this section is that event driven architecture need not always be the traditional [sage pattern](https://microservices.io/patterns/data/saga.html), but can be imperative with try/catch and stuff
+
+<p>
+    <img src="../assets/temporal-43.png" height=150 width="45%"/>
+    <img src="../assets/temporal-44.png" height=150 width="45%"/>
+</p>
+
+We've moved from monolith -> microservices --> coherent microservices. We've also broken down "processes" across time and across space. At the top level, the "process" has more of coordination role, and as it gets broken down, it gets more of "execution" role...This is exactly the relationship between Workflows and Activities.
+
+<p>
+    <img src="../assets/temporal-45.png" height=100/>
+    <img src="../assets/temporal-46.png" height=100/>
+    <img src="../assets/temporal-47.png" height=200/>
+</p>
+
+How do we achieve _long lived coordination_? Its via either **Orchestration** or **Choreography**. Orchestration is sort of like procedural, choreography is like event based..
+
+
+```js
+// Orchestration
+function Flow(){
+    await CallA()
+    await CallB()
+    await CallC()
+}
+
+// Choreography
+if (canHandle(event)){
+    switch(typeof(event)){
+        case Flow Requested:
+            trigger A Requested:
+        case A Returned:
+            trigger B Requested:
+        case B Returend:
+            trigger C Requested:
+        case C Returned:
+            trigger Flow Returned
+    }
+}
+```
+
+<img src="../assets/temporal-48.png" height=250/>
+
+You can see how choreography via events gets messy. But in imperative orchestration, this is fairly simple
+
+What if you have to **send emails** after every process? You throw in a notification service
+
+
+<p>
+    <img src="../assets/temporal-49.png" height=50 width="30%"/>
+    <img src="../assets/temporal-50.png" height=250/>
+</p>
+
+
+## Development Environment
+"Temporalite" with sqlite
+
+## KTLO
+
+#### [Making (code) changes to workflows ](https://docs.temporal.io/go/versioning/)
+This can be disastrous (understand how log based workflow engines work)
+.Workflow Versioning is paramount!
+
+- Avoid changing the number/types of input params and return values of your Workflow
+- Instead use a struct for input output. Single struct input, single struct output
+
+[What is deterministic and non-deterministic?](https://docs.temporal.io/concepts/what-is-a-workflow-definition/#deterministic-constraints)
+
+But since workflows might run for months/years, its possible you want to make **major changes to a workflow definition** while there are still running executions based on current workflow definition. If such changes do not affect the "deterministic" nature of workflow, you can blindly deploy. <u>Else, you can use SDK's versioning feature to identify when a non-deterministic change is introduced, which allows older executions to use the original code and new executions to use the modified version.</u>
+
+> **Note** <br>
+> _Querying a DB is non-deterministic_
+
+#### [Large payloads](https://docs.temporal.io/kb/temporal-platform-limits-sheet)
+This can be disastrous (understand how log based workflow engines work)
+
+Avoid passing large amounts of data. Beacuse EventHistory contains input+output (log based workflow engine), which is also sent across the n/w from application to Temporal Cluster, you will have better performance if you limit the amount of data sent.
+Can be mitigated by having a blob storage(s3) store the large payloads, and workflow history just stores pointers to it
+
+#### Values must be serializable
+For temoral cluster to store the workflow's input and output, they must be serializable. Avoid accepting/returning channels, functions, unsafe pointers..
+
+#### [Data Confidentiality](https://docs.temporal.io/concepts/what-is-a-data-converter/)
+Temporal cluster stores the workflow's input and output (+activity input and output). You need to create **Custom Data Converters** to encrypt+decrypt data as it enters+leaves the temporal cluster.
+
+#### Use mTLS
+This can be disastrous if not used in the context of multiple temporal clusters, wherein they can tend to merge accidentally
+
+#### Heartbeating on long running processes
+For temporal server to detect failure timely
+
+
+--- 
 
 # Resources
 - [Example temporal application](https://github.com/temporalio/background-checks)
     - design decisions(temporal related) for this particular app
     - what business processes are mapped to temporal primitives?
     - philosophical points... 
+- [How Workers, Temporal Server, and the client interact](https://www.youtube.com/watch?v=JxXiF9skT_k)
+    - [Step by step examination of workflow execution by following the event history](https://youtu.be/gMP01CmD-rI)
+- [mikhail.io](https://mikhail.io/)
+    - For production deployment tips
 
-# To research
+# TODO | Unanswered ...
+- [python samples](https://github.com/temporalio/samples-python)
+- Productionizing workers
+    - https://temporal.io/blog/workers-in-production
+    - https://www.youtube.com/watch?v=bKRIkbxrVjs
 - [ read code ] How client --> temporal core --> worker messages are sent via protobuf
 - [ read code ] is temporal "queue" a poll on db?
-- Is all this applicable to typical 
+- Is all this applicable to typical request/response type applications?
+    - Maxim's reply
+    - > Not currently. Temporal is good for building specific service implementations that require state management. In the future it can take over service to service communication for long running operations across teams. See Nexus project.
+    It is not planning to replace synchronous request/reply services.
+
+- how tf did java worker run side by side with golang worker(?).. and golang worflow invoked the activity from Java!?
+    - Note that a single golang worker was running at this time
+    - Check if the java.jar was running a worker behind the scenes.
+    - steps taken was...    
+        - start the jar with `java -classpath localjar.jar io.temporal.training.PdfCertWorker` . (probably started a worker)
+        - Trigger the workflow either with `tctl` or via code. 
+- Why Lambdas would be bad workers even with intermediate long running low-resource intensive job dispatchers? 
+    - > Simply put, this due to the fact that lambdas are restricted to a maximum of 15 min executions. Workers cache workflow executions. Thanks to that cache, the worker doesn’t have to replay history of a workflow every time a new event comes in. When a worker dies, there is some penalty in “redistributing” tasks to surviving workers. In general, that penalty is not something to worry, but having workers never live more than 15 minutes is pushing it an extreme. 
+    - > A typical setup would be that your workers are also running on ECS, and your clients are a combinaison of lambda functions and ECS containers. All running in the same VPC
+
+- Understand Sagas from within temporal context
+    - Understand compensation logic 
+    - [Example](https://github.com/temporalio/samples-java/blob/main/src/main/java/io/temporal/samples/bookingsaga/TripBookingWorkflowImpl.java)
+- Understand Signals in temporal
