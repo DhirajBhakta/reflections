@@ -36,6 +36,11 @@ We get this done via **distributed, asynchronous, event driven approaches.**
 - separate **queue** to handle cancellation requests -> update DB
 - **workers** to process queue **tasks** and execute associated code
 
+#### As per AWS recommendation
+<img src="../assets/temporal-85.png" height=250/>
+<img src="../assets/temporal-86.png" height=250/>
+
+
 </details>
 
 
