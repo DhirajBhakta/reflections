@@ -92,6 +92,13 @@ We get this done via **distributed, asynchronous, event driven approaches.**
     - `tctl` can trigger a workflow execution
 - **SDK** (client)
     - use this in your code to trigger a workflow execution
+	- Major usecases
+		- Start a workflow
+		- Signal a workflow 
+		- Query a workflow
+		- Get result of a workflow execution
+		- List all workflow executions..
+	- uses gRPC to communicate with the cluster.
 
     
 
@@ -424,6 +431,68 @@ Characteristics of a Workflow (not temporal Workflow) (take example of filing ex
     - Reimuburse w/f = Withdraw w/f + Deposit w/f
 
 
+**Workflow Executions are**
+- Durable.
+	- Executes effectively ONCE, and to completion.
+- Reliable.
+	- Reliability is **responsiveness** in presence of failure.
+	- These are fully recoverable after a failure.
+	- State of workflow persists in the face of failure/outages and resumes execution from the latest state.
+- Scalability
+	- Scalability is **responsiveness** in presence of load.
+	- supports billions of concurrent workflow executions.
+	- _continue-as-new_
+
+
+#### WorkflowID
+- customizable
+- application-level identifier
+- unique to a namespace.
+- providing ID is not mandatory but recommended
+- **map it to a business process, or business entity..like orderID or customerID etc**
+
+**WorkflowID re-use policy** : default = Allow DuplicateS
+
+> **Warning**
+> You CANNOT spawn new workflow with same WorkflowID as another OPEN workflow execution
+
+
+#### RunID
+One workflowID can have many RunIDs. **Temporal guarantees that ONLY ONE is in the OPEN state at any given time**
+> **Warning**
+> Please dont rely on RunIDs. Let them just be internal details to manage retries.
+
+#### Workflow Execution States
+<img src="../assets/temporal-00.svg" />
+- OPEN
+	- Progressing
+	- Suspended
+- CLOSED
+	- Completed
+	- Cancelled
+	- Failed
+	- Timed out
+	- Terminated
+	- Continued-as-New
+
+#### Attach metadata to workflow executions for filtering..
+"Memo".
+- non indexed
+
+#### Child workflows | ..or just use activities?
+If your workflow is too long, and can potentially exhaust the event history limit, you should use Child workflows.
+
+You could have just used `continue-as-new` instead.
+
+Too many child workflows will have a net effect of too many Events..and this will shoot up compute costs. So just go with Simple small workflows with activities to begin with.
+
+#### Signals (async)
+To send data TO the workflow (running workflow)
+
+#### Queries (sync)
+To get data FROM the workflow
+
+
 
 
 <img src="../assets/temporal-09.png" />
@@ -512,17 +581,67 @@ The details show the Event History
 2. Next event (WorkflowTaskScheduled) indicates the temporal cluster scheduled a WorfklowTask ..which was then picked up and completed by a worker (WorkflowTaskStarted), (WorkflowTaskCompleted)
 3. Final event(WorkflowExecutionCompleted) confirms end of workflow execution, returning the final value
 
+#### Event Sourcing...
+
+
+#### Non-determinism how-tos ...
+_I WANT to use random package, time.now etc inside my workflow, but you have forbidden non-determinism_
+
+Determinism is ENFORCED on workflows because temporal is a log based workflow engine. Every instruction's LHS and RHS is stored in event history..
+
+```js
+function my_workflow(){
+	if local_clock().is_before("12pm"){
+		await workflow.sleep(duration.until("12pm"));
+	}else{
+		await afternoon_activity();
+	}
+}
+```
+Stuff like this is **inline non deterministic branching**. You should use the SDK's version of random, time, etc. When those APIs are used, the results are stored as a part of Event History, which means that re-executed Workflow Function will issue the same sequence of Commands, even if there is branching like this involved. Say you want to use `random` package. You should instead use `workflow.random()` instead...this will generate the random number during first execution of the workflow and will use the same value in following runs.
+
+These are termed [Side Effects](https://docs.temporal.io/workflows#side-effect)
+
+**All Operations that do NOT purely mutate the Workflow Execution State should occur through the SDK API**
+
+#### [Versioning...](https://github.com/tsurdilo/temporal-version-go)
+[Read this first](https://legacy-documentation-sdks.temporal.io/go/versioning)
+
+If you're too lazy to implement versioning, just use different task Queue for every new version..
+
+
+```go
+maxSupported := 1
+v := workflow.GetVersion(ctx, "ChangeOne", workflow.DefaultVersion, maxSupported)
+if v == workflow.DefaultVersion{
+	err = workflow.ExecuteActivity(ctx, ActivityA, data).Get(ctx, &results)
+}else{
+	err = workflow.ExecuteActivity(ctx, ActivityC, data).Get(ctx, &results)
+}
+```
+When the number of `else if` blocks get way too many (100s), you can query using tctl or webUI to confirm that older workflows have finished and then remove these else if blocks..
+
+**Querying workflows by changes** [Requires ElasticSearch]
+```sh
+tctl workflow count --query='TemporalChangeVersion="<changeID>-<version>" AND ExecutionStatus=1'
+```
+```sh
+tctl workflow list --query='TemporalChangeVersion="<changeID>-<version>" AND ExecutionStatus=1'
+```
+You can view on WebUI too.
+
 ### Activity
 > **Note**
 > _Any operation that introduces the possibility of failure should be done as a part of an Activity_
 
-Activity is meant for arbitrary I/O, to encapsulate business logic prone to failure.
+Activity is meant for arbitrary I/O, to encapsulate business logic prone to failure. Single well defined action (either short or long running), eg: calling another service, transcoding a media file, sending an email.
 
-Activities are retried if they fail.  Temporal has good defaults, but if you want to customize the retry policy...
+Activities are retried(from start) if they fail.  Temporal has good defaults, but if you want to customize the retry policy...
 <img src="../assets/temporal-68.png"/>
 <img src="../assets/temporal-69.png"/>
 
 - Activity Functions can be non-deterministic. 
+	- Since they are **retried from the beginning** if they fail, activities can contain any code without restriction.	
 - These are used to interact with the outside world (unreliable, uncontrollable 3rd party APIs, like Banks...). 
 - <u>Activity functions are orchestrated by Workflow functions</u> so, they can be only called within a workflow
 
@@ -590,11 +709,81 @@ func GreetSomeone(ctx workflow.Context, name string) (string , error){
 }
 ```
 
+#### ActivityID
+- system generated | or | provided by the workflow
+- reusable. The ID is unique among the OPEN Activity execution of a workflow
+- single workflow may reuse an activity ID if an earler activity with same ID has closed.
+- but why bother?: keep it unique and simple.
+
+#### Timeouts
+```
+Scheduled.....Started....Closed.
+```
+- **Schedule-to-start timeout**: time b/w "scheduled" to "started"
+	- _How long a task can remain in a queue_
+	- **NOT RECOMMENDED: but,This can be used to detect whether #workers is not able to keep up with rate of tasks being added to the Queue** 
+	- **Monitor `temporal_activity_schedule_to_start_latency` instead of setting this timeout**
+	- In most cases, this timeout must NOT be set.
+	- default = Infinity
+- **Start-to-close timeout**:
+	- **this is recommended to be set always**
+	- This is used to detect if a worker failed(crashed) midway during executing this activity.
+- **Schedule-to-close timeout**:
+	- 
+#### Heartbeating
+heartbeat is a notification(ping) from the Worker to the Temporal Cluster that the Activity Execution is progressing and Worker has not crashed.
+Important for long running activities...To check their progress and status
+
+If the activity is too long, it would not be able to report "finished" status or any other "progress status" until finish, back to the workflow to be persisted in its event history.  So heartbeating is a way for the activity **to report progress WHILE executing the activity task**
+
+
+Dont heartbeat
+- making a Quick API call
+- reading a small file from disk
+- making a quick DB CRUD operation
+
+Heartbeat the following
+- reading a large file from s3
+- running some ML job
+
+#### Asynchronous activity completion
+What is "signals" to "workflow"... you can do the same to activity, but applies only while "completing" it.
+
+Usecase
+- Send an SMS via 3rd party API (activity started and executed, but not completed)
+- Recv delivery receipt from 3rd part  via callback (asynchronously complete the activity)
+
+#### ![Local Activities (Very high throughput)](https://community.temporal.io/t/local-activity-vs-activity/290/23)
+
+- Runs in the same process as the parent workflow
+	- no going back and forth with Temporal cluster
+- Use when activities are very short lived (few seconds)
+- Use when you dont require global rate limiting
+- Use when you dont require routing to a specific Worker or Worker pool
+- Local activities CANNOT heartbeat. (Remember heartbeats are mandatory for long running activities)
+- Your workflow wont get notified until the activity is completed (So ensure it is very short, very very short)
+- Commands created by the w/f will NOT be sent to the cluster until the activity is completed (So ensure it is very short, very very short)
+
+
+> **Warning**
+> If local activity takes more than 80% of workflow task timeout (10s default), the worker will ask the cluster to create a new Workflow Task to "extend the lease" for the given activity. This is called Workflow Task Heartbeating.
+
+#### Retry Policies (defaults)
+- InitialInterval = 1s
+- BackoffCoefficient = 2
+- MaximumInterval = 100 x InitialInterval
+- MaximumAttempts = Inf
+- NonRetryableErrors = []
+```
+RetryInterval = MIN( MaximumInterval, InitialInterval * POW( BackoffCoefficient, RETRY_COUNT ) )
+```
+
+By default, Workflows are not retried, and Activities are retried until success. **Workflows are assumed to never fail**, if they fail...its your application bug.
 
 
 ### Temporal Server
 
-Temporal follows a client server model. You need a cluster of temporal servers. Your backend applications will use temporal SDKs(client) to communicate with temporal server
+Temporal follows a client server model. You need a cluster of temporal servers. Your backend applications will use temporal SDKs(client) to communicate with temporal server (over gRPC)
 
 <p>
     <img src="../assets/temporal-64.png" height=250/>
@@ -608,18 +797,75 @@ Temporal follows a client server model. You need a cluster of temporal servers. 
     - gives advanced searching/filtering/sorting on current and recent workflow executions
 - Prometheus + Grafana is optional
 
-_Temporal Server/Cluster does not execute your code_
+> **Warning**
+> _Temporal Server/Cluster does not execute your code_
+
+<img src="../assets/temporal-01.svg" height=250/>
+
+_4 independently scalable services_
+
+> **Info**
+> eg Production setup: 5 Frontend, 15 History, 17 Matching and 3 Worker Services per cluster.
+
+- Frontend Service
+	- rate limiting, routing , auth, validations..
+	- incoming req has `workflowID` which gets hashed here for routing purposes. (Consistent Hashing)
+	- Frontend Service talks to Matching service, History service, Worker service and DB and ES.
+	- _stateless_
+- Matching Service
+	- Hosts task queues
+	- _stateful_
+- History Service
+	- maintains data (mutable state, queues, timers)
+	- persists w/f execution state
+	- determines what to do next to progress the workflow execution
+	- **recommended to have 1 History Service per 500 History shards**
+	- _stateful_
+- Worker Service
+	- for internal  workflows
+	- _stateful_
+- Database
+	- stores **tasks** to be dispatched
+	- stores **state of workflow executions**
+		- Execution Table: Capture of mutable state of workflow executions...
+		- History Table: append only log of workflow execution History Events
+	- stores **namespace metadata**
+	- stores **visibility data** (can be offloaded to ElasticSearch)
+
+#### The History Shard | #historyShards = Performance^^
+
+```
+Hash(worfklowID) ---> determines --> history shard that it belongs to
+```
+- Number of history shards control the scale of concurrent workflow execution throughput
+- **one history shard maps to one DB partition**
+- **One history shard assumes that ONLY ONE concurrent operation can be within a partition at a time**
+
+
+
+
 
 ### Workers
 
-_Workers execute your code_. Workers are **part of your application** and they communicate with Temporal Server/Cluster to manage the execution of workflows
+_Workers execute your code_. Workers are **part of your application** and they communicate with Temporal Server/Cluster(over GRPC) to manage the execution of workflows
 
-- Worker is provided by the Temporal SDK
-- Worker establishes a persistent connection to Temporal Cluster and polls a Task Queue on the cluster to seek work to perform 
+> Workers listen on task queues using **long polling** via the service gRPC interface. Activity Workers call PollActivityTaskQueue and workflow workers call PollWorkflowTaskQueue.
+
+> Why gRPC? . It provides multiplexing multiple long polling on a single HTTP2 TCP open connection.
+
+- ONE worker listens on ONE task queue
+- Worker is provided by the Temporal SDK.
+- YOU manage the workers OUTSIDE of the temporal cluster.
+- A worker can process multiple tasks IN PARALLEL.
+- A worker process is any process that implements the **Task Queue Protocol** and the **Task Execution Protocol**
+- Worker establishes a persistent connection to Temporal Cluster and polls a Task Queue on the cluster to seek work to perform [ grpc ] [ http2 ] 
 - <u>Lifetime of a Worker and duration of Workflow Execution are unrelated.</u>
     - Lifetime of a Worker - forever. Lives until terminated
     - If a worker handles short workflows, it may execute millions of workflows in its lifetime.
     - If a worker handles really long workflow, it might get rebooted in the middle, some other worker will pick up where it left off
+
+> **Warning**
+> _YOU manage the workers OUTSIDE of the temporal cluster. The Temporal Cluster(incl Temporal Cloud) doesn't execute any of your code (Workflow and Activity Definitions) on Temporal Cluster machines. The Cluster is solely responsible for orchestrating state transitions and providing Tasks to the next available Worker Entity.
 
 > **Warning**
 > _You need to restart the worker after every application code change, else they will use the cached version of the workflow deployed earler_
@@ -676,7 +922,8 @@ func main(){
 </p>
 <u>Note that all these source files can be arranged in any way, can be mashed up in a single file too. Regardless of this, in production, you shall compile everything into a single executable and deploy</u>
 
-
+#### Multiple Priorities
+You create (one task queue + one Worker pool) per priority
 
 ### Temporal SDKs
 
@@ -715,6 +962,7 @@ Any workflow engine needs to have following
  - Durability
     - state of the workflow needs is fully preserved at all times.
     - incl local variables, stack traces, threads etc
+	- executes ONCE, and to completion
  - Timers
  - Consistency
  - Sharding & Routing
@@ -874,6 +1122,15 @@ What if you have to **send emails** after every process? You throw in a notifica
 </p>
 
 
+## Failures
+- Application level failures
+- Platform level failures
+
+Throwing a **Temporal Exception/Error** from inside a workflow(or activity) fails the **workflow execution**
+
+Throwing any other exception/error fails the **workflow task** and the task will be retried until success.
+
+
 ## Development Environment
 "Temporalite" with sqlite
 
@@ -893,11 +1150,16 @@ But since workflows might run for months/years, its possible you want to make **
 > **Note** <br>
 > _Querying a DB is non-deterministic_
 
-#### [Large payloads](https://docs.temporal.io/kb/temporal-platform-limits-sheet)
+#### [Large payloads](https://docs.temporal.io/kb/temporal-platform-limits-sheet) | anti pattern
 This can be disastrous (understand how log based workflow engines work)
+
+> Keep payloads under 1MB. Keep them primitive. Includes arguments and results as well.
 
 Avoid passing large amounts of data. Beacuse EventHistory contains input+output (log based workflow engine), which is also sent across the n/w from application to Temporal Cluster, you will have better performance if you limit the amount of data sent.
 Can be mitigated by having a blob storage(s3) store the large payloads, and workflow history just stores pointers to it
+
+#### Sending large number of signals to a single workflow execution | anti pattern
+By design, one workflow is executing on a single worker at a given time. Sending 1000 signals/sec to a single workflow execution doesnt scale at all.
 
 #### Values must be serializable
 For temoral cluster to store the workflow's input and output, they must be serializable. Avoid accepting/returning channels, functions, unsafe pointers..

@@ -332,6 +332,154 @@ Each command in Dockerfile creates a new layer. Each layer contains the filesyst
 Since Docker CACHES every single layer during build, and uses them in subsequent builds,
 _you should keep the instructions that change the most at the bottom of the dockerfile_
 
+#### ENTRYPOINT v/s CMD ?
+> _CMD allows you to provide defaults for an executing container_
+> _ENTRYPOINT allows you to specify the executable_
+
+```Dockerfile
+FROM ubuntu
+ENTRYPOINT ["executable", "param1", "param2"]
+CMD ["param3", "param3]
+```
+Would result in the following command 
+`executable param1 param2 param3 param4`
+
+
+- **ENTRYPOINT** is the executable name... **CMD** is just (default) arguments to the entrypoint...
+- You can allow users to supply different command line args for ENTRYPOINT 
+- You can allow users to override the executable (ENTRYPOINT) by providing `--entrypoint` flag during docker run.
+- Dockerfile should specify atleast one of CMD or ENTRYPOINT
+- ENTRYPOINT should be defined when using container as an executable
+- CMD should be used as a way of defining default args for an ENTRYPOINT command 
+	- OR for executing an ad-hoc command in a container
+- CMD will be overridden when running the container with arguments
+
+##### Shell and Exec forms
+> _always prefer the exec form_
+
+```bash
+# shell form
+ENTRYPOINT command param1 param2
+
+# avoid the shell form...
+# the shell form causes ENTRYPOINT to be started as a subcommand of --->"/bin/sh -c"<---
+# Your ENTRYPOINT thus will not be PID1 of the container.
+# ... will not receive Unix Signals like SIGTERM
+
+# shell form
+CMD arg1 arg2
+CMD command arg1 arg2
+
+# the shell form causes CMD to be executed in -->"/bin/sh -c"<--
+# If you want to run CMD outside of a shell, you need to use the exec form..
+# ...and give the full path to the command as the first string in the array with args as remaining strings in the array
+CMD ["/path/to/command", "arg1", "arg2"]
+```
+
+```bash
+# exec form
+ENTRYPOINT ["command",  "param1",  "param2"]
+
+# In exec form, variable substitution WILL NOT happen. Access to shell isnt there...
+ENTRYPOINT ["echo",  "$PATH"]
+# will NOT work!
+ENTRYPOINT ["/bin/sh", "-c", "echo $PATH"]
+# will work though
+
+```
+
+##### Example0: No ENTRYPOINT No CMD
+Not allowed. Error
+
+##### Example1: No ENTRYPOINT
+```Dockerfile
+FROM alpine
+RUN apk add sl
+CMD ["sl"]
+```
+`docker build -t sl .` ---> `docker run -it sl`
+
+##### Example2: No CMD
+```Dockerfile
+FROM alpine
+RUN apk add sl
+ENTRYPOINT ["sl"]
+```
+`docker build -t sl .` ---> `docker run -it sl`
+
+##### Example3: ENTRYPOINT and CMD
+```Dockerfile
+FROM alpine
+RUN apk add sl
+ENTRYPOINT ["sl"]
+CMD ["-a"]
+```
+`docker build -t sl .` ---> `docker run -it sl`
+
+
+##### Example4: ENTRYPOINT (shell form) only
+```
+ENTRYPOINT exec_entry p1_entry
+```
+will result in `/bin/sh -c exec_entry p1_entry`
+
+
+##### Example5: ENTRYPOINT (exec form) only
+```
+ENTRYPOINT ["exec_entry", "p1_entry"]
+```
+will result in `exec_entry p1_entry`
+
+
+##### Example6: CMD (shell form) only
+```
+CMD exec_cmd p1_cmd
+```
+will result in `/bin/sh -c exec_cmd p1_cmd`
+
+##### Example7: CMD (exec form) only
+```
+CMD ["exec_cmd", "p1_cmd"]
+```
+will result in `exec_cmd p1_cmd`
+
+
+##### Example8: ENTRYPOINT (shell form) and CMD (shell form)
+```
+ENTRYPOINT exec_entry p1_entry
+CMD exec_cmd p1_cmd
+```
+will result in `/bin/sh -c exec_entry p1_entry`. 
+CMD is totally ignored.
+
+##### Example8: ENTRYPOINT (shell form) and CMD (exec form)
+```
+ENTRYPOINT exec_entry p1_entry
+CMD ["exec_cmd", "p1_cmd"]
+```
+will result in `/bin/sh -c exec_entry p1_entry`. 
+CMD is totally ignored.
+
+
+##### Example8: ENTRYPOINT (exec form) and CMD (shell form)
+```
+ENTRYPOINT ["exec_entry", "p1_entry"]
+CMD exec_cmd p1_cmd
+```
+will result in `exec_entry p1_entry /bin/sh -c exec_cmd p1_cmd`. 
+
+So complex. Whyd you even do this!?
+
+##### Example8: ENTRYPOINT (exec form) and CMD (exec form)
+```
+ENTRYPOINT ["exec_entry", "p1_entry"]
+CMD ["exec_cmd", "p1_cmd"]
+```
+will result in `exec_entry p1_entry exec_cmd p1_cmd`. 
+
+Most peaceful...
+
+
 #### Dockerfile Maturity Model
 
 Dockerfile is the most basic and most important foundational layer that you need to get right. Dont obsess over orchestration, CICD in first go, but let your Dockerfile evolve to its best
