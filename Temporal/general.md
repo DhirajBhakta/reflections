@@ -1131,6 +1131,14 @@ Throwing a **Temporal Exception/Error** from inside a workflow(or activity) fail
 Throwing any other exception/error fails the **workflow task** and the task will be retried until success.
 
 
+
+## Scaling | Performance
+
+### Adding More TaskQueues ⊗
+Adding more TaskQueues **DOES NOT** increase performance.
+
+You add more task queues when you want to scale workflows independently...
+
 ## Development Environment
 "Temporalite" with sqlite
 
@@ -1174,6 +1182,25 @@ This can be disastrous if not used in the context of multiple temporal clusters,
 For temporal server to detect failure timely
 
 
+# Stress Testing | Maru
+- Rabbit Scenario
+	- ONE massive workflow spawns generations of workflows, each of which keep spawning workflows and wait for their completion.
+	- By increasing `d=depth` you can spawn exponential number of workflows
+	- By increasing `f=fanout`; determines how many children a given workflow at any given depth can spawn, You can spawn exponential number of workflows
+	- **Rabbit scenario is an anti-pattern. You are not supposed to cram a lot of things in one workflow, since the unit of scale is a Workflow**
+	- validation1: spawn and wait for completion
+		- validate that any w/f at any level only completes when its children complete, incl root.
+	- validation2: spawn and terminate root
+		- validate that all w/fs at any level incl leaf ones terminate.
+- Reactor Scenario
+	- Large number of Long running workflows that get bombarded with signals
+
+### Maru
+- Contains a `Bench workflow` which will call your `Target Workflow`
+- Bench workflows gives you an approximation of whether current cluster size is sufficient for target workfload.
+
+
+## Rabbit Scenario
 --- 
 
 # Resources

@@ -174,7 +174,7 @@ _continuously_ take actions to ensure that the current state matches the desired
 
 Node: A machine. ( host/machine/Ec2/VM etc ) with defined CPU and RAM<br>
 
-- one Master Node
+- one(or more) Master Node(s)
   - runs kubernetes processes to run and manage the **worker Nodes**.
   - It has the following running
     - **the API server** (which is also a container)
@@ -414,6 +414,8 @@ spec:
 	args: ["10"]				# corresponds to docker CMD
 ```
 
+
+
 #### Pod Lifecycle | Pod statuses | Pod Conditions
 
 **Pod Statuses**
@@ -577,8 +579,11 @@ spec:
 
 #### But Why?? Why Wrap the container around a pod? Why not deploy container directly without a "Pod" abstraction?
 - Mainly to allow architectural changes in future 
-- You might want to have multi-contianer pods
-- 
+ca- You might want to have multi-contianer pods
+
+#### * [What exactly is a Pod? Is a pod implemented as a container? A container running more containers inside?](https://iximiuz.com/en/posts/containers-vs-pods/)
+
+
 
 ### ⛳️ `Service`
 
@@ -975,12 +980,16 @@ spec:
 
 ![](../assets/kube-18.png)
 
+_ReplicaSet is actually a linux process that monitors the pods._
+
 - Deployments dont actually manage the Pods directly. Its done by ReplicaSets.
 - Deployment is a controller that manages ReplicaSets and ReplicaSet is a controller that manages the Pods.
 - Deployments can manage multiple ReplicaSets
 - When you sclae a Deployment, it updates the existing ReplicaSet to set the new number of replicas, but if you change the Pod spec in the Deployment, it replaces the ReplicaSet and scales the previous one down to zero.
 Mostly same as Deployments (but actually its Deployment minus rollouts rollbacks).
 
+> **Note**
+> `ReplicaSet` was preceeded by `ReplicationController` which could only control the pods specified within its spec. Whereas ReplicaSet can manage pods outside of its spec using **selectors**. Selectors set apart ReplicaSets from ReplicationController(legacy)
 
 ```yaml
 apiVersion: apps/v1
@@ -1131,6 +1140,11 @@ spec:
 
 **Approach 2: ConfigMaps**
 
+<p>
+	<img src="../assets/kube-48.png" height=400/>
+	<img src="../assets/kube-49.png" height=400/>
+</p>
+
 Some good rules
 
 - default app settings are baked into the container image
@@ -1179,12 +1193,11 @@ spec:
               secretKeyRef:
                 name: adminer-secret
                 key: ADMINER_DEFAULT_SERVER
-		  envFrom: # this loads the entire configmap/secret. Use either of envFrom or env
-			- configMapRef:
-				name: adminer-config
-			- secretRef:
-				name: adminer-secret
-
+          envFrom: # this loads the entire configmap/secret. Use either of envFrom or env
+          - configMapRef:
+             name: adminer-config
+          - secretRef:
+             name: adminer-secret
 ---
 
 apiVersion: v1
@@ -1266,6 +1279,7 @@ example namespaces
 - kube-node-lease
 ```
 
+> **Note** 
 > To connect to a service, we use the format `<servicename>.<namespacename>.svc.cluster.local` But within a namespace, you could just refer to it with `<servicename>`
 
 ```kubectl create namespace dev```
@@ -1278,6 +1292,16 @@ metadata:
 ```
 
 ```kubectl config set-context $(kubectl config current-context) --namespace=dev```
+
+```sh
+kubectl get pods --namespace=dev``` 
+#or 
+kubectl get pods -n dev
+
+kubectl get pods --all-namespaces```
+#or 
+kubectl get pods -A
+```
 
 ```yaml
 apiVersion: v1
@@ -1293,6 +1317,9 @@ spec:
 		limits.cpu: "10"
 		limits.memory: 10Gi
 ```
+
+#### What is the role of existing namespaces like `kube-system` `kube-public`?
+TODO
 
 ### ⛳️ `ServiceAccount`
 
@@ -1796,6 +1823,13 @@ Post this, `helm install npm --set image.tag=local .` inside `charts` directory 
 ### Copy files from the container into the local machine
 
 `kubectl cp <podname>:/usr/share/nginx/html/index.html  /tmp/index.html`
+
+
+# Questions
+-- check the huge list of questions already maintained in notebook--
+1. What is the need to scale up or scale down the pods when the resources are fixed (CPU, MEM)?
+2. kubectl expose vs kubectl create service vs kubectl run (a pod) with --port or --expose option ? and why are options different for different types of services? what exactly are services?
+
 
 # Resources
 - [Article Series](https://medium.com/google-cloud/kubernetes-101-pods-nodes-containers-and-clusters-c1509e409e16)
