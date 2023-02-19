@@ -454,6 +454,17 @@ spec:
 		httpGet:
 			path: /api/ready
 			port: 8080
+		initialDelaySeconds: 10
+		periodSeconds: 5
+		failureThreshold: 8
+	readinessProbe:
+		tcpSocket:
+			port: 3306
+	readinessProbe:
+		exec:
+			command:
+				- cat
+				- /app/is_ready
 ```
 
 #### Liveness Probes
@@ -513,7 +524,7 @@ You could use
 
 By default, the container is run as `root` user.
 
-You can specify the `SecurityContext` either at the **Pod level or at the container level**.
+You can specify the `SecurityContext` either at the **Pod level or at the container level**. The security context set at the container level will override the one at the pod level
 
 ```yaml
 apiVersion: v1
@@ -535,6 +546,7 @@ spec:
 #### < SecurityContext.capabilities.add > Provide linux capabilities to the container
 You can specify the `SecurityContext.capabilities.add` **only at the container level**
 
+
 ```yaml
 apiVersion: v1
 kind: Pod
@@ -553,9 +565,8 @@ spec:
 ```
 
 #### Resource Requirements
-By default, K8s assumes a pod/container requires
-- 0.5 CPU
-- 256M memory
+> **Note**
+> `resource.requests and resource.limits` are meant to guide the Kubernetes Scheduler to decide where to place the pod (which node to place the pod into)
 
 If pod attempts to consume more CPU, it will be throttled. But for memory, it will be terminated..(`OOMKilled`)
 
@@ -915,12 +926,14 @@ Deployment provides
 
 `kubectl rollout history deployment/myapp-deployment`
 
+`kubectl rollout undo deployment/myapp-deployment` Will destroy the current ReplicaSet and bring back the previous ReplicaSet.
+
 #### Deployment strategies
-- `Recreate`
+- `Recreate` strategy
 	- bring down all existing pods
 	- bring up new pods
 	- downtime, service disruption
-- `RollingUpdate` (default)
+- `RollingUpdate` strategy (default)
 	- gradually bring down pods one by one
 	- gradually bring those pods one by one
 	- no downtime, no service disruption
@@ -1322,6 +1335,53 @@ spec:
 TODO
 
 ### ⛳️ `ServiceAccount`
+K8s has two types of accounts
+- User accounts
+- Serviceaccounts
+
+Service accounts are for bots. bots which want to hit the K8s API to say get the number of pods running, to create new pods, or a deployment, etc.
+eg: 
+- Prometheus, 
+- Jenkins : to auto-deploy apps on the cluster
+
+To create a serviceaccount called bot123
+```
+kubectl create serviceaccount bot123
+```
+
+When a serviceaccount is created, it creates a `token` automatically.
+```
+kubectl describe serviceaccount/bot123
+```
+This `token` is used by the application(Bearer token) to authenticate to the k8s API(REST call). BTW this `token` is stored as a K8s Secret.
+![](../assets/kube-50.png)
+**NOTE THHAT THIS IS NO LONGER VALID** (see next subheading)
+
+
+> **Note**
+> _Each namespace has its own default serviceaccount._ This secret is mounted as a volume into EVERY pod in the namespace. (mounted to /var/run/secrets/kubernetes.io/serviceaccount) This serviceaccount allows the pod to do basic querying on K8s API.
+
+
+#### Changes and updates (enhancements and proposals KEP 1205, KEP 2799) -> TokenRequestAPI
+The `token` we discussed earlier is a JWT with no expiry or audience
+
+Hereon,
+- Creating a serviceaccount NO lONGER creates a token (and a secret)
+- you must create the token yourself
+
+```
+kubectl create serviceaccount bot123
+```
+```
+kubectl create token token-for-bot123
+```
+> **Note**
+> `kubectl create token` obtains the token from the **TokenRequestAPI**
+
+> **Warning**
+> You should only create a service account token Secret object if you cannot use the TokenRequestAPI to obtain a token, and the security exposure of persisting a non-expiring token credential in a readable API object is acceptable to you.
+
+
 
 
 
@@ -1424,6 +1484,9 @@ This problem is again solved via `iptables`. The packet reaches one of the nodes
 ### Taints and Tolerations
 **_Prevent pod(s) from being scheduled on a given node_**
 
+> **Warning**
+> Taints and Toleration DO NOT tell a pod where to go. It only tells a pod where NOT TO GO.
+
 
 > Think of _Taints_ as _Mosquito repellants_
 > Think of _Tolerations_ as _Houseflies have toleration to mosquito repellants_
@@ -1439,6 +1502,12 @@ kubectl taint node node01 spray=mortein:NoSchedule
 # to remove the taint (hyphen at the end)
 kubectl taint node node01 spray=mortein:NoSchedule-
 ```
+
+`key=value:taint-effect` Where taint-effect = NoSchedule | PreferNoSchedule | NoExecute
+
+NoSchedule: pods will NOT be scheduled on the node.
+PreferNoScheduled: at best, pods will NOT be scheduled on the node, but not guaranteed.
+NoExecute: Will kick out the existing pods
 
 #### How to add toleration to a Pod?
 ```yaml

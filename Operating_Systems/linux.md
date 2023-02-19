@@ -1099,6 +1099,14 @@ To find out where disk space is being used:
 Repeat steps 2 to 5.
 ```
 
+```bash
+grep cheatsheet
+---------------
+# search recursively for the SEARCH_TERM, with a context of 5 lines above and below
+grep -C 5 --color -rni <SEARCH_TERM>
+
+```
+
 # Troubleshooting
 
 ### [Bad USB flash drive](https://dottheslash.wordpress.com/2011/11/29/deleting-all-partitions-on-a-usb-drive/)
