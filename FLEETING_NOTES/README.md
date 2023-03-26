@@ -33,6 +33,11 @@ An attempt to document most important learnings from various books, articles, fo
 - Enterprise Integration Patterns
 - Patterns of Enterprise Application Architecture
 
+
+
+### Topics to explore
+- FFT : Fast fourier transforms
+- 
 ### quick links
 <https://medium.com/hackernoon/the-2018-devops-roadmap-31588d8670cb>
 <https://medium.com/@ThilinaAshenGamage/the-best-software-architecture-books-of-all-time-b82b63bb853b>

@@ -1,0 +1,194 @@
+{
+  "main": {
+    "id": "41cb19411e7a14ef",
+    "type": "split",
+    "children": [
+      {
+        "id": "5fa10cf5d625eb15",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "9b2847908787bd6d",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {}
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "9d718a12cb80e407",
+    "type": "split",
+    "children": [
+      {
+        "id": "92057b4cc79fc9bd",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "b0a49adacbb21c5e",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "0b0670e535548b9d",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "03790c0881c320f5",
+            "type": "leaf",
+            "state": {
+              "type": "starred",
+              "state": {}
+            }
+          }
+        ],
+        "currentTab": 1
+      }
+    ],
+    "direction": "horizontal",
+    "width": 200
+  },
+  "right": {
+    "id": "6868528d1830efe9",
+    "type": "split",
+    "children": [
+      {
+        "id": "61acabcc542deb8e",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "f3decb7042ca751e",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "757d93a8be5207e7",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "7ca01f9fe740dc8a",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true
+              }
+            }
+          },
+          {
+            "id": "a14d25dd34f01640",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {}
+            }
+          }
+        ],
+        "currentTab": 2
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false
+    }
+  },
+  "active": "9b2847908787bd6d",
+  "lastOpenFiles": [
+    "PERMANENT_NOTES/README.md",
+    "PERMANENT_NOTES",
+    "general/NoteTaking.md",
+    "FLEETING_NOTES/tests/general.md",
+    "FLEETING_NOTES/tests",
+    "FLEETING_NOTES/testing.md",
+    "FLEETING_NOTES/ssl.md",
+    "FLEETING_NOTES/ssh.md",
+    "FLEETING_NOTES/sed.md",
+    "FLEETING_NOTES/rust/general.md",
+    "FLEETING_NOTES/rust",
+    "FLEETING_NOTES/python/web_servers.md",
+    "FLEETING_NOTES/python/streams.md",
+    "FLEETING_NOTES/python/python.md",
+    "FLEETING_NOTES/python/logging.md",
+    "FLEETING_NOTES/python/flask.md",
+    "FLEETING_NOTES/python/celery.md",
+    "FLEETING_NOTES/python",
+    "FLEETING_NOTES/proxy.md",
+    "FLEETING_NOTES/prometheus.md",
+    "FLEETING_NOTES/payments.md",
+    "FLEETING_NOTES/nginx.md",
+    "FLEETING_NOTES/networking/webrtc.md",
+    "FLEETING_NOTES/networking/tcpdump.md",
+    "FLEETING_NOTES/networking/networking.md",
+    "FLEETING_NOTES/networking",
+    "FLEETING_NOTES/microservices.md",
+    "FLEETING_NOTES/lesson_3_reflections",
+    "FLEETING_NOTES/lesson_2_reflections.txt",
+    "FLEETING_NOTES/lesson_1_reflections.txt",
+    "FLEETING_NOTES/ldap.md",
+    "FLEETING_NOTES/jupyter.md",
+    "FLEETING_NOTES/http.md",
+    "FLEETING_NOTES/git.md",
+    "FLEETING_NOTES/general",
+    "FLEETING_NOTES/excel",
+    "FLEETING_NOTES/assets/wsgi-01.png",
+    "FLEETING_NOTES/assets/vlan-01.png",
+    "FLEETING_NOTES/assets/ts-02.png",
+    "FLEETING_NOTES/assets/ts-01.png",
+    "FLEETING_NOTES/assets/temporal.png",
+    "FLEETING_NOTES/assets/temporal.jpg",
+    "FLEETING_NOTES/assets/temporal-86.png",
+    "FLEETING_NOTES/assets/temporal-85.png",
+    "FLEETING_NOTES/assets/temporal-84.png",
+    "FLEETING_NOTES/assets/temporal-83.png",
+    "FLEETING_NOTES/Untitled.canvas",
+    "Untitled.canvas"
+  ]
+}

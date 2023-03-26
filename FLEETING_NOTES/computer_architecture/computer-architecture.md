@@ -1,4 +1,6 @@
 
+book: Patterson and Hennessey
+
 # 8...16...32-bit...64-bit architecture
 
 ## What is an address space?
