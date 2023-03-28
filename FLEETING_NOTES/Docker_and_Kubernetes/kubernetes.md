@@ -889,6 +889,14 @@ spec:
 
 ```
 
+```
+kubectl create ingress <ingressname> --rule="host/path=service:port"
+
+# eg:
+kubectl create ingress ingress-test --rule="wear.myonlinestore.com/wear*=wear-service:80"
+
+```
+
 #### What is `rewrite-target` option  in Ingress?
 
 
