@@ -172,21 +172,44 @@ _continuously_ take actions to ensure that the current state matches the desired
 
 ![](../assets/kube-20.png)
 
+
+![[kube-51.png]]
 Node: A machine. ( host/machine/Ec2/VM etc ) with defined CPU and RAM<br>
 
 - one(or more) Master Node(s)
   - runs kubernetes processes to run and manage the **worker Nodes**.
   - It has the following running
     - **the API server** (which is also a container)
-      - Frontend for Kubernetes
+      - **Frontend** for Kubernetes
       - Communicates with kubelet on worker nodes
       - kubectl talks to the API server.
+      - Other systems like **Scheduler** and **ControllerManager** and **etcd** talk to each other via the API Server.
+      - Other systems like **Scheduler** and **ControllerManager** and **kubelet** obtain statuses and update statuses into **etcd** <u>via the **API server** only</u>  In essence, every thing that has to happen, happens via API server.
+      - API Server is the ONLY one who is able to talk directly to **etcd**.
     - **the Scheduler** (where to put the pod?)
       - checks for "tasks"-to create and assign pods from the Controller manager
-    - **the Controller manager** (detect crashes of pods, and recover) (brain behind orchestration)
+      - identifies the **right node** to place a container on, after considering..
+	      - containers resource requirements.
+	      - nodes' capacity.
+	      - taints and tolerations.
+	- Scheduler does NOT put the pod on the node. **kubelet** does that. Scheduler only _decides_ where to put the pod on which node..
+	- How does Scheduler choose a node for the pod? (bin pack)
+		- step1: **filter** out the nodes that dont meet the criteria (not enough resources, taints, nodeselectors etc..)
+		- step2: **rank** the remaining nodes. The node having more resources left _after_ the pod is assumed to run on that node, gets a higher score.
+    - **the Controller manager** (detect crashes of pods, and recover. Watch status, remediate situation) (brain behind orchestration)
       - runs reconciliation loop.
       - keeps looking at current state - desired states configs and creates tasks(task to create pods) for the **scheduler** to assign to nodes.
-    - **the etcd** (key value store of cluster state)
+      - **the Node Controller** _watches_ the nodes. 
+	      - checks node status every 5s via the **API server**  (Node monitor period=5s)
+	      - waits for heartbeats
+	      - if no heartbeat for 40s, marks the node as _UNREACHABLE_ (Node monitor grace period=40s)
+	      - It gives that node 5mins to come back up, after which it will evict all the pods on that node so that they can be run on other healthy nodes (POD eviction timeout=5min)
+      - **the Replication Controller** _watches_ the containers/pods..
+	      - ensures current=desired pods.
+	- All the above "built-in" controllers are packaged as a single process called "kube-controller-manager"
+	- the `ReplicaSet` uses the replication Controller.
+	- **...XYZ Controller** _watches_ custom resources. You can write your own controllers for your CRDs..
+     - **the etcd** (key value store of cluster state)
       - stores the current state config and desired state config
       - etcd is distributed, reliable key-value store
 - multiple worker Nodes
@@ -196,13 +219,19 @@ Node: A machine. ( host/machine/Ec2/VM etc ) with defined CPU and RAM<br>
     - **Kubelet**
       - Kubelet talks to the containers through the CRI interface (Container Runtime Inteface)
       - communicates with the master node
-      - makes sure that the containers are running within pods
+	      - master node continuously fetches status updates  on pods via the kubelet.
+      - makes sure that the containers are running within pods. monitors the node and the pods and reports to the APIServer on a timely basis.
+      - Kubelet is responsible for initially "registering" the node into the k8s cluster.
+      - **NOTE:** `kubeadm` does NOT install kubelets on each workers. You should manually install the kubelets on every worker.
     - **Kube Proxy**
       - allows for n/w communication inside and outside the node.
+      - allows for n/w communications between pods (even though they are on different nodes).
       - responsible for routing n/w traffic to load balanced services in the cluster. Kubeproxy runs using DaemonSet.
       - Note that many of the kubernetes control plane components are run using kubernetes itself!
+      - A K8s "Service" is actually implemented via Kubeproxy. A Service really does not exist. Kubeproxy listens to new Services being created on etcd via APIServer, and then updates the routetable (iptables) of the node it runs on. Since every node runs a KubeProxy process, every node will have its routetables updated to reach the service endpoints...
     - **Container runtime**
       - Kubernetes doesnt care what container runtime you use. containerd? docker? rkt? cri-o? no issues.
+      - Note that nearly everything on K8s is a container. ControllerManager, Scheduler, APIServer, DNSserver...all of these are containers.. Hence the container runtime has a massive role to play in K8s.
   - each node has one or more containers running on it
 
 ![](https://learning.oreilly.com/api/v2/epubs/urn:orm:book:9781617297984/files/OEBPS/Images/1-1.jpg)
@@ -224,6 +253,17 @@ The worker node(s) host the Pods that are the components of the application work
 - You send that YAML file to the Kubernetes API(via kubectl)
 - Kubernetes compares the YAML and what’s already running in the cluster.
   - and tries to get to a desired state
+
+What happens behind the scenes?
+- When you run `kubectl get pods` for eg, kubectl sends a GET request to the **API server** on the master plane. The request is authenticated, validated ..and then data is fetched from **etcd** and returned to kubectl
+- When you run `kubectl run nginx --image nginx` , kubectl sends a POST request to the **API server** to create the POD resource , API server instructs **etcd** to create k-v entries for the new pod, and a success message is returned to kubectl
+	- _The **scheduler** continuously monitors the API server_
+	- The **scheduler** now realises there is a new pod with  no node assigned. So it makes some calculations and decides that that new pod should run on node X.
+	- The **scheduler** informs the API server about this decision.
+	- The **API server** updates **etcd** with this decision on where to place the pod 
+	- The **API server** also contacts the **kubelet** of node X and asks it to create a pod 
+	- The **kubelet** creates the container using the **container runtime engine** installed on the node, and then updates the **API server**  that container(pod) is created.
+	- The **API server** updates the data back in **etcd** 
   
 ## Kubernetes API?
 
@@ -246,6 +286,39 @@ output a particular field? `-o jsonpath --template{.status.podIP}`
 ```
 kubectl get pods my-pod -o jsonpath --template={.status.podIP}
 ```
+
+## Docker vs Containerd ... in brief
+Docker was the de-facto king earlier in Kubernetes. Other container runtimes became popular, and wanted to be integrated into k8s. 
+So K8s created an "interface" called CRI - Container Runtime Interface, which adheres to OCI's standards (ImageSpec and RuntimeSpec).
+But docker did not support CRI interface, and K8s had to support docker (legacy) via **dockershim**. 
+> _For some reason, containerd is CRI compliant, and was also part of docker along with runc. I dont undestand why they had to create dockershim to get around CRI on K8s..._
+
+Maintaining dockershim was an unnecessary headache so starting v1.24, K8s deprecated docker. But docker images will continue to work since it followed OCI imagespec.
+
+#### Containerd , the new default.
+`ctr` is the command line tool for containerd. Not user friendly. Use `nerdctl` instead. Its interface is exactly same as docker.
+
+`crictl` is the command line tool for ANY CRI compatible container runtime. It works for containerd, rkt. Was created from Kuberentes perspective..(Kubernetes created CRI and hence critctl too.) **`crictl` is to be used for deubugging purpose in K8s, and NOT for creating containers, though you can do it** . 
+> If you do create containers with `crictl`, the kubelet will later delete it because it is unaware of its presence (not recorded in etcd as a "desired state")
+
+_**tldr; you need to get familiar with `crictl` since docker is gone**_
+
+# ETCD
+What is etcd? What is a Key-value Store? how is it different from a DB? How does it work?
+- Every info you see from `kubectl get ..` is coming from etcd.
+- etcd stores info of all resources, incl nodes, pods, svcs, secrets, configmaps, accounts, roles, bindings..
+
+`etcdctl` is the command line tool for etcd.
+
+```shell
+etcdctl set key1 value1
+
+etcdctl get key1
+```
+- distributed system
+- RAFT protocol
+- 
+
 
 # Kubernetes Resources (Objects)
 
@@ -357,6 +430,16 @@ spec:
 - `ReplicaSet` : **apps/v1**
 - `Deployment` : **apps/v1**
 
+
+### Namespaced resources and global resources
+Most resources are namespaced. However, some resources like `nodes`, `PV` ,`csr` are global.
+
+To view the whole list of namespaced and non namespaced resources...
+```
+kubectl api-resources --namespaced=true
+kubectl api-resources --namespaced=false
+```
+![[kube-54.png]]
 ### ⛳️ `Pod`
 
 ![](https://drek4537l1klr.cloudfront.net/stoneman2/v-7/Figures/02-08_img_0001.jpg)
@@ -414,7 +497,16 @@ spec:
 	args: ["10"]				# corresponds to docker CMD
 ```
 
+#### Imperative way to start a pod
+`kubectl run <podname> --image <imagename>`
 
+eg: `kubectl run nginx --image=nginx`
+
+You can pass custom `args`  ...
+`kubectl run nginx --image=nginx -- arg1 arg2`  just like `docker run nginx arg1 arg2`
+
+You can also override the `command` in addition to providing args ...
+`kubectl run nginx --image=nginx --command -- cmd arg1 arg2` just like `docker run nginx --entrypoint=cmd -- arg1 arg2
 
 #### Pod Lifecycle | Pod statuses | Pod Conditions
 
@@ -518,11 +610,52 @@ You could use
 - DataDog
 - Dynatrace
 
-> The `**kubelet**` on each node has something called `cAdvisor` which can collect metrics from each pod and then send them to the metrics server.
+> The `kubelet` on each node has something called `cAdvisor` which can collect metrics from each pod and then send them to the metrics server.
+
+```shell
+git clone https://github.com/kubernetes-incubator/metrics-server.git
+kubectl create -f metrics-server/deploy/1.8+/ 
+```
+
+After this you can run the following to get metrics.
+- `kubectl top node` 
+- `kubectl top pod`
+
+
+#### Where are images pulled from ? | Private Registries
+When you say image name = `nginx` , its actually `library/nginx` . The format is `<username>/<repository>` . Since this `nginx` repo is not under anyone's user account, it belongs to `library` account.
+> The format, to be specific, is `<registry>/<username>/<repository>`. In this case, it would be `docker.io/library/nginx`.  If you use a private registry, it would be `private-registy.io/apps/internal-app` or something like that
+
+But where are they pulled from? Since we didnt specify the **Image registry**, `docker.io` is taken as default registry. To use a **Private Registry**, you need to allow the container runtime to login to your private registry inorder to pull the image from there.
+
+```shell
+kubectl create secret docker-registry regcred \
+   --docker-server=private-registry.io \
+   --docker-username=dhiraj \
+   --docker-password=mypass \
+   --docker-email=dhiraj@gmail.com 
+```
+And then reference this **Secret** in `imagePullSecrets` section in  Pod Spec.
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+	name: some-pod
+spec:
+	imagePullSecrets:
+	- name: regcred
+	containers:
+	- name: nginx
+	  image: private-registry.io/apps/internal-apps
+```
 
 #### < SecurityContext.runAsUser > Run a Pod as different user. Run a container as different user.
 
-By default, the container is run as `root` user.
+By default, the container is run as `root` user ( default applies in the context of just Docker too.)
+```shell
+$ kubectl exec <podname> -- whoami
+root
+```
 
 You can specify the `SecurityContext` either at the **Pod level or at the container level**. The security context set at the container level will override the one at the pod level
 
@@ -531,13 +664,13 @@ apiVersion: v1
 kind: Pod
 metadata: multi-pod
 spec:
-	securityContext:
+	securityContext:   # set at Pod level
 		runAsUser: 1001
 	containers:
 	- name: web
 	  image: ubuntu
 	  command: ["sleep", "5000"]
-	  securityContext:
+	  securityContext: # set at Container level - overrides Pod level.
 		runAsUser: 1002
 	- name: sidecar
 	  image: ubuntu
@@ -546,6 +679,19 @@ spec:
 #### < SecurityContext.capabilities.add > Provide linux capabilities to the container
 You can specify the `SecurityContext.capabilities.add` **only at the container level**
 
+`/usr/include/linux/capability.h` shows the full list of linux capabilities. 
+![[kube-55.png]]
+
+> Get the full list at `/usr/include/linux/capability.h` 
+```sh
+# For Docker, 
+# You can add capability
+docker run --cap-add NET_BIND
+# You can remove capability
+docker run --cap-drop NET_BIND
+# Or you can grant total access by 
+docker run --privileged 
+```
 
 ```yaml
 apiVersion: v1
@@ -588,6 +734,34 @@ spec:
 			cpu: 2
 ```
 
+You can specify namespace level defaults for resources (requests and limits) using `LimitRange ` objects.. However to set limits for all pods in total for the entire namespace, use `ResourceQuota` Object.
+```yaml
+apiVersion: v1
+kind: LimitRange
+metadata:
+	name: cpu-limit-range
+spec:
+	limits:
+	- default:
+		cpu: 1
+	  defaultRequest:
+		cpu: 0.5
+	  type: Container
+```
+and
+```yaml
+apiVersion: v1
+kind: LimitRange
+metadata:
+	name: mem-limit-range
+spec:
+	limits:
+	- default:
+		memory: 512M
+	  defaultRequest:
+		memory: 256M
+	  type: Container
+```
 #### But Why?? Why Wrap the container around a pod? Why not deploy container directly without a "Pod" abstraction?
 - Mainly to allow architectural changes in future 
 ca- You might want to have multi-contianer pods
@@ -597,6 +771,18 @@ ca- You might want to have multi-contianer pods
 
 
 ### ⛳️ `Service`
+Pods die often, and their IPs keep changing... how do we deal with this?
+
+**Services provide a stable virtual IP**
+- set of pods behind the service can change
+- services use `iptables` of each node
+    - services route to `endpoints` ..the pods...via `iptables`
+- a "service" is NOT a daemon..its just an abstraction on top of `iptables`
+- **DNS**: Everytime you create a service, you get a new DNS entry. You dont have to hardcode service IP address.
+- This **DNS** itself runs as pods and a service
+
+
+
 
 ![](../assets/kube-21.png)
 
@@ -618,11 +804,14 @@ Every Pod gets its own private IP address, but Pods are ephemeral, Pods die easi
 `Service` gives a permanent IP, `Service` can be attached to the Pod.
 A service is also a `loadbalancer`
 
+> Note: A Service is NOT a pod. Even though it has an IP address, it really does not exist per se. It only lives in memory. A Service is "implemented" via route tables and **Kube proxy** . The kube proxy(which runs on every node) continuously listens to creation of new Service resources on **etcd** via APIServer and then updates the node's route table(iptables).
 ![](../assets/kube-07.png)
 #### Types of Services
 - **ClusterIP** : Services are reachable by pods/services in the cluster
 - **NodePort** : Services are reachable via nodes on the same subnet as worker nodes.
 - **LoadBalancer** : Services are reachable by anyone on the internet.
+
+![[kube-52.png]]
 
 _Internally_ the ClusterIP is the most basic. NodePort actually uses ClusterIP under the hood...LoadBalancer actually uses NodePort under the hood.
 
@@ -763,7 +952,6 @@ NodePort: allow traffin INTO the cluster.<br/>
 - say your DB is RDS and hence is outside your cluster where your app is running
 - K8s implements ExternalName Services using a std feature of DNS - CNAMEs.
 
--
 
 Basic concept behind service discovery in Kubernetes: _Deploy a Service resource and use the name of the Service as the domain name for components to communicate._
 
@@ -795,9 +983,18 @@ The service is an abstraction over (Pod+its n/w address), just like a Deployment
 is an abstraction over (Pod+its container)
 
 <div style="color:white; background-color:black; padding:1em; border-radius:4px; box-shadow: 0 0 5px black; font-style:italic; margin:4px">
-A Kubernetes Cluster has a DNS server built in &mdash; which maps Service names to IP addresses
+A Kubernetes Cluster has a DNS server built in &mdash; which maps Service names to IP addresses.
+A Service is NOT a pod. Even though it has an IP address, it really does not exist per se. It only lives in memory.
 </div>
 
+#### Problem with the `LoadBalancer` Service
+`LoadBalancer` Service is a real L4 Network layer load balancer provided by the cloud provider. ..which lives OUTSIDE of the cluster..
+This LB is not pod-aware, its only **node-aware**, it can _balance_ the load between nodes, but it cannot really balance the load between pods (say one node has 2 pods, another node has just 1 pod, ..here even if the LB _balances_ the load between the two nodes, the load on the pods would be 50%,25%,25% ..which is not balanced)
+
+This problem is again solved via `iptables`. The packet reaches one of the nodes' `iptables`,  which then decides which pod to send the packet to. This pod may or may not be in the same node which first recvd the packet.... _interesting_. The node was just a hop. 
+> Note that you can override this behavior with _OnlyLocal_ annotation to route the packet to the pod WITHIN the node 
+
+![](../assets/kube-36.png)
 
 ### ⛳️ `Ingress`
 
@@ -925,7 +1122,7 @@ Its a "Controller" for managing `Pods`.A deployment’s primary purpose is to de
 Deployment provides
 - rolling updates (update containers one by one)
 - rollbacks
-#### Rollout and Versioning
+#### Rollout and Versioning | Rollback
 
 - The deployment first creates a **rollout**, lets call it "Revision 1".
 - When you make changes, the deployment creates a new rollout , lets call it "Revision 2"..
@@ -935,17 +1132,24 @@ Deployment provides
 `kubectl rollout history deployment/myapp-deployment`
 
 `kubectl rollout undo deployment/myapp-deployment` Will destroy the current ReplicaSet and bring back the previous ReplicaSet.
+<div style="color:white; background-color:firebrick; padding:1em; border-radius:4px; box-shadow: 0 0 5px black; font-style:italic; margin:4px">
+Everytime you `kubectl apply -f deployment.yaml` it creates a new rollout ( and hence a new revision ).
+`kubectl set image ..` also has the same effect.
+</div>
 
 #### Deployment strategies
+`strategyType` : RollingUpdate # set this attr in deployment yaml.
+
 - `Recreate` strategy
 	- bring down all existing pods
 	- bring up new pods
-	- downtime, service disruption
+	-  >>downtime, service disruption<<
+	- The old **ReplicaSet** is scaled in to ZERO. and New **ReplicaSet** is scaled out directly to N
 - `RollingUpdate` strategy (default)
 	- gradually bring down pods one by one
 	- gradually bring those pods one by one
 	- no downtime, no service disruption
-	- A **Deployment** does this by creating a new **Replicaset** and gradually scaling it up, while at the same time scaling down the older replicaset
+	- A **Deployment** does this by creating a new **Replicaset** and <u>gradually</u> scaling it up, while at the same time scaling down the older replicaset ONE AT A TIME.
 
 #### But whyy?? why not just use the Pods directly?
 
@@ -1060,6 +1264,10 @@ spec:
 			- name: nginx
 			  image: nginx
 ```
+> Is the ReplicaSet pointless if you just have 1 replica??
+> Not at all... ReplicationController ensures that 1 replica is always running. So if your Pod goes down, the ReplicationContoller brings it up automatically.
+
+
 
 #### How exactly is a `ReplicaSet` Different from a `Deployement` ? They seem the same...
 
@@ -1136,8 +1344,27 @@ Fulfills the routing rules defined by `Ingress`
 - Secrets are not encrypted in ETCD
 - Anyone with cluster access can access the secrets..
 
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+	name: app-config
+data:
+	APP_COLOR: red
+	APP_ENV: prod
+```
 
-##### Supplying Configurations &mdash; ConfigMaps & Secrets
+```shell
+kubectl create configmap my-configmap \
+   --from-literal=key1=value1 \
+   --from-literal=key2=value2
+
+kubectl create configmap my-configmap \
+   --from-file=my_cfg.properties
+```
+
+
+##### Supplying Configurations -- ConfigMaps & Secrets
 
 ![](../assets/kube-19.png)
 
@@ -1160,11 +1387,13 @@ spec:
 ```
 
 **Approach 2: ConfigMaps**
-
-<p>
-	<img src="../assets/kube-48.png" height=400/>
-	<img src="../assets/kube-49.png" height=400/>
-</p>
+With ConfigMaps and Secrets, you have 3 options
+- load ALL the env vars from a configmap  | `envFrom`
+- load ONE/FEW env vars from a configmap by PICKING |  `valueFrom`
+- load the contents of the configmap as a volume
+	- here, each attr in the secret is created as a file in the specified volume.
+![](../assets/kube-48.png)
+![](../assets/kube-49.png)
 
 Some good rules
 
@@ -1270,17 +1499,294 @@ data:
 ```
 
 
-### ⛳️ `StatefulSet`
+#### How is `Secret` any safer than `ConfigMap` ?
+Just encoding an env variable doesnt make it any safer than configmap. 
 
-Just like Deployment
+However,
+- A secret is only sent to a node if a pod in the node requires it
+- Kubelet stores the secret into tmpfs so it is not written to disk
+- When the pod dies, the kubelet removes the secret from tmpfs.
+
+Its always better to offload secrets to tools like Hashcorp Vault, Helm-Secrets... 
+
+### ⛳️ `StatefulSet` 
+In DB deployments, you want the master to come up first, and then the slaves, one by one, so that slave N-1 can help create the clone in slave N, instead of overwhelming the master for the cloning procedure. We also need the master to have a fixed address.. a static hostname.
+
+This cannot be done  with a `Deployment` since all pods come up together. the Pods of a deployment have random hostnames, so static hostname is not possible.
+
+In Statefulset,
+- Pods are created **sequentialy**
+- Each pod gets a unique incremental indexed name
+	- scylla-0
+	- scylla-1
+	- scylla-2
+- pods maintain a sticky identity. If they die, they will come up with the same name.
+- Every **StatefulSet needs a headless service** with the `serviceName` yaml key
+
+```yaml
+apiVersion: apps/v1
+kind: StatefuSet
+metadata:
+	name: mysql-deployment
+	labels:
+		app: mysql
+spec:
+	serviceName: mysql-h # important, for a StatefulSet
+	replicas: 3
+	matchLabels:
+		app: mysql
+	template:
+		metadata:
+			name: mysql-pod
+			labels:
+				app: mysql
+			spec:
+				containers:
+					- name: mysql
+					  image: mysql
+```
+
+#### `Headless Service`  ?
+Usual service with `ClusterIP: None` in the service definition file.
+
+A Service has a DNS name and IP.. to reach the underlying pods.
+Say your requirement is to point all writes to master mysql pod and all reads to all mysql pods. How would you do this with `Service` ? A `ClusterIP` would spread the load across all the pods.
+
+You create a `Headless Service` to each of the pods just to get a DNS name
+- it does not load balance
+- it does not have an IP address
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+	name: mysql-h
+spec
+	ports:
+		- port: 3306
+	selector: 
+		app: mysql
+	clusterIP: None # this makes the service "headless"
+```
+
+For the associated Pod to get a DNS record(A-record), we must specify these on the pod definition
+- hostname
+- subdomain 
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+	name: my-pod
+	labels:
+		app: mysql
+spec:
+	containers:
+		- name: mysql
+		  image: mysql
+	subdomain: mysql-h
+	hostname: mysql-pod
+	volumeClaimTemplate: # see next sections for explanation.
+		metadata:
+			name: data-volume-pvc
+		spec:
+			accessModes:
+				- ReadWriteOnce
+			storageClassName: google-storage # you need to create this storageClass
+			resources:
+				requests:
+					storage: 500Mi
+```
+
+`mysql-pod.mysql-h.default.svc.cluster.local` 
+
+^ StatefulSet automatically does it based on the headlessService name..`serviceName`
+
+#### What is `VolumeClaimTemplate` ?
+Every pod in the StatefulSet needs a PVC. They all could have referenced the same PVC but then this would imply shared data (same volume mounted on 3 places), and EBS maybe wouldnt even allow multiple mountspoints for same device...
+So you need N PVCs for N pods in the StatefulSet.
+
+**_If a pod dies, the associated PVC nor PV is not deleted. The new pod will be re-atttached to the same PVC_**
+
+So you create a "template" for the PVC in the StatefulSetDefinition.
 
 ### ⛳️ `Volumes`
+**Volumes** help the data **outlive** the lifetime of a **Pod**.
 
-attaches a physical storage to Pod.
-Can be from the node, or from a remote node.
+Read the section on [[docker]] **Volumes** section
+Read the section on [[docker]] **CSI** section.
+
+
+- attaches a physical storage to Pod.
+- Can be from the node(hostpath), or from a remote node.
+- Volume storage options
+	- node (hostpath)
+	- glusterfs, nfs, EBS, Google's EBS etc...
 ![](../assets/kube-09.png)
 
-`hostPath` type is suitable when you want to use the volume from the host, i.e the node. If the Pod is restarted on another node, you will lose this data. For this , use `nfs` or `iSCSI`
+`hostPath` type is suitable when you want to use the volume from the host, i.e the node. If the Pod is restarted on another node, you will lose this data. For this , use `nfs` or `iSCSI` 
+
+
+You create PVs (PV pool), create a PVC to bind to any one of the PV, and then bind a Pod to the PVC...
+![[kube-56.png]]
+
+#### What is `Persistent Volumes` ?
+The cluster admin creates a lot of PVs (PV pool) to be used later by deployments. 
+> **accessModes**: This property defines how a PV should be mounted on the host. The value can be **ReadWriteOnce**(RW by single node), **ReadOnlyMany**(R by multiple nodes), or **ReadWriteMany**(RW by multiple nodes). 
+```yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+	name: pv-vol1
+spec:
+	accessModes:
+		- ReadWriteOnce
+	capacity:
+		storage: 10Gi
+	# by default, it is retain. See next sections for details.
+	persistentVolumeReclaimPolicy: Retain
+	hostPath: # you can replace this block with awsElasticBlockStore
+		path: /tmp/data
+	# OR ...
+	awsElasticBlockStore: # you can replace this block with hostPath
+		volumeID: <volumeID>
+		fsType: ext4 
+```
+
+```
+kubectl create -f pv-definition.yaml
+```
+
+```
+kubectl get pv
+```
+
+##### `Volumes` vs **`PersistentVolumes`** ?
+Configuration of **Volumes** goes into the Pod definition file.  Regular **Volumes** are tied to the lifecycle of the pod. When pod is deleted, the volumes are gone.
+
+With PVs, the administrator creates a large pool of storage (large pool of PVs), and users will request pieces from it (via PVCs) as required.
+
+
+
+#### What is `Persistent Volume Claim` ?
+> The cluster admin creates PVs, the users create PVCs to use the PVs.
+> **Every PVC is bound to a single PV** (binding logic as per requirements requested by PVC, which includes storage requested, accessModes specified..etc)
+
+ > **Warning**
+ > A PVC might get much more than it originally requested. Just because there were no other PV to match ...
+- Assume that there was just ONE PV with 100Gi. and one PVC requesting 1Gi. They would be matched, and all 100Gi of that PV would be given to that PVC!! 
+- note that this does not mean that entire underlying storage device is dedicated to that PVC which requested merely 1Gi. The storage device could have been 1TB!! You could have just created a lot of PVs on it.
+
+ NOTE:
+- You create a PV
+- You create a PVC
+- They get bound. 
+- Note that binding happened even without the presence of a pod!!
+- The pod can then reference the PVC..
+- You could also use labels and selector to force a binding between selected PV and PVC
+- If there is no match, PVC will remain in `pending` state until new PV is available 
+
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+	name: myclaim
+spec:
+	accessModes:
+		- ReadWriteOnce
+	resources:
+		requests:
+			storage: 5Gi
+```
+
+```
+kubectl create -f pvc.yaml
+```
+
+#### How would I reference the PVC in the pod definitions?
+> **Note**
+> You **DONT** reference PV in pod definition. You reference only PVC.
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+	name: mypod
+spec:
+	containers:
+	- name: frontend
+	  image: nginx
+	  volumeMounts:
+	  - mountPath: "/var/www/html"
+		name: mypd
+	volumes:
+	- name: mypd
+	  persistentVolumeClaim:
+	    claimName: myclaim # you would have to create this PVC explicitly
+```
+
+#### What happens when `pvc` is deleted?
+Retained(default), deleted or recycled.
+
+>**Warning**
+>If you delete a `pvc` when the pod is still running , the PVC will be stuck in terminating state until the pod is also deleted off.
+>Once pod (and hence pvc) is deleted, the PV would NOT be deleted if its reclaimPolicy was `Retain`. 
+
+By default the underlying volume would be retained. **The PV  would not be deleted(goes into state=`released`) , but would not be available to others.** Would not be bound to any new PVCs. 
+```yaml
+persistentVolumeReclaimPolicy: Retain 
+```
+Or it can be deleted automatically so that pv is deleted when pvc is deleted so that space is freed up on the underlying storage device...
+```yaml
+persistentVolumeReclaimPolicy: Delete
+```
+Or it can be recycled, as in..the data in the data volume will be scrapped before making the PV available to another PVC
+```yaml
+persistentVolumeReclaimPolicy: Recycle
+```
+
+#### What is `StorageClass` ?
+
+_removes the need for manually creating PVs..._
+
+##### Static Provisioning and Dynamic Provisioning of Volumes. 
+Say you wanted to use EBS disks as underlying storage for your PVs. You would first have to **create the EBS disk** with `aws ebs create...` command and then use it.  This is _static provisioning_. Dynamic Provisioining just automates this process for you.
+
+![[kube-57.png]]
+
+Lets create a StorageClass
+```yaml
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+	name: google-storage
+provisioner: kubernetes.io/gce-pd
+```
+You shall then reference this storageClass in your PVCs
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+	name: myclaim
+spec:
+	accessMode: 
+		- ReadWriteOnce
+	resources:
+		requests:
+			storage: 10Gi
+	storageClassName: google-storage # storageClass referenced here.
+```
+The StorageClass will take care of creating the PVs when needed.
+
+A StorageClass has "volumeBindingMode", which describes when the PVCs get bound to the PVs
+- Immediate
+- WaitForFirstConsumer : binding happens when a pod references the PVC.
+
+> **Note**
+> You created a PV, and a matching PVC.
+> The PVC would not bind to the PV yet, even if everything match...if `WaitForFirstConsumer` is set as the `volumeBindingMode`. 
+
+> **Note**
+> StorageClasses which do not support any provisioner, will have the `provisioner` attribute set to `kubernetes.io/no-provisioner` in the spec of the StorageClass.
 
 ### ⛳️ `Namespaces`
 
@@ -1315,7 +1821,8 @@ metadata:
 ```kubectl config set-context $(kubectl config current-context) --namespace=dev```
 
 ```sh
-kubectl get pods --namespace=dev``` 
+kubectl get pods --namespace=dev
+``` 
 #or 
 kubectl get pods -n dev
 
@@ -1347,10 +1854,10 @@ K8s has two types of accounts
 - User accounts
 - Serviceaccounts
 
-Service accounts are for bots. bots which want to hit the K8s API to say get the number of pods running, to create new pods, or a deployment, etc.
+Service accounts are for bots. bots which want to hit the K8s API to say get the number of pods running, to create new pods, or a deployment, etc. Creating **ServiceAccounts** allows you to create **tokens** (bearer tokens) which can be used to authorize the calls to `kube-apiserver` on the application's behalf. This token is present as a **Secret** in K8s, which can be mounted on to the application's pod.
 eg: 
-- Prometheus, 
-- Jenkins : to auto-deploy apps on the cluster
+- Prometheus : to monitor pods and nodes.
+- Jenkins : to auto-deploy apps on the cluster.
 
 To create a serviceaccount called bot123
 ```
@@ -1386,108 +1893,58 @@ kubectl create token token-for-bot123
 > **Note**
 > `kubectl create token` obtains the token from the **TokenRequestAPI**
 
+
+To create a non-expiring long lived token, create a **Secret** explicitly for that token.
+```yaml
+apiVersion: v1
+kind: Secret
+type: kubernetes.io/service-account-token
+metadata:
+  name: build-robot-secret
+  annotations:
+    kubernetes.io/service-account.name: build-robot
+```
+
 > **Warning**
-> You should only create a service account token Secret object if you cannot use the TokenRequestAPI to obtain a token, and the security exposure of persisting a non-expiring token credential in a readable API object is acceptable to you.
+> You should only create a service account token Secret object if you cannot use the TokenRequestAPI to obtain a token, and the security exposure of persisting a non-expiring token credential in a readable API object is acceptable to you. Otherwise, just specify the serviceAccountName, and mounting of token will be automatically done for you
 
 
 
 
+## Scheduling
+**At creation time** , you can specify where you want your pod to go by specifying `nodeName` .
+_Assume_ you dont have a **scheduler** in your cluster. The Pod will always remain in `Pending` state. Only option is to use `nodeName` to manually place the pod.
+```yaml
+apiVersion: v1
+kind: Pod
+metdata:
+	name: nginx
+	labels:
+		name: nginx
+spec:
+	nodeName: node-01 # name of the node where you want this pod to go
+	containers:
+	- name: nginx
+	  image: nginx:alpine
+	  ports:
+	  - containerPort: 8080
+```
+> **Warning**
+> This works **only during creation time**. You cant do this if pod is already running somewhere..
 
+ But, if the Pod is already running somewhere, you need to create a `Binding` Object and send a POST request to the binding api of the Pod.
+ ```yaml
+ apiVersion: v1
+ kind: Binding
+ metadata:
+	 name: nginx
+ target:
+	 apiVersion: v1
+	 kind: Node
+	 name: node02
+```
+and then send a POST request with the Binding object in json form to `https://$SERVER/api/v1/namespaces/default/pods/$PODNAME/binding/`
 
-## Networking
-All of these have IP address
-- Node
-- Pod
-- Service
-
-### Packets..Basics..**
-<p>
-    <img src="../assets/kube-37.png" height=100/>
-    <img src="../assets/kube-38.png" height=100/>
-    <img src="../assets/kube-39.png" height=100/>
-    <img src="../assets/kube-40.png" height=100/>
-</p>
-
-### Docker...networking...
-<p>
-    <img src="../assets/kube-41.png" height=100/>
-    <img src="../assets/kube-42.png" height=100/>
-    <img src="../assets/kube-43.png" height=100/>
-    <img src="../assets/kube-44.png" height=100/>
-    <img src="../assets/kube-45.png" height=100/>
-</p>
-
-- Every docker container runs in its own **network namespace** (see below on namespaces)
-- Docker creates a `bridge` network by default. (unless you create more docker networks, this is the only visible network interface on `ip addr`) 
-- Docker allocates a block of IPs 172.17.0.0/16 to it
-- Docker creates new network namespace for every container created.
-- Docker then creates a VETH pair(virtual ethernet device). its like `pipe`.
-    - It attaches one of the devices to the docker0 bridge and the other into the container's network namespace and names it "eth0" within container namespace.
-    - run `ip addr` inside the container for details
-    - the "eth0" interface inside the container is assigned an IP from the range 172.17.0.0/16
-    - this allows containers to talk to each other via the private IP range...essentially a private subnet.
-
-<p>
-    <img src="../assets/kube-46.png" height=100/>
-    <img src="../assets/kube-47.png" height=100/>
-    <img src="../assets/kube-48.png" height=100/>
-</p>
-
-
-### IP-per-pod model | Pod addresses
-**Every pod has an IP address**
-- Pod IPs are accessible from other pods, regardless of node they're on
-- Pod contains one or more containers sharing same network namespace
-- Pod IPs are allocated via **IPAM functionality** of the **CNI**(Container Network Interface) plugins
-    - Most basic involves assigning a **subnet** to each node and give out IPs to pods on that node...
-- `kube-apiserver` process is started with a flag `--cluster-cidr=172.16.0.0/16` which determines the rangle all pod IPs should be in
-    - this is the range of IP addresses "within the cluster"
-
-### Service addresses
-- `kube-apiserver` process is started with a flag `--service-cluster-ip-range=172.15.100.0/23` which determines the rangle all services should be in
-- `kube-apiserver` process handles this and tells the `kubelets` processes about what IPs are assigned to what services
-    - as well as the `endpoints` which are IPs of pods behind that service
-
-
-### Network Namespaces | Veth pair
-<p>
-    <img src="../assets/kube-30.png" height=100/>
-    <img src="../assets/kube-31.png" height=100/>
-    <img src="../assets/kube-32.png" height=100/>
-    <img src="../assets/kube-33.png" height=100/>
-    <img src="../assets/kube-34.png" height=100/>
-    <img src="../assets/kube-35.png" height=100/>
-</p>
-
-- Every node/device has a network namespace.
-- But you want the pod to have its own network namespace? You don't want a pod to feel like its on a node..
-- To communicate between two network namespaces, you would create a linux pipe....we call it veth pair (virtual ethernet interface)
-- Now all the pod's namespace can talk to root namespace of the host node.
-- But how do pods talk to each other? we need a bridge... (bridge uses L2 routing, ARP..)
-
-### Services
-Pods die often, and their IPs keep changing... how do we deal with this?
-
-**Services provide a stable virtual IP**
-- set of pods behind the service can change
-- services use `iptables` of each node
-    - services route to `endpoints` ..the pods...via `iptables`
-- a "service" is NOT a daemon..its just an abstraction on top of `iptables`
-- **DNS**: Everytime you create a service, you get a new DNS entry. You dont have to hardcode service IP address.
-- This **DNS** itself runs as pods and a service
-
-#### Problem with the `LoadBalancer` Service
-`LoadBalancer` Service is a real L4 Network layer load balancer provided by the cloud provider. ..which lives OUTSIDE of the cluster..
-This LB is not pod-aware, its only **node-aware**, it can _balance_ the load between nodes, but it cannot really balance the load between pods (say one node has 2 pods, another node has just 1 pod, ..here even if the LB _balances_ the load between the two nodes, the load on the pods would be 50%,25%,25% ..which is not balanced)
-
-This problem is again solved via `iptables`. The packet reaches one of the nodes' `iptables`,  which then decides which pod to send the packet to. This pod may or may not be in the same node which first recvd the packet.... _interesting_. The node was just a hop. 
-> Note that you can override this behavior with _OnlyLocal_ annotation to route the packet to the pod WITHIN the node 
-<img src="../assets/kube-36.png" height=100/>
-
-
-
-
-## Other things....
 
 ### Taints and Tolerations
 **_Prevent pod(s) from being scheduled on a given node_**
@@ -1572,6 +2029,130 @@ spec:
 					- key: size
 					  operator: Exists
 ```
+
+
+
+
+## Networking
+- **Prerequisite**: Read [[linux]] section on **Linux Networking** and **DNS** .
+- **Prerequesite**: Read [[docker]] section on **Networking** .
+
+All of these have IP address
+- Node
+- Pod
+- Service
+
+### Packets..Basics..**
+![](../assets/kube-37.png)
+![](../assets/kube-38.png)
+![](../assets/kube-39.png)
+![](../assets/kube-40.png)
+
+### CoreDNS
+CoreDNS is a DNS Server. 
+
+### Docker...networking...
+![](../assets/kube-41.png)
+![](../assets/kube-42.png)
+![](../assets/kube-43.png)
+![](../assets/kube-44.png)
+![](../assets/kube-45.png)
+- Every docker container runs in its own **network namespace** (see below on namespaces)
+- Docker creates a `bridge` network by default. (unless you create more docker networks, this is the only visible network interface on `ip addr`) 
+- Docker allocates a block of IPs 172.17.0.0/16 to it
+- Docker creates new network namespace for every container created.
+- Docker then creates a VETH pair(virtual ethernet device). its like `pipe`.
+    - It attaches one of the devices to the docker0 bridge and the other into the container's network namespace and names it "eth0" within container namespace.
+    - run `ip addr` inside the container for details
+    - the "eth0" interface inside the container is assigned an IP from the range 172.17.0.0/16
+    - this allows containers to talk to each other via the private IP range...essentially a private subnet.
+
+![](../assets/kube-46.png)
+![](../assets/kube-47.png)
+
+
+
+### IP-per-pod model | Pod addresses
+**Every pod has an IP address**
+- Pod IPs are accessible from other pods, regardless of node they're on
+- Pod contains one or more containers sharing same network namespace
+- Pod IPs are allocated via **IPAM functionality** of the **CNI**(Container Network Interface) plugins
+    - Most basic involves assigning a **subnet** to each node and give out IPs to pods on that node...
+- `kube-apiserver` process is started with a flag `--cluster-cidr=172.16.0.0/16` which determines the rangle all pod IPs should be in
+    - this is the range of IP addresses "within the cluster"
+
+### Service addresses
+- `kube-apiserver` process is started with a flag `--service-cluster-ip-range=172.15.100.0/23` which determines the rangle all services should be in
+- `kube-apiserver` process handles this and tells the `kubelets` processes about what IPs are assigned to what services
+    - as well as the `endpoints` which are IPs of pods behind that service
+
+
+### Network Namespaces | Veth pair
+![](../assets/kube-30.png)
+![](../assets/kube-31.png)
+![](../assets/kube-32.png)
+![](../assets/kube-33.png)
+![](../assets/kube-34.png)
+![](../assets/kube-35.png)
+
+- Every node/device has a network namespace.
+- But you want the pod to have its own network namespace? You don't want a pod to feel like its on a node..
+- To communicate between two network namespaces, you would create a linux pipe....we call it veth pair (virtual ethernet interface)
+- Now all the pod's namespace can talk to root namespace of the host node.
+- But how do pods talk to each other? we need a bridge... (bridge uses L2 routing, ARP..)
+
+### CNI 
+
+_Any container runtime should be able to work with any CNI plugin_
+
+All container runtimes use networking solutions that essentially do the same thing with minor differences. For example, to **configure a bridge network** these are the same steps everywhere...
+- Create Network Namespace
+- Create Bridge Network/interface
+- Create veth Pairs (pipe, virtual cable)
+- Attach veth to Namespace
+- Attach other veth to Bridge
+- Assign IP adddresses to veth
+- Bring up the interfaces(veth and bridge)
+- Enable NAT (via IP Masquerading in `iptables`)
+![[Pasted image 20230507234732.png]]
+Assume you built a program which does all of the above for **your container runtime solution**. You call it `bridge`. It can be executed as follows, to add a container to a namespace.
+```sh
+bridge add <containerId> /var/run/netns/<nsID>
+```
+
+**CNI** is a set of standards which specifiy the interface for custom networking programs(plugins) like `bridge` for example. **CNI** specifies how the the container runtime should invoke these plugins. 
+
+For container runtime side, it specifies ..
+- Container Runtime must CREATE NETWORK NAMESPACE
+- Container Runtime must IDENTIFY THE NETWORK the container must attach to
+- Container Runtime must INVOKE the `bridge` plugin when container is ADDed
+- Container Runtime must INVOKE the `bridge` plugin when container is DELeted.
+
+For plugin side, it specifies...
+- Plugin must SUPPORT CMD LINE ARGS for ADD/DEL/CHECK/LIST
+- Plugin must SUPPORT PARAMS < containerID > , < nsID > etc...
+- Plugin must MANAGE IP ADDRESS ASSIGNMENT to pods
+- Plugin must RETURN RESULTS in specific FORMAT.
+
+> **Note**
+> All this makes sure that **any container runtime can work with any CNI plugin** !
+
+
+### Networking Requirements of Master and Worker Nodes ( & Ports)
+Master
+- `kube-apiserver`: 6443
+- `kubelet`: 10250
+- `kube-scheduler`: 10259
+- `kube-controller-manager`: 10257
+- `etcd`: 2379
+- `etcd-client`: 2380 (etcd clients communicate with each other for synchronization, eventual consistency)
+Worker
+- `kubelet`: 10250
+- Services...: 30000 - 32767
+![[kube-58.png]]
+
+
+## Other things....
 
 ### [Multi-Container Pods] 
 `[ [ Web server ] + [ Log Agent ] ]` paired together.
@@ -1757,6 +2338,600 @@ Contexts are used to manage different clusters
 ## CRD (Custom Resource Definition)
 
 Kubernetes Operators
+
+
+# K8s without control plane
+- no api server
+- no scheduler
+- no controller manager
+- no etcd
+- ... Just few worker nodes with kubelet on them. 
+
+### Static Pods (WIP)
+You can still run pods (**static pods**)...
+- Place the pod manifests in `/etc/kubernetes/manifests` . 
+- The kubelet will continuously check for these files and deploy pods in the node.
+- If they crash it will try to bring them back up.
+- Such pods are called **Static Pods**. 
+> **Info**
+> Static Pods always have the suffix of the nodename. 
+> If the node name was "node01" then the pod would be called say "nginx-node01" .
+> This helps distinguish between static pods and pods scheduled via master nodes(api server).
+
+> **Warning**
+> You can only create Pods this way. NOT Deployments, ReplicaSets or anything else.
+
+>**Warning**
+>If you try using static pods even in the presence of the control plane (master nodes), the control plane will still be aware of the presence of the static pods (kubelet informs the api server), but you cannot modify them via `kubectl`. Editing the manifests in `/etc/kubernetes/manifests` is the only way to edit or delete the static pods.
+
+
+The location `/etc/kubernetes/manifests` is configurable. When starting the **kubelet**, pass in the parameter `--pod-manifests-path=/etc/kubernetes/manifests`
+OR `--config=kubeconfig.yaml` which contains the configuration `staticPodPath: /etc/kubernetes/manifests`
+
+**<u> /var/lib/kubelet/</u>  will contain the config used to start the kubelet
+
+> **INFO** 
+> Look for the service file for the kubelet. `kubelet.service` 
+
+>**Warning**
+>`kubectl` is useless here since there is no apiserver. Just use the container runtime directly to inspect the pods. 
+
+You could also install control plane components like apiserver, etcd, controllermanager, scheduler as pod manifests into `/etc/kubernetes/manifests` and allow a worker to behave like a full fledged standalone cluster.
+
+#### How do I know if a pod is a static pod ?
+1. if they have the nodename as suffix
+2. if they have `ownerReferences` set to the node in the pod manifest. `kubectl get pod/<name> -o yaml` 
+
+# K8s REST APIs
+All resources in K8s are grouped under **API groups** . 
+### API Groups
+- `/api` | **Core** Group.
+	- `/v1`
+		- nodes, pods, services, namespaces, pv, pvc, configmaps, secrets, events , bindings, endpoints
+- `/apis` | **Named** Group. _More Organised_ . _All new additions are made here..._
+	- `/apps` , `/extensions` , `/networking.k8s.io` , `/storage.k8s.io`, `/authentication.k8s.io`, `/certificates.k8s.io`
+- `/metrics` | Monitor the health of the cluster
+- `/logs` | Integrating with 3rd party logging applications
+- `/version` | Get the version of the K8s cluster
+- `/healthz` | cluster uptime
+You could hit the `kube-apiserver` with `curl https://kube-master:6443/version` and get the cluster K8s version. 
+You could hit `curl https://kube-master:6443/api/v1/pods` to get a list of pods.
+
+![[kube-53.png]]
+`curl https://kube-master:6443 -k` will give you the list of all API groups. You do need to authenticate via the certificates and keys though.
+```shell
+curl https://kube-master:6443 -k \
+     --key admin.key \
+     --cert admin.crt \
+     --cacert adminca.crt
+```
+Alternatively, `kubectl proxy` will start a "server" on localhost and uses the credentials from your kubeconfig, so you dont have to pass certs and keys everytime like above.
+# Cluster Setup
+You have 3 options
+- use a cloud provider based solution - EKS, AKS, GKE
+- use `kubeadm`.. or alternatives `kops` , `kubespray`
+- Install the hardway manually.
+
+### Where to look for config files for control plane components?
+If setup by `kubeadm`, all components would exist as **static pods** . So you will look for configs in `/etc/kubernetes/manifests/*`  . However, do confirm the path by checking the **kubelet**'s config in `/var/lib/kubelet/config.yaml` . You might have to confirm this one's path too by inspecting the final source of truth - the service file for the **kubelet** in `/etc/systemd/system/kubelet.service.d/10-kubeadm.conf` . You can get that location by inspecting the output of `systemctl status kubectl`. 
+
+If setup the "hard way", all components exist as **normal processes** on master nodes. You just inspect the service file for the control plane component eg :`/etc/systemd/system/kube-apiserver.service` 
+
+### How to debug failure of control plane components?
+If setup by `kubeadm`, all components would exist as **static pods**. So you will look for pod logs `kubectl logs etcd-controlplane`. 
+> **Warning**
+> If `kubectl` itself fails because `kube-apiserver` failed or so, you will have to inspect container logs directly using `crictl` or `ctr` . 
+> `crictl ps`  ... `crictl ps -a`  ... `crictl logs <containerid>` ...
+
+If setup the "hard way", all components exist as **normal processes(systemd)** on master nodes. So you will look for service logs `journalctl -u etcd.service -l`
+# Cluster Maintenance
+- OS upgrades
+- implications of losing a worker node.. replacing a node
+- K8s Upgrades
+- Backup and recovery | disaster recovery.
+
+### Backup all objects
+```sh
+kubectl get all --all-namespaces -o yaml > all-deployed-services.yaml
+```
+
+Or you could **backup the etcd dump**
+
+`--data-dir=/var/lib/etcd` is supplied while starting etcd. So you could backup this directory.
+
+OR
+```bash
+ETCDCTL_API=3 etctdctl \
+	snapshot save snapshot.db
+```
+
+#### Restore backup
+```sh
+service kube-apiserver stop
+
+ETCDCTL_API=3 etcdctl \
+	snapshot restore snapshot.db \
+	--data-dir /var/lib/etcd-from-backup
+```
+Then update the service file for etcd to use `--data-dir=/var/lib/etcd-from-backup` and then restart etcd `systemctl etcd restart`  and then `service kube-apiserver start` 
+
+### Kubernetes Versions
+You can find the current version being used by running `kubectl get nodes` command.
+- `v1.0` - July 2015 - First stable version
+- `v1.27` - April 2023 - Latest
+
+> **Note**
+> Kubernetes supports only latest 3 minor versions at any given time.
+
+### Kubernetes Version upgrade
+Recommended upgrade process is **one version hop at a time** , NOT jumping directly to the latest version. Upgrade the Master nodes first, and then the worker nodes. During master downtime, you cannot access kubectl etc but application will still be running. Best strategy to upgrade worker nodes is to first provision new nodes and gradually decommission old nodes.
+
+`kubadm upgrade plan` can tell you what is the latest version available.
+
+Upgrade Steps in brief:
+- Master Nodes (Control Plane)
+	- Check current version `kubeadm upgrade plan`. `kubectl get nodes` and check version of api-server pods manually.
+	- Drain the node, cordon.
+	- upgrade `kubeadm` to **immediate next version** , not the ultimate final target version!
+	- Run `kubeadm upgrade apply <version>`
+	- 
+
+```shell
+# WARNING: while upgrading kubeadm, make sure to just upgrade 
+		#  kubeadm and nothing else. Package managers tend to 
+		#  upgrade all dependencies while upgrading a given pkg.
+		#   use `apt-mark unhold` and then `apt-mark hold` ..
+		#.  CHECK DOCS for upgrade proces.
+		#.  below is just "pseudocode-ish"
+# drain the master node
+kubectl drain controlplane
+# upgrade kubeadm version to the required K8s version...
+apt-get upgrade -y kubeadm=1.27.0-00
+# see what changes can be done after upgrade
+kubeadm upgrade plan
+# perform the upgrade
+kubeadm upgrade apply v1.27.0
+# check the version
+kubectl get nodes
+# >> note that you will still see old versio because kubectl get nodes show the kubelet version, not the kube-apiserver version.
+
+#-----------------------------------
+# (Optional) upgrade the kubelet on master node
+#-------------------------------------
+#Note: you may or may not have kubelet running on master nodes
+apt-get upgrade -y kubelet=1.27.0-00
+systemctl restart kubelet
+kubectl get nodes
+
+
+#-----------------------------------
+# upgrade the kubelet on worker nodes (one by one)
+#-------------------------------------
+# (RUN ON MASTER NODE!!)move the pods to other nodes and cordon the node. 
+kubectl drain node01
+# upgrade kubeadm and kubelet versions
+apt-get upgrade -y kubeadm=1.27.0-00
+apt-get upgrade -y kubelet=1.27.0-00
+# 
+kubeadm upgrade node
+systemctl restart kubelet
+kubectl uncordon node01
+
+```
+> **Note**
+> `kubeadm` does NOT upgrade kubelets. Has to be done manually.
+
+The releases are found in `https://github.com/kubernetes/kubernetes/releases` in **tar.gz** format which contains executables for all k8s components. It contains all control plane components with same versions (except etcd cluster and coreDNS , as they are separate projects)
+- kube-apiserver
+- controller-manager
+- kube-scheduler
+- kubelet
+- kube-proxy
+- kubectl
+- ETCD Cluster
+- CoreDNS
+
+#### Should all components be of same version?
+- None of the components should be ABOVE the **kube-apiserver**'s version.
+- **controller-manager** and **kube-scheduler** can be ONE version below the **kube-apiserver**
+- **kubelet** and **kube-proxy** can be TWO versions below the **kube-apiserver**
+> NOTE: 
+> However, **kubectl** can be one version ABOVE or BELOW the**kube-apiserver**
+ 
+### Nodes Going Down 
+If a Node goes down for more than 5 mins, K8s considers it dead.
+
+If the pods on it belonged to a ReplicaSet, then they would be scheduled on another node. `pod-eviction-timeout` by default is set to 5mins.
+```
+kube-controller-manager --pod-eviction-timeout=5m0s ...
+```
+
+### Manually taking down a Node for maintenance. 
+ **DRAIN** the node and then CORDON it so that no pods get scheduled on it. Once those drained pods are successfully scheduled and run on other nodes, you can bring down the node for maintenance. 
+ When the node comes back online, you need to UNCORDON it.
+
+```bash
+# remove all the existing pods, gracefully terminate them.
+kubectl drain node01
+kubectl drain node01 --ignore-daemonsets
+
+# Does NOT remove existing pods; but new pods are no longer scheduled 
+kubectl cordon node01
+
+kubectl uncordon node01
+```
+You will get an error while DRAINing a node if there are standalone pods with NO ReplicaSet.  If you use `--force` to forcefully drain, such pods are lost forever.
+
+# Security
+`kube-apiserver` is at the center. All commands and communication goes through kube-apiserver. So first line of defence is to control access to kube-apiserver.
+
+All communication to `kube-apiserver` is secured with TLS. 
+
+## TLS
+ Who talks to who ?
+ - **kube-apiserver** (exposes https service)
+	 - `apiserver.crt` and `apiserver.key`
+	 - clients:
+		 - **kubectl**, used by admin : `admin.crt` and `admin.key`
+		 - **kube-scheduler** : `scheduler.crt` and `scheduler.key` 
+		 - **kube-controller-manager**: `controller-manager.crt` and `controller-manager.key`
+		 - **kube-proxy** : `kube-proxy.crt` and `kube-proxy.key`
+-  **etcd-server** 
+	- `etcdserver.crt` and `etcdserver.key`
+	- clients:
+		- **kube-apiserver** : `apiserver.crt` and `apiserver.key` OR separate crt+key pair could be used.
+- **kubelet** (exposes https service thats used by kube-apiserver to retrieve pod details..., status updates..)
+	- `kubelet.crt` and `kubelet.key`
+	- clients:
+		- **kube-apiserver**: `apiserver.crt` and `apiserver.key` OR separate crt+key pair could be used.
+
+### Case Study | keys and certs for `kube-apiserver`
+Since `kube-apiserver` is a "server" and also a "client" to `etcd-server` and the `kubelet`, it has the following options 
+- "server" | `--tls-cert-file` and `--tls-private-key-file` and `--client-ca-file`
+- "etcd client" | `--etcd-cafile` and `--etcd-certfile` and `--etcd-keyfile`
+- "kubelet client" | `--kubelet-client-certificate` and `--kubelet-client-key`
+
+### Creating keys manually
+#### CA key and CA root certificate
+Create a private key (ca.key)
+```shell
+openssl genrsa -out ca.key 2048
+```
+Create Certificate Signing Request (ca.csr)
+```shell
+openssl req -new -key ca.key -subj "/CN=KUBERNETES-CA" -out ca.csr
+```
+Sign the certificate (ca.crt)
+```
+openssl x509 -req -in ca.csr -signkey ca.key -out ca.crt
+```
+
+#### Client Key and certificate
+Use the following steps to generate key+cert for any client (kube-scheduler, kube-controller-manager, kube-proxy). We use an admin user as an example here...
+
+Create a private key (admin.key)
+```shell
+openssl genrsa -out admin.key 2048
+```
+Create Certificate Signing Request (admin.csr)
+```shell
+openssl req -new -key admin.key \
+    -subj "/CN=kube-admin/O=ystem:masters" \
+    -out admin.csr
+```
+Sign the certificate (admin.crt)
+```shell
+openssl x509 -req -in admin.csr -CA ca.crt -CAkey ca.key -out admin.crt
+```
+
+Since `kubectl` is also a client which issues requests to `kube-apiserver` on the user's behalf(say admin user), we need to pass these client certs to `kubectl`. We do that by updating the `kube/config.yaml`
+
+#### Server Key and certificate
+
+For each:
+- kube-apiserver
+- etcd-server
+- kubelet-server
+Follow the same steps as above (client key + cert)
+> **Note**
+>**alt_names** for kube-apiserver must be `kubernetes` , `kubernetes.default` , `kubernetes.default.svc`,  `kubernetes.default.svc.cluster.local` 
+
+### Inspecting certificate details
+To view things like 
+- CN 
+- alt_names (DNS)
+```shell
+openssl x509 -in /path/to/cert.crt -text -noout
+```
+
+### K8s Certificates API
+If you were an admin, you would have access to all the certs created above. Mainly `ca.crt` and `ca.key` , which can be used to issue(or sign) new certificates to access the `kube-apiserver`. 
+
+As number of "admins" increase it becomes your job to Issue certs for them (csr --> cert). 
+
+Since we dont really have a "certificate authority" per se, all we have is `ca.crt` and `ca.key`, anyone or anything that holds these securely and then uses these to issue(or sign) new certificates becomes the "certificate authority". As an admin, you literally were the "certificate authority" who did these tasks manually. Thanks to **Kubernetes Certificates API**, this can be automated. 
+
+Step1: User first creates a key
+```shell
+openssl genrsa -out jane.key 2048
+```
+Step2: User creates Certificate Signing Request
+```sh
+openssl req -new -key jane.key -subj="/CN=jane" -out jane.csr
+```
+Step3: User sends this `jane.csr` to an admin,
+Step4: The Admin creates `CertificateSigningRequest` object
+```shell
+cat jane.csr | base64 | tr -d "\n"
+```
+
+```yaml
+apiVersion: certificates.k8s.io/v1
+kind: CertificateSigningRequest
+metadata:
+	name: jane
+spec:
+	groups:
+	- system:authenticated
+	usages:
+	- digital signature
+	- key encipherment
+	- server auth
+	request:
+		<base64 encoded csr> 
+```
+
+Once this is done, all admins can see the new csr's 
+```shell
+kubectl get csr
+```
+and then approve/deny the request
+```sh
+kubectl certificate approve jane
+OR
+kubectl certificate deny jane
+```
+
+> **Note**:
+> **Kube-controller-manager** is responsible for CSR creating, signing, approving etc. Not **kube-apiserver** !
+> So `ca.crt` and `ca.key` of the `kube-apiserver` are actually passed on to `kube-controller-manager` during startup, so that it can issue(sign) new keys. In a way, **kube-controller-manager** IS the Certificate Authority!
+
+```shell
+kube-controller-manager \
+	--address=127.0.0.1 \
+	--cluster-signing-cert-file=/etc/kubernetes/pki/ca.crt \
+	--cluster-signing-key-file=/etc/kubernetes/pki/ca.key \
+	...
+	...
+```
+se
+### KubeConfig ~/.kube/config
+You are supposed to pass client crt and ca and key for each of the `kubectl` commands you issue
+```shell
+kubectl get pods \
+	--server my-playground:6443 \
+	--client-key admin.key \
+	--client-certificate admin.crt \
+	--certificate-authority ca.crt 
+```
+But this is too tedious and hence we place this in kubeconfig  = `~/.kube/config`
+
+A kubeconfig has ..
+- clusters
+	- All the "clusters" you have access to
+- contexts
+	- mapping of cluster-user
+- users
+	- All the "user" accounts you pose as
+```yaml
+apiVersion: v1
+kind: Config
+current-context: dhiraj@devcluster
+
+clusters:
+- name: dev-cluster
+  cluster:
+	  certificate-authority: 
+	  server: https://localhost:6443
+	  
+contexts:
+- name: dhiraj@devcluster
+  context:
+     cluster: dev-cluster
+     user: dhiraj
+     
+users:
+- name: dhiraj
+  user:
+	  client-certificate:
+	  client-key
+```
+### Authentication
+- Files | Username & password (Basic Auth)
+- Files | Username & tokens (Bearer Auth)
+- Certificates
+- External Authentication Providers - eg: LDAP
+- ServiceAccounts (Machine to Machine communication)
+
+What kind of Users we have?
+- < User >  | Admins: Perform administrative tasks on the cluster
+- < User >  |  Developers: Deploy applications
+- < ServiceAccount > | 3rdPartyApps: `Bots` which want to access cluster for integration purposes. Eg: Prometheus. FluxCD
+
+#### BasicAuth (Static username:password)
+You start the `kube-apiserver` with an option `--basic-auth-file=user-details.csv` 
+
+This csv file contains password|user|userID
+```csv
+tonyisgreat, dhiraj, u001
+mypassword, someuser, u002
+```
+
+All GET,POST requests to `kube-apiserver` must now have the username:password . 
+
+#### BearerAuth (Static username:token)
+You start the `kube-apiserver` with an option `--token-auth-file=user-details.csv`
+
+This csv file contains token|user|userID
+```
+bGludXhoaW50LmNvbQo=, dhiraj, u001
+```
+
+All GET, POST requests to `kube-apiserver` must now have the bearer token in Authorization header. `Bearer bGludXhoaW50LmNvbQo=`
+
+
+### Authorization
+You might want to restrict access to people, limit access to just their namespaces, prevent ServiceAccounts or Users from deleting nodes, important daemonsets etc, give read-only access to some resources, prevent people from reading configmaps etc...
+- RBAC Authorization
+- ABAC Authorization
+- Node Authorization
+- Webhook mode
+- AlwaysAllow mode
+- AlwaysDeny mode
+
+> **Info**
+> Authorization mode(s) set on the cluster can be viewed by checking the startup command of `kube-apiserver`. If its a static pod, check `/etc/kubernetes/manifests` . If its a systemd process, check `/etc/systemd/system/kube-apiserver.service/*` 
+
+`--authorization-mode=...` need to provided as an argument to `kube-apiserver` during startup to tell it to use the specified authorizers. By default, `--authorization-mode=AlwaysAllow` If you dont provide anything. But say if you provided `--authorization-mode=Node,RBAC,Webhook` , they will be **chained** (Chain of Responsibility pattern) . If NodeAuthorizer rejects, it will be passed on to RBACAuthorizer and so on..until allowed..or denied by the last authorizer.
+
+#### Node Authorizer
+**Kubelets** should be part of `systems:node` group and have a name prefixed with `system:node` 
+
+Kubelets hit the API server for 
+- Read
+	- Nodes
+	- Pods
+	- Services
+	- Endpoints
+- Write
+	- Node status
+	- Pod status 
+	- events
+
+Now if any **User** is added to `systems:node` group and has a name prefixed with `system:node` then he will get previliges equivalent to that of the kubelet.
+
+#### ABAC Authorizer (difficult to manage, cumbersome)
+Say you want a user named `dhiraj` to only be able to view, create and delete Pods.  You need to create a "policy"
+```json
+{
+	"kind": "Policy",
+	"spec":{
+		"user":"dhiraj",
+		"namespace": "*",
+		"resource": "pods",
+		"apiGroup": "*"
+	}
+}
+```
+
+Say you want a user named `security-guy` to only be able to view and approve csrs.  You need to create a "policy"
+```json
+{
+	"kind": "Policy",
+	"spec":{
+		"user":"security-guy",
+		"namespace": "*",
+		"resource": "csr",
+		"apiGroup": "*"
+	}
+}
+```
+With every change in policies, you need to restart the `kube-apiserver` . Difficult to manage.
+
+#### RBAC 
+You create a **Role** and associate it with a set of **permissions** and then associate user(s) to that **Role** by creating a **RoleBinding** .
+>**Warning**
+>These are limited to the namespace they are created in.
+>To create "Cluster-wide" roles and roleBindings, see **ClusterRole** and **ClusterRoleBinding
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+	name: developer #role name
+rules:
+	- apiGroups: [""]
+	  resources: ["pods"]
+	  verbs: ["list", "get", "create", "update", "delete"]
+	  resourceNames: ["blue", "orange" ] # restrict to ONLY pods with these names
+	- apiGroups: [""]
+	  resources: ["configMap"]
+	  verbs: ["create"]
+```
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+	name: dhiraj-developer-binding
+subjects:
+- kind: User
+  name: dhiraj
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+	kind: Role
+	name: developer
+	apiGroup: rbac.authorization.k8s.io
+```
+
+`kubectl get roles` and `kubectl get rolebindings` to get info.
+
+To create authorization rules (roles) on non-namespaced resources, (clusterwide resources), use **ClusterRoles** and **ClusterRoleBindings** 
+
+##### Checking access  ` kubectl auth can-i` 
+```sh
+kubectl auth can-i create deployments
+
+kubectl auth can-i delete nodes
+
+## Impersonation
+kubectl auth can-i delete nodes --as dhiraj
+
+kubectl auth can-i delete deployments --as dhiraj --namespace temporal
+```
+
+
+#### Webhook
+If you want to outsource Authorization to a 3rd party tool, like OPA(Open Policy Agent)
+
+#### AlwaysAllow
+By default, this is set (if you dont provide any other authorizer)
+
+#### AlwaysDeny
+...Obvious.
+
+### NetworkPolicy
+By default all pods can access all other pods. We can control that with **NetworkPolicy**
+
+You can control **Ingress** and **Egress** traffic with **NetworkPolicy** .
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+	name: db-policy
+spec:
+	podSelector: 
+		matchLabels:
+			role: db
+	policyTypes:
+	- Ingress
+	ingress:
+	- from:
+	  - podSelector:
+		  matchLabels:
+		      name: api-pod
+		namespaceSelector:
+		  matchLabels:
+			  name: prod
+	  - ipBlock:
+		  cidr: 192.168.5.10/32
+	  ports:
+		- port: 3306
+		  protocol: TCP
+```
+
+> **Warning** 
+> Note all Networking solutions provide support foor **NetworkPolicy** .
+> **Flannel does NOT support NetworkPolicy** , whereas kube-router, Calico, Weave-net, Romana do support. 
 
 # Helm
 

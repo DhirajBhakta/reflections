@@ -86,7 +86,7 @@ dependencies, both formats can include names or packages and/or service names th
 ### `sudo apt-get upgrade` and related
 actually installs
 
-##  _Everything is a File_
+#  _Everything is a File_
  A wide range of input/output resources such as documents, directories, hard-drives, modems, keyboards, printers and even some inter-process and network communications are simple streams of bytes exposed through the filesystem name space.
  
  Why? Interoperability! The same set of tools, utilities and APIs can be used on a wide range of resources. Also, things are transparent this way
@@ -344,17 +344,6 @@ There is a catch here. "File Size" is different than "disk usage". **FileSize <=
 ```
 
 
-## Honourable mentions
-#### commandline
-##### (Sudo bangBang) Re-run the previous command as root
-`sudo !!`
-
-Know that BangBang `!!` re-runs previous command
-
-##### learn to use less
-
-##### <CTRL+x+e>  for editing laarge commnds 
-you need to `export EDITOR=vim` for this
 
 
 # 60 Days of Linux
@@ -951,6 +940,94 @@ Hardlinks are faster.
 
 Harlinks help you create backup
 
+# Linux Networking
+- Switching & Routing & Default Gateway.
+- DNS configurations, & CoreDNS.
+- Network Namespaces.
+- Docker Networking...
+
+## Switches & Routers
+`ip link` lists all **network interfaces..** and `ip addr` lists all **network interfaces AND ip addresses** . `ip route` or `route` displays the routing table.
+
+Let's make LAN1. Say there are 2 PCs connected via a **Switch** at `192.168.1.0`. 
+```sh
+# we get the network interface name on PC1
+ip link
+# we assign the IP address to the interface
+ip addr add 192.168.1.10/24 dev eth0
+
+# we get the network interface name on PC2
+ip link
+# we assign the IP address to the interface
+ip addr add 192.168.1.11/24 dev eth0
+
+# Now PC1 can talk to PC2
+ping 182.168.1.11
+```
+
+Now Assume there's a similar LAN (LAN2) with PC3 and PC4 with its own switch. 
+
+How can Pc1 in LAN1 talk to PC4 in LAN2? You need a **Router**. 
+> A **Router** connects two or more networks (LANs). It has multiple NICs (or virtual NICs), one each for the network it is connecting to. So it has multiple IP addresses, one in each network.
+
+This router now has 2 IP addres in our example. `192.168.1.1` in LAN1 and `192.168.2.1` in LAN2. The Router is still just a device on the networks, we need to configure it as a **Gateway** to allow other devices to send packets across LANs **Via the Router(Gateway)**. 
+```shell
+# add to the routing table of PC1
+ip route add 192.168.2.0/24 via 192.168.1.1
+# add to the routing table of PC3
+ip route add 192.168.1.0/24 via 192.168.2.1
+
+# list the routing table
+route
+```
+
+You wouldn't add every network you'd want to reach like this (eg: for all sites you want to access on the internet),so you setup the default rule
+```sh
+ip route add default via 192.168.1.1 # on PC1
+ip route add default via 192.168.2.1 # on PC3
+```
+
+Your packets will stilll not pass through. By default linux does not allow packets to be forwarded from one network interface to another network interface in the same host(here, the router). 
+`cat /proc/sys/net/ipv4/ip_forward` is set to "0" by default. Set it to "1". 
+
+#### Routers vs Gateways ?
+TBD
+
+## DNS
+Add the (DNS) entry(s) on `/etc/hosts`
+```sh
+cat >> /etc/hosts
+192.168.1.11 db
+```
+
+### DNS server
+Managing large number of entries on `/etc/hosts` for each of hundreds of machines got out of hand quickly, especially when IP addresses kept changing..
+So a centralized solution was created... DNS Server.
+
+```sh
+cat >> /etc/resolv.conf
+nameserver 1.1.1.1 
+nameserver 8.8.8.8
+```
+> **Note** : `/etc/hosts` takes precedence over `/etc/resolv.conf`
+> But this order can be changed..
+> `/etc/nsswitch.conf` has the value "hosts:   files dns" . flip the order if you need to.
+
+Types of DNS records
+- **A Record**: ipv4 address to name mapping
+- **AAAA Record**: ipv6 address to name mapping
+- **CNAME Record**: name to name mapping
+
+> **nslookup** and **dig** utils help check DNS records. (blind to /etc/hosts)
+
+> A DNS Server runs on **Port 53**. 
+
+
+
+
+
+
+
 # Linux Memory Management
 Like it or not, **youre actually not directly addressing the real physical memory addresses**. You're addressing a layer ABOVE it (virtual address space), so that it abstracts out stuff like paging, swap in swap out etc
 
@@ -1057,6 +1134,14 @@ As a matter of fact, `arch-chroot` does exactly this. Its a wrapper on `chroot`.
 
 
 # Saved Commands
+### (Sudo bangBang) Re-run the previous command as root
+`sudo !!`
+>  BangBang `!!` re-runs previous command
+
+### <CTRL+x+e>  for editing laarge commands 
+you need to `export EDITOR=vim` for this
+
+### `pacman` cheatsheet...
 [Cheatsheets](https://devhints.io/)
 ```bash
 # List all installed packages with their sizes

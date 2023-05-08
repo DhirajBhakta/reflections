@@ -260,7 +260,10 @@ Docker Image format is made up os a series of filesystem layers. Each layer adds
   - **about exposed ports**
   - about how it is run (CMD)
 
-" A container is just a single read/write layer on top of image "
+" A container is just a single read/write layer on top of image ". This is called **copy-on-write** mechanism (CoW)
+> _Copy-on-write (sometimes referred to as "COW") is an optimization strategy used in computer programming. The fundamental idea is that if multiple callers ask for resources which are initially indistinguishable, you can give them pointers to the same resource. This function can be maintained until a caller tries to modify its "copy" of the resource, at which point a true private copy is created to prevent the changes becoming visible to everyone else. All of this happens transparently to the callers. The primary advantage is that if a caller never makes any modifications, no private copy need ever be created._
+> - _Wikipedia_
+
 
 ### Dockerfile
 
@@ -479,6 +482,8 @@ will result in `exec_entry p1_entry exec_cmd p1_cmd`.
 
 Most peaceful...
 
+But what if you provide just a CMD: ["bash"] ? bash looks for any attached terminals , and if found, it waits for user inputs. If there are no terminals attached, it just exits. So `docker run` without `-it` is necessary if the CMD was just "bash"
+
 
 #### Dockerfile Maturity Model
 
@@ -509,8 +514,181 @@ _every line is essentially the same image (multiple alias tags for same image)_
 
 # Docker Networking
 
-- `docker port <CONTAINER>` List all the exposed port
+## Network Namespaces (Linux)
+When a container is run, it lives inside its own **network namespace**, and has no idea about the network configs(interfaces) of the host. It will have its own routing table and ARP Table,... it has **its own network interface** 
 
+### Creating ns and connecting them...
+
+```sh
+# we create  two network namespaces... 
+ip netns add red
+ip netns add blue
+
+#list the ns
+ip netns
+
+# list the network interfaces on the host (default ns)
+ip link
+# list the network interfaces inside the network namespace
+ip netns exec red ip link # OR...
+ip -n red link
+
+# show the arp table and routing table on the host
+arp
+route
+# show the arp table and routing table inside the network namespace
+ip netns exec red arp
+ip netns exec red route
+```
+
+We now create a `veth` pair (virtual network interface pair) to connect the two namespaces
+```sh
+# create veth pair
+ip link add veth-red type veth peer name veth-blue
+# attach one end to red ns
+ip link set veth-red netns red
+# attach other end to blue ns
+ip link set veth-blue netns blue
+```
+We then set IP addresses to the network interfaces we created on two namespaces
+```sh
+ip -n red addr add 192.168.15.1 dev veth-red
+ip -n blue addr add 192.168.15.2 dev veth-blue
+
+# set the interfaces "UP"
+ip -n red link set veth-red up
+ip -n blue link set veth-blue up
+
+# now they can talk to each other
+ip netns red exec ping 192.168.15.2
+```
+
+
+### Creating ns and connecting them via **Bridge Network** 
+What if you have several namespaces like this ? You need a **network switch** (bridge) 
+
+We create an **internal bridge network**.. It behaves like a **switch**.
+![[docker-17.png]]
+```sh
+ip link add v-net-0 type bridge
+# this shows up in the list of network interfaces
+ip link
+# set the interface "UP"
+ip link set dev v-net-0 up
+```
+We will add all new namespaces to the bridge network, and not connect them to each other as we  did above (cumbersome).
+```sh
+# we delete the old direct connection.
+ip -n red link del veth-red
+# since they are a pair, deleting one end (one n/w interface) automatically deletes the other one (veth-blue)
+
+# create a veth pair
+ip link add veth-red type veth peer name veth-red-br
+# attach one end to red ns
+ip link set veth-red netns red
+# attach another end to bridge network
+ip link set veth-red-br master v-net-0
+
+# create a veth pair
+ip link add veth-blue type veth peer name veth-blue-br
+# attach one end to blue ns
+ip link set veth-blue netns blue
+# attach another end to bridge network
+ip link set veth-blue-br master v-net-0
+```
+We set IP addresses to the network interfaces on both the namespaces..
+```sh
+ip -n red addr add 192.168.15.1 dev veth-red
+ip -n blue addr add 192.168.15.2 dev veth-blue
+
+# set the network interfaces "UP"
+ip -n red link set veth-red up
+ip -n blue link set veth-blue up
+
+# now they can talk to each other
+ip netns red exec ping 192.168.15.2
+```
+ Note that the host cannot ping `192.168.15.1` , the host network interface needs to be "connected" to the bridge network too..
+ We add an IP address to the network interface `v-net-0` (even though its a bridge, its still a network interface.)
+ ```sh
+ ip addr add 192.168.15.5/24 dev v-net-0
+```
+
+As  of now, the network namespaces are completely sandboxed and the only way to the outside world is via the `eth0` network interface on the host.
+
+### Access to the world outside the host
+![[docker-18.png]]
+We need a **Gateway** to the outside world. The host can act as the gateway.. 
+```sh
+# the host has an ip address "192.168.15.5" on the bridge network, so use
+# it as the gateway.
+ip netns exec blue ip route add 192.168.1.0/24 via 192.168.15.5
+```
+![[docker-19.png]]
+You can now ping `192.168.1.3` from the blue namespace, but you dont get any response back **because there is no NAT configured yet**. 
+```sh
+iptables -t nat -A POSTROUTING -s 192.168.5.0/24 -j MASQUERADE
+```
+
+There's no internet connectivity inside these namespaces yet. The host can act as the gateway
+```sh
+ip netns exec blue ip route add default via 192.168.15.5
+```
+
+### Access FROM the outside world
+The outside world cannot yet reach the namespaces...
+There are two options
+- add a routing table rule explaining that the internal namespaces can be reached VIA the host `192.168.1.2`
+- use forwarding via `iptables` 
+
+Adding a port forwarding rule , "any traffic coming to port X on the localhost must be forwarded to port Y on the namespace..."
+```sh
+iptables -t nat -A PREROUTING --dport 80 --to-destination 192.168.15.2:80 -j DNAT
+```
+## Docker Networking
+### `--network=none`
+Absolutely shielded from outside world, and other containers. The container itself cannot reach the outside world. Noone from outside can reach it. The lone container.
+```sh
+docker run --network none nginx
+```
+
+### `--network=host`
+Share the host's network namespace. No new ns is created. 
+
+### Bridge network (default)
+All containers connect to the default bridge network . They get their own internal **private adress** on this **private network**(subnet). 
+The default network is also named "bridge". `docker network ls` will show it. But on the host , `ip link` will show that its name is `docker0` **network interface** . The IP linked to the bridge network is  shown in `ip addr` command (look for `docker0`).  To 
+
+> Internally, it was created with `ip link add docker0 type bridge` command on the host
+
+![[docker-20.png]]
+
+### Network Namespace
+Whenever a container is created, docker creates a **network namespace** for it.  `ip netns` to list the namespaces. When you run `docker inspect <containerid>`, under the "NetworkSettings", you can see "SandboxID" and "SandboxKey" which will refernce this namespace ID shown in `ip netns` output. 
+
+But where are the `veth pairs` which connect the container(namespace) to the bridge network?
+
+`ip link` shows the one end of the veth pair (on the bridge ) as say, `vethbb1c343@if7` . The other end of  the veth pair ( on the ns ) can be seen with `ip -n <nsID> link` as `eth0@if8` for example.
+
+The IP address of the interface on the ns (or the iP of the container) can be viewed by `ip -n <nsID> addr` . The address under `eth0@if8` would be the IP address of the container.
+![[docker-21.png]]
+But how does traffic intended for a container reach it via the host? There should be an `iptable` forwarding rule...
+```sh
+iptables -t nat -A PREROUTING -j DNAT --dport 8080 --to-destination 80
+```
+But docker uses a special "DOCKER" type instead of PREROUTING
+```sh
+iptables -t nat -A DOCKER -j DNAT --dport 8080 --to-destination 172.17.0.3:80
+```
+
+See the entire list of routing
+```sh
+iptables -nvL -t nat
+```
+
+### Simple Docker Networking usecases 
+
+- `docker port <CONTAINER>` List all the exposed port
 - Each container is connected to a private virtual n/w "bridge".
 - Each virtual n/w routes through NAT firewall on host IP
 - All containers on a virtual network can talk to each other without -p !!!
@@ -576,26 +754,60 @@ This will be explained in detail in swarm section
 - Its a "bridge" network across nodes
 ![](https://blog.octo.com/wp-content/uploads/2017/08/bridge-overlay.png)
 
-# Docker Volumes
+# Docker Storage & Volumes
+
+- **Storage Drivers** [..read more]([About storage drivers | Docker Documentation](https://docs.docker.com/storage/storagedriver/))
+	- They take care of how to store images,containers in their select formats.
+	- How to write data to the top-most "container layer" which is writable in the container.
+		- Ideallly the container should write to volumes (see volume drivers ), but there are a lot of /tmp files and other files being written on the top-most "container layer".
+	- **Volumes are NOT handled by Storage Drivers**
+	- eg: AUFS, ZFS, BTRFS, Overlay, Overlay2, Device-Mapper
+	- `Overlay2` is the current default.
+	- Docker will choose the best available storage driver depending on the OS.
+- **Volume Drivers** (Plugins)
+	- Volumes are handled by Volume Driver Plugins
+	- eg: Local, AzureFileStorage, Convoy, DigitalOceanBlockStorage, Flocker, NetApp, Portworx, Flocker, RexRay(for AWS EBS)
+	- `Local` : is the default volume driver. Manages creating and storing data in `/var/lib/docker/volumes`. Most used.
+	
 
 ## Container Lifetime & Persistent Data
+Containers are immutable and ephemeral, disposable
+> Why ? 
+> Separation of concerns. The application in container should not be concerned about persistence.
 
-- Containers are immutable and ephemeral
-- "immutable infrastructure": re-deploy containers; containers never change;
-- unchanging, temporary, disposable
+### How does Docker store data ? (on the host machine)
+On the host machine, `/var/lib/docker` is where docker stores all data
+- `/var/lib/docker`
+	- `/aufs`
+	- `/containers`
+	- `/image`
+	- `/volumes`
 
-Why ? :=> Separation of concerns
+In docker, when the container is "started"(run), it adds a new _writable layer_ on top of the read only layers of the image. Every file created or modified by the container is written to this top most layer only.
+> **Info**
+> If container tries to modify a file in the read-only layers (say /usr/bin/xyz) then a copy of this file would be made and placed in the read-write topmost layer...and then modified.
+> This is called **copy-on-write** 
+![[docker-15.png]]
 
-- The application in docker shouldnt be concerned about persistence
+If the container is deleted, this topmost layer(read-write) is totally lost.
+What if you wanted the data to live beyond the lifetime of the container?
 
-### What about persistence, DB , key value stores?
+### How to "outlive" the container? Volumes
 
-How to "outlive" the container?
+1. **Volumes**  (_You dont care where the data lives in the host machine_)(_clean slate_)
+2. **Bind Mounts**  (_You know exactly where the data lives in the host machine_)(_You already have some data on the host machine that you want to **mount** on to the container._)
 
-1. Volumes  
-2. Bind Mounts
+#### Volumes
+You can first create a **Volume** , and then mount it. The volume would live on the host machine at `/var/lib/docker/volumes` . If you created a **Volume** called `my-volume` , it would be at `/var/lib/docker/volumes/my-volume`. 
+```bash
+docker volume create my-volume
+docker run -v my-volume:/var/lib/mysql mysql
+```
 
-Volumes
+You don't have to explicitly create the volume, using the `-v` flag with the volume name will create it automatically
+```bash
+docker run -v my-volume-2:/var/lib/mysql mysql
+```
 
 - Special location outside of container UFS(Union File System)
 - `docker volume inspect`
@@ -609,7 +821,7 @@ Volumes
 
 - Lets say you have to upgrade your postgres, but keep your data.
 
-    ```
+    ```shell
     $ docker run -d --name psql1 -v psql-volume:/var/lib/postgresql/data postgres:9.6.1
 
     //Now check the logs of psql1 container. pretty huge ?
@@ -621,7 +833,11 @@ Volumes
     // now check the logs of psql2 container. Logs are smaller. This is because it is using the old data volume
     ```
 
-Bind Mounts
+#### Bind Mounts
+When you already have some data on your host machine, and want to mount it to the container, you use bind mounts. You specify directly the path on the host, instead of the volume name.
+```bash
+docker run -v /home/dhirajbhakta/Development/somedir:/var/lib/mysql mysql
+```
 ![](https://docs.docker.com/storage/images/types-of-mounts-bind.png)
 
  _**very useful for local development**_
@@ -951,7 +1167,7 @@ This is because of the **Global Traffic Router** or the **Swarm Routing Mesh**  
 
 ### `docker stack services <stack name>`
 
-Its OKAY
+
 
 # Orchestration -- Kubernetes
 
@@ -1030,12 +1246,18 @@ eg : `docker tag minas-morgul localhost:5000/minas-morgul`
 do you want to have the containers in /home/youruser, then you can create /home/youruser, cp /var/lib/docker to /home/youruser/ (with --preserve=ownership), remove /var/lib/docker and symlink /home/youruser/docker to /var/lib/
 ```
 
-![](https://www.tutorialworks.com/assets/images/container-ecosystem.drawio.png)
+# Container Ecosystem - CRI, CNI, CSI, ...OCI
+Especially due to Kubernetes, "interface specifications" or "standards" were developed for Container Runtimes, Networking Solutions, Storage Solutions... so that multiple players can contribute, not just Docker & co.
 
+![](https://www.tutorialworks.com/assets/images/container-ecosystem.drawio.png)
+![[docker-16.png]]
 ### CNI ? - Container Network Interface
 
 - creates a network namespace
 - deletes network namespaces
+
+### CSI ? - Container Storage Interface
+Multiple vendors already provide cloud native storage solutions. AWS EBS, EFS, AzureDisk, Google's block storage and so on. To allow K8s (or any container runtime) to use these solutions to create and mount volumes, you would need appropriate **CSI Plugin** , eg: [AWS EBS CSI Driver]([Amazon EBS CSI driver - Amazon EKS](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html))
 
 ### CRI ? - Container Runtime Interface
 

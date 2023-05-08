@@ -13,19 +13,31 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "FLEETING_NOTES/Docker_and_Kubernetes/EKS.md",
+                "file": "FLEETING_NOTES/Docker_and_Kubernetes/docker.md",
                 "mode": "source",
                 "source": false
               }
             }
           },
           {
-            "id": "a657f7b2327c9a43",
+            "id": "feb13dd3a71af90b",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "PERMANENT_NOTES/programmatically fetch current ec2 pricing.md",
+                "file": "FLEETING_NOTES/Docker_and_Kubernetes/kubernetes.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "adb6fee6d8eb427f",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "FLEETING_NOTES/Operating_Systems/linux.md",
                 "mode": "source",
                 "source": false
               }
@@ -60,7 +72,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "",
+                "query": "tag:#Scheduling",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -76,12 +88,20 @@
               "type": "starred",
               "state": {}
             }
+          },
+          {
+            "id": "ec213699ab333ff0",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {}
+            }
           }
         ]
       }
     ],
     "direction": "horizontal",
-    "width": 200
+    "width": 329.5
   },
   "right": {
     "id": "6868528d1830efe9",
@@ -97,7 +117,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "FLEETING_NOTES/Docker_and_Kubernetes/EKS.md",
+                "file": "FLEETING_NOTES/Docker_and_Kubernetes/docker.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -114,7 +134,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "FLEETING_NOTES/Docker_and_Kubernetes/EKS.md",
+                "file": "FLEETING_NOTES/Docker_and_Kubernetes/docker.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -126,7 +146,7 @@
             "state": {
               "type": "tag",
               "state": {
-                "sortOrder": "frequency",
+                "sortOrder": "alphabetical",
                 "useHierarchy": true
               }
             }
@@ -137,17 +157,16 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "FLEETING_NOTES/Docker_and_Kubernetes/EKS.md"
+                "file": "FLEETING_NOTES/Docker_and_Kubernetes/docker.md"
               }
             }
           }
         ],
-        "currentTab": 2
+        "currentTab": 3
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -161,7 +180,34 @@
   },
   "active": "9b2847908787bd6d",
   "lastOpenFiles": [
+    "FLEETING_NOTES/Docker_and_Kubernetes/kubernetes.md",
+    "FLEETING_NOTES/assets/kube-58.png",
+    "FLEETING_NOTES/assets/Pasted image 20230507234732.png",
+    "FLEETING_NOTES/Docker_and_Kubernetes/docker.md",
+    "FLEETING_NOTES/assets/docker-21.png",
+    "FLEETING_NOTES/assets/docker-20.png",
+    "FLEETING_NOTES/assets/docker-19.png",
+    "FLEETING_NOTES/assets/docker-18.png",
+    "FLEETING_NOTES/assets/docker-17.png",
+    "FLEETING_NOTES/Operating_Systems/linux.md",
+    "FLEETING_NOTES/assets/kube-57.png",
+    "FLEETING_NOTES/assets/kube-56.png",
+    "FLEETING_NOTES/assets/docker-16.png",
+    "FLEETING_NOTES/Cryptography/PKI.md",
+    "FLEETING_NOTES/Cryptography/RSA.md",
+    "FLEETING_NOTES/Econonomics/vc.md",
+    "FLEETING_NOTES/Untitled.canvas",
+    "FLEETING_NOTES/Untitled.md",
+    "FLEETING_NOTES/Econonomics/bitcoin standard.md",
+    "FLEETING_NOTES/Docker_and_Kubernetes/k8s_the_hard_way.md",
+    "FLEETING_NOTES/Econonomics",
+    "FLEETING_NOTES/general/NoteTaking.md",
     "PERMANENT_NOTES/programmatically fetch current ec2 pricing.md",
+    "FLEETING_NOTES/obsolutely_miscellaneous/unfuck_yourself.md",
+    "FLEETING_NOTES/obsolutely_miscellaneous/productivity.md",
+    "FLEETING_NOTES/obsolutely_miscellaneous/gita.md",
+    "FLEETING_NOTES/obsolutely_miscellaneous/eat_that_frog.md",
+    "FLEETING_NOTES/obsolutely_miscellaneous",
     "FLEETING_NOTES/Docker_and_Kubernetes/EKS.md",
     "PERMANENT_NOTES/README.md",
     "PERMANENT_NOTES",
@@ -175,39 +221,11 @@
     "FLEETING_NOTES/rust/general.md",
     "FLEETING_NOTES/rust",
     "FLEETING_NOTES/python/web_servers.md",
-    "FLEETING_NOTES/python/streams.md",
-    "FLEETING_NOTES/python/python.md",
-    "FLEETING_NOTES/python/logging.md",
-    "FLEETING_NOTES/python/flask.md",
-    "FLEETING_NOTES/python/celery.md",
     "FLEETING_NOTES/python",
-    "FLEETING_NOTES/proxy.md",
-    "FLEETING_NOTES/prometheus.md",
-    "FLEETING_NOTES/payments.md",
-    "FLEETING_NOTES/nginx.md",
-    "FLEETING_NOTES/networking/webrtc.md",
-    "FLEETING_NOTES/networking/tcpdump.md",
-    "FLEETING_NOTES/networking/networking.md",
     "FLEETING_NOTES/networking",
-    "FLEETING_NOTES/microservices.md",
     "FLEETING_NOTES/lesson_3_reflections",
     "FLEETING_NOTES/lesson_2_reflections.txt",
     "FLEETING_NOTES/lesson_1_reflections.txt",
-    "FLEETING_NOTES/ldap.md",
-    "FLEETING_NOTES/jupyter.md",
-    "FLEETING_NOTES/general",
-    "FLEETING_NOTES/excel",
-    "FLEETING_NOTES/assets/wsgi-01.png",
-    "FLEETING_NOTES/assets/vlan-01.png",
-    "FLEETING_NOTES/assets/ts-02.png",
-    "FLEETING_NOTES/assets/ts-01.png",
-    "FLEETING_NOTES/assets/temporal.png",
-    "FLEETING_NOTES/assets/temporal.jpg",
-    "FLEETING_NOTES/assets/temporal-86.png",
-    "FLEETING_NOTES/assets/temporal-85.png",
-    "FLEETING_NOTES/assets/temporal-84.png",
-    "FLEETING_NOTES/assets/temporal-83.png",
-    "FLEETING_NOTES/Untitled.canvas",
     "Untitled.canvas"
   ]
 }
