@@ -1,0 +1,1 @@
+Files with "INDEX-" prefix are the entry points.

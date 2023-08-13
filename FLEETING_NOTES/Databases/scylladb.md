@@ -1,7 +1,3 @@
-## Prerequisites
-- Cassandra Architecture
-- Dynamodb Architecture 
-
 ## What is ScyllaDB
 - Real time big-data DB
 - Drop in replacement for Cassandra and Dynamodb
@@ -15,5 +11,39 @@
     - Throughput 10X higher than Cassandra
     - Linear scalability to many-core machines
     - Focussed on modern fast SSDs
+
+## ScyllaDB Architecture
+- distributed concepts derived from cassandra
+- cassandra in-turn derived distributed concepts from DynamoDB... and data modelling concepts from BigTable.
+
+#### Node
+
+#### Shard 
+
+#### Partition
+A Partition is a subset of Data .
+Partition Key is the unique identifier for a partition. Hash of partitionKey = Token. 
+
+
+#### Ring
+Scylla cluster = nodes visualised as a RING. 
+
+#### Token/Token-Range
+Token = hashed primary key. 
+A Token identifies both node and the partition. 
+
+
+#### Shared-Nothing Architecture
+
+#### Keyspaces
+Keyspaces are collection of tables. You define `replicationFactor` at the Keyspace level. "Keyspace" is analogous to "Database" in RDBMS.
+
+#### Partition Key & Clustering Key 
+Partition Key uniquely identifies a partition. 
+
+#### Joins are impossible 
+TODO
+
+
 
 

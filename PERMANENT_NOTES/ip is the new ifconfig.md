@@ -1,0 +1,3 @@
+`ifconfig` is deprecated. Use `ip addr` and `ip link` henceforth... 
+
+## `ip link` 

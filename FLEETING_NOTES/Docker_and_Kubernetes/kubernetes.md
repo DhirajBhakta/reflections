@@ -20,7 +20,7 @@ You just want to _define_ the application in a YAML file (manifest), and let Kub
 
 **K8s' Job** -> Make sure `CURRENT STATE == DESIRED STATE` ( a self healing app ). It figures out HOW to make it happen.
 
-# Course Objectives
+### List of (core)Topics
 - Core Concepts
     - Kubernetes architecture
     - Create and configure Pods
@@ -49,30 +49,7 @@ You just want to _define_ the application in a YAML file (manifest), and let Kub
     - Persistent Volume Claims
 
 
-# Terminologies [brief]
-- Container Orchestrator
-- Kubernetes "objects"
-- Kubernetes "controller"
-- Pods
-- Labels and Annotations
-- Services
-- Ingress
-- ReplicaSets
-- Deployments
-- DaemonSets
-- Jobs
-- ConfigMaps
-- Secrets
-- Kubernetes "operator"
-- RBAC
-- Service Mesh
-- Persistent Volume 
-- Persistent Volume Claim
-
-
-
-## Container Orchestrator
-
+### Container Orchestrator
 - You have many nodes
 - You want to run your "service(s)" on all those nodes, with replicas of each service
 - container orchestration is the automation of much of the operational effort required to run containerized workloads and services.
@@ -265,7 +242,7 @@ What happens behind the scenes?
 	- The **kubelet** creates the container using the **container runtime engine** installed on the node, and then updates the **API server**  that container(pod) is created.
 	- The **API server** updates the data back in **etcd** 
   
-## Kubernetes API?
+### Kubernetes API?
 
 Everything contained in Kubernetes is represented by a RESTful resource. Each Kubernetes object exists at a unique HTTP path, eg: `https://your-k8s.com/api/v1/namespaces/default/pods/mypod` leads to the representation of a Pod in the default namespace named `mypod`.
 
@@ -287,7 +264,7 @@ output a particular field? `-o jsonpath --template{.status.podIP}`
 kubectl get pods my-pod -o jsonpath --template={.status.podIP}
 ```
 
-## Docker vs Containerd ... in brief
+### Docker vs Containerd ... in brief
 Docker was the de-facto king earlier in Kubernetes. Other container runtimes became popular, and wanted to be integrated into k8s. 
 So K8s created an "interface" called CRI - Container Runtime Interface, which adheres to OCI's standards (ImageSpec and RuntimeSpec).
 But docker did not support CRI interface, and K8s had to support docker (legacy) via **dockershim**. 
@@ -303,21 +280,46 @@ Maintaining dockershim was an unnecessary headache so starting v1.24, K8s deprec
 
 _**tldr; you need to get familiar with `crictl` since docker is gone**_
 
-# ETCD
+# ETCD 
+_port: 2379_
+
 What is etcd? What is a Key-value Store? how is it different from a DB? How does it work?
 - Every info you see from `kubectl get ..` is coming from etcd.
-- etcd stores info of all resources, incl nodes, pods, svcs, secrets, configmaps, accounts, roles, bindings..
+- etcd stores info of all resources, incl nodes, pods, svcs, secrets, configmaps, accounts, roles, bindings.
+- etcd is distributed. You can write/read on any etcd node.
 
 `etcdctl` is the command line tool for etcd.
 
 ```shell
-etcdctl set key1 value1
+# important!
+export ETCDCTL_API=3
+
+etcdctl put key1 value1
 
 etcdctl get key1
+
+# to get all keys
+etcdctl et / --prefix --keys-only 
 ```
-- distributed system
-- RAFT protocol
-- 
+
+> **Note**
+> It is a good practice to host etcd in a separate pool of nodes, away from other kubernetes control plane components.
+
+## Consistency Guarantees
+You can read from any etcd node and you are guaranteed to get the same value.
+You can write to any etcd node, and it will go **through the leader** node..The leader ensures copies are distributed to other nodes too. The write is considered "complete" if the leader gets ACKs from (majority of) all other nodes in the etcd cluster.
+
+### Leader Election - RAFT Protocol
+All nodes start a random timer, the first one whose timer times out will ask for votes from the other nodes to be the leader.
+The leader sends notifications to other nodes at regular intervals saying "im alive!". if any node fails to get this notification, it will kickoff the leader election process again... 
+
+### How many etcd nodes? = 3,5,7...
+//TODO: [ ] Explain "Quorum" [What is quorum in distributed systems? (educative.io)](https://www.educative.io/answers/what-is-quorum-in-distributed-systems) 
+- **Atleast 3**. For Quorum.
+- **Odd number of nodes** to guarantee quorum in the network paritions if it happens..
+
+
+
 
 
 # Kubernetes Resources (Objects)
@@ -766,7 +768,19 @@ spec:
 - Mainly to allow architectural changes in future 
 ca- You might want to have multi-contianer pods
 
-#### * [What exactly is a Pod? Is a pod implemented as a container? A container running more containers inside?](https://iximiuz.com/en/posts/containers-vs-pods/)
+#### What should I put in a Pod?
+
+You shouldnt place a Wordpress container and a MySQL container in a singe Pod. Why? because you wouldnt want to scale them together as a unit lol!!
+
+The right question to be asked is "Will these containers work correctly if they land on different machines?". If the answer is "No", then place both containers in the same Pod.
+
+#### Pod Manifests
+
+The yaml declarative configs - definition of the Pod
+
+The Kubernetes API server accepts and processes Pod manifests before storing them in persistent Storage(etcd). The Scheduler also uses the Kubernetes API to find Pods that haven't been scheduled to a node. The scheduler then places the Pods onto nodes depending on the resources and other constraints mentioned in the Pod manifest.
+
+####  [What exactly is a Pod? Is a pod implemented as a container? A container running more containers inside?](https://iximiuz.com/en/posts/containers-vs-pods/)
 
 
 
@@ -996,7 +1010,7 @@ This problem is again solved via `iptables`. The packet reaches one of the nodes
 
 ![](../assets/kube-36.png)
 
-### ⛳️ `Ingress`
+### ⛳️ `Ingress` & `IngressController`
 
 ![](../assets/kube-27.png)
 
@@ -1006,19 +1020,55 @@ Motivation:
 - Even if you use a proxy infront of the LBs, you need to configure them everytime for routes
 - SSL
 
-Without Ingress, you would use
-- Nginx | Traefik | HAProxy
+Without Ingress, you would use Reverse Proxies like...
+- GCE LB | Nginx | Traefik | HAProxy | AWS ALB
 - configure the routes
+- configure SSL certificates
 
 Kubernetes implementes Ingress in the same way! The solution (Nginx | Traefik | HAProxy) are called **Ingress Controllers** and the configurations needed are called **Ingress Resources**
 - it creates a separate namespace for ingress
 - it creates an nginx deployment
 - it creates a nodeport service
-- it creates a serviceaccount
+- it creates a ConfigMap to feed in configurations to say Nginx Load Balancer.
+- it creates a serviceaccount with corrent Roles and RoleBindings. (needs this to gain permissions to rewrite rules on another service "Nginx" here.)
+Ingress Controllers are NOT Load Balancers. They _associate_ to a LoadBalancer. They have additional intelligence to listen to new **Ingress** resources being created and re-write the routing rules on the load balancer.
+
+>**Warning**
+>A K8s cluster does NOT come with an IngressController by default.
+>Set it up manually.
 
 ![](../assets/kube-29.png)
 
 ![](../assets/kube-01.jpg)
+
+#### Deploying an Ingress Controller (nginx)
+```bash
+# create a ns
+kubectl create ns ingress-nginx
+# create an empty configmap
+kubectl create cm ingress-nginx-controller -n ingress-nginx
+# create 2 serviceaccounts
+kubectl create sa ingress-nginx -n ingress-nginx
+kubectl create sa ingress-nginx-admission -n ingress-nginx
+# Create Roles, RoleBindings, ClusterRoles, ClusterRoleBindings
+...
+# Create a Deployment with name="ingress-controller" with image=nginx
+...
+# Create a Service to expose the Deployment
+kubectl expose deploy ingress-controller -n ingress-nginx --name ingress-svc --port=80 --targetPort=80 --type NodePort
+```
+#### Splitting routes by domain name, Splitting routes by path...
+As Demonstrated below, the routing can be
+- Same domain.. different paths
+	- https://my-domain.co/wear
+	- https://my-domain.co/watch
+	- http://my-domain.co/shop
+- Different domains
+	- https://wear.my-domain.co
+	- https://watch.my-domain.co
+	- https://shop.my-domain.co
+- Combination of above two.
+	- ...
 
 ```yaml
 apiVersion: networking.k8s.io/v1
@@ -1034,6 +1084,7 @@ spec:
 
 ```
 
+Splitting routes by path (in the same domain name)
 ```yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -1058,6 +1109,7 @@ spec:
 
 ```
 
+Splitting routes by domain name.. (Each of these _could_ have had multiple routes too )
 ```yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -1094,25 +1146,76 @@ kubectl create ingress ingress-test --rule="wear.myonlinestore.com/wear*=wear-se
 
 ```
 
-#### What is `rewrite-target` option  in Ingress?
+>**Note**
+>**Ingress** is associated with a **Layer 7 Load Balancer**.
 
+>**Warning**
+>Remember to set `default-backend` for Ingress. By deploying a separate service which hosts the content for 404 page for example.
+
+
+#### What is `rewrite-target` option  in Ingress?
+Say you want to route https://mydomain.co/wear to _wear-service_ and https://mydomain.co/watch to _watch-service_. But the applications behind those services dont handle such routes "/wear" or "/watch". Is such cases you must "rewrite-target" on the Load Balancer.
+
+`http://<ingress-service>:<ingress-port>/watch` --> `http://<watch-service>:<port>/`
+
+`http://<ingress-service>:<ingress-port>/wear` --> `http://<wear-service>:<port>/`
+
+`replace(path,rewrite-target)`
+examples: `replace(/pay, /)`
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+	name: test-ingress
+	namespace: critical-space
+	annotations: 
+		nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+ rules:
+  - http:
+		paths:
+		  - path: /pay
+		    backend:
+				service
+					name: pay-service
+					port
+					  number: 8282
+```
+
+examples: `replace("/something(/|$)(.*)", "/$2")`
+- https://mydomain-co/something rewrites to https://mydomain-co
+- https://mydomain-co/something/ rewrites to https://mydomain-co
+- https://mydomain-co/something/new rewrites to https://mydomain-co/new
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+	name: test-ingress
+	namespace: critical-space
+	annotations: 
+		nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+ rules:
+  - http:
+		paths:
+		  - path: /something(/|$).(.*)
+		    backend:
+				service
+					name: pay-service
+					port
+					  number: 8282
+
+```
 
 ##### Why bother with pods? Why doesnt Kubernetes handle the containers directly (bypassing the pods)?
 
 Kubernetes doesn't really run containers - it passes the responsibility for that onto the container runtime installed on the node, which could be Docker or containerd or something more exotic. **That's why the pod is an abstraction**, it’s the resource which Kubernetes manages whereas the container is managed by something outside of Kubernetes.
 
-#### What should I put in a Pod?
 
-You shouldnt place a Wordpress container and a MySQL container in a singe Pod. Why? because you wouldnt want to scale them together as a unit lol!!
 
-The right question to be asked is "Will these containers work correctly if they land on different machines?". If the answer is "No", then place both containers in the same Pod.
+### ⛳️ `Ingress Controller`
 
-#### Pod Manifests
-
-The yaml declarative configs - definition of the Pod
-
-The Kubernetes API server accepts and processes Pod manifests before storing them in persistent Storage(etcd). The Scheduler also uses the Kubernetes API to find Pods that haven't been scheduled to a node. The scheduler then places the Pods onto nodes depending on the resources and other constraints mentioned in the Pod manifest.
-
+Fulfills the routing rules defined by `Ingress`
 ### ⛳️ `Deployment`
 
 Its a "Controller" for managing `Pods`.A deployment’s primary purpose is to declare how many replicas of a pod should be running at a time. When a deployment is added to the cluster, it will automatically spin up the requested number of pods, and then monitor them. If a pod dies, the deployment will automatically re-create it.Using a deployment, you don’t have to deal with pods manually. You can just declare the desired state of the system, and it will be managed for you automatically.
@@ -1328,9 +1431,7 @@ spec:
 			backoffLimit: 4
 ```
 
-### ⛳️ `Ingress Controller`
 
-Fulfills the routing rules defined by `Ingress`
 
 ### ⛳️ `ConfigMap and Secrets`
 
@@ -1945,6 +2046,7 @@ spec:
 ```
 and then send a POST request with the Binding object in json form to `https://$SERVER/api/v1/namespaces/default/pods/$PODNAME/binding/`
 
+The above things, can be viewed in another way. The Scheduler does its job by first filtering out pods which already have nodeName property set. For rest of the pods, it will choose the nodes where they must be run.
 
 ### Taints and Tolerations
 **_Prevent pod(s) from being scheduled on a given node_**
@@ -2033,6 +2135,35 @@ spec:
 
 
 
+
+### Custom Scheduler(s)
+For each new scheduler you want to run, you need to run the same `kube-scheduler` binary(or pod) with a different config file. 
+```sh
+kube-scheduler \
+   --config=/etc/kubernetes/my-scheduler-config.yaml
+   ...
+```
+Prior to this, you do need to create ServiceAccount, ClusterRole, ClusterRoleBinding .
+
+To use this scheduler, specify the `schedulerName` in the Pod's spec. 
+```yaml
+apiVersion: v1
+kind: Pod
+metadata: 
+   name: nginxpod
+spec:
+   schedulerName: my-custom-scheduler # name of the scheduler pod
+   containers:
+       - image: nginx
+         name: nginx
+  
+```
+
+To verify that your pod was scheduled by your new scheduler, check the events. `kubectl get events -o wide`. You can also view the logs of the scheduler pod.
+
+>**Warning**
+>Running multiple schedulers (multiple instances of the same binary), would cause race conditions in scheduling the same pod. So with +1.18 K8s, you can **specify multiple scheduler profiles in the same scheduler**. 
+
 ## Networking
 - **Prerequisite**: Read [[linux]] section on **Linux Networking** and **DNS** .
 - **Prerequesite**: Read [[docker]] section on **Networking** .
@@ -2048,8 +2179,7 @@ All of these have IP address
 ![](../assets/kube-39.png)
 ![](../assets/kube-40.png)
 
-### CoreDNS
-CoreDNS is a DNS Server. 
+
 
 ### Docker...networking...
 ![](../assets/kube-41.png)
@@ -2114,7 +2244,7 @@ All container runtimes use networking solutions that essentially do the same thi
 - Assign IP adddresses to veth
 - Bring up the interfaces(veth and bridge)
 - Enable NAT (via IP Masquerading in `iptables`)
-![[Pasted image 20230507234732.png]]
+![[kube-60.png]]
 Assume you built a program which does all of the above for **your container runtime solution**. You call it `bridge`. It can be executed as follows, to add a container to a namespace.
 ```sh
 bridge add <containerId> /var/run/netns/<nsID>
@@ -2151,6 +2281,99 @@ Worker
 - Services...: 30000 - 32767
 ![[kube-58.png]]
 
+### Networking at Pod level
+
+**PreRequisite**: [[docker]] section on **Docker Networking** and **Linux Namespaces**. 
+How do Pods reach each other internally? How does external world reach the Pods ? These are the problems that Kubernetes **expects you to solve**. Kubernetes does NOT come with a built in solution for this but specifies the interface..so that you can implement a **Networking Solution** (eg: Flannel, Calico, Weave-net)
+![[kube-59.png]]
+
+Requirements for Pod Networking as laid out by Kubernetes as a "Spec"
+- Every Pod **should have an IP Address**
+- Every Pod should be able to talk to every other Pod on the **same Node**
+- Every Pod should be able to talk to every other Pod on **other Nodes ,without NAT**. 
+
+This **Networking Solution** say Calico, does the very same things discussed in [[docker#Docker Networking]] . We also stressed this fact in [[#CNI]] Section above, that all **Networking Solutions** pretty much do the same things that you do in vanilla linux to wire up networks.
+![[kube-61.png]]
+
+Here is a sample setup.
+![[kube-62.png]]
+- Your nodes are on 192.168.1.0/24 network, each of them has an IP address.
+- Each Pod in every Node has a network namespace created for it.
+- Each Node creates a **bridge network** and brings it "UP". Each **bridge network** will be its own **subnet**. say 3 bridge n/ws with 10.244.1.0/24 , 10,244.2.0/24, 10.244.3.0/24.
+- We set the IP address to the bridge interface.
+- Remaining steps are to be created for every new container created , so we write a script for it (**this is essentially the CNI plugin**).
+	- All the network namespaces within a given node are connected to this bridge network by creating `veth` pairs (one side lies in the namespace, other side lies on the bridge)
+	- We set IP address to the network interfaces (one side of the veth pair lying on the namespace)
+	- We add a route to the default gateway.
+	- Bring "UP" the interface.
+	- ![[kube-68.png]]
+
+We managed to get the pods to talk to each other **within a node**. What about pods in other nodes ?
+- For every pod, we could use its host node as a gateway. i.e, you add a route to the other pod on other node via the other node the other pod sits on.  Run this on the host node1: `ip route add 10.244.2.2 via 192.168.1.12 `
+- ^ This gets cumbersome when number of pods increase . Instead you could use a router. (_collect all this routing information and put them on a single machine which acts as a dedicated router_). All nodes then will have their default routes set to the router.
+- Note that this is just one simple way to achieve pod networking. But in reality, it is offloaded to a pod networking solution like weave, flannel , calico. Weave, for eg, creates its own bridge network and keeps the containers on this bridge.
+
+Whats the takeaway?
+The CNI plugin would called everytime a Pod is created to handle most of the above tasks. And even for cleanup when the Pod is kiled.
+
+Its the **Kubelet** that creates the Pods. So **Kubelet** must call the CNI Plugin. kubelet is started with an option `--network-plugin=cni` and  `--cni-conf-dir=/etc/cni/net.d`  and `--cni-bin-dir=/etc/cni/bin` which specify the "program directory" and its configuration directory. The kubelet then simply calls `bridge add <containerId> <nsId>`.  Here `bridge` is just one of the CNI plugins in the /etc/cni/bin directory.
+
+> You rarely get the Pods to talk to each other. You allow them to communicate via services. See **Service Networking** section below...
+
+
+
+### IPAM (IP Address Management)
+Who assigns IP addresses to Pods and when ..?
+its the job of the CNI. it does it via host-local or dhcp plugins. The is configured in `/etc/cni/net.d/net-script.conf` under the IPAM section. 
+![[kube-69.png]]
+
+### Service Networking
+How services(ClusterIP, NodePort..) get IP addresses, and how they are visible throughout the cluster, and how NodePort is accessible via a port on the node ? . ...**kube-proxy** makes this happen.
+![[kube-63.png]]
+Every Node has a **kube-proxy** running on it(daemonset) and it listens to **kube-apiserver** to know if a new service is created . **kube-proxy** adds a new forwarding rule  on every node's `iptables` to forward requests to the Pod if the service-ip was hit.
+```
+iptables -L -t nat | grep "<service-name>"
+```
+You could also check the logs of **kube-proxy** to see what forwarding rules it creates for new services...
+```
+cat /var/log/kube-proxy.log
+```
+![[kube-64.png]]
+
+>**Note**
+>**"Services" are a Cluster-wide concept.** They dont belong to any specific node. cas they dont really "exist" as a Pod or something. There is no "server" or "application" listening on the service-port.
+
+> **Note**
+> `iptables` is just one way of doing things for **kube-proxy**. It could have used either of `iptables`, `userspace` or `ipvs` . The `--proxy-mode` option on **kube-proxy**'s startup command is used to specify this. default is `iptables`
+
+>**Nore**
+> The IP address assigned to the services comes from a range specified in the **kube-apiserver** startup command .. `--service-cluster-ip-range` . default is 10.0.0.0/24
+
+
+### DNS &  CoreDNS
+CoreDNS is a DNS Server. 
+
+How are these entries made?
+- Service DNS records.
+- Pod DNS records
+
+For Services...
+`web-service.apps.svc.cluster.local`.. 
+`<servicename>.<namespacename>.svc.cluster.local`
+
+For Pods...
+`10-244-2-5.apps.pod.cluster.local`
+`<pod-ip-with-dashes>.<namespacename>.svc.cluster.local`
+
+![[kube-70.jpeg]]
+
+> **Note**
+> `cluster.local` is the root domain.
+
+>**Warning**
+>DNS records are not enabled for Pods by default.
+
+These DNS records are stored in the DB by the coredns Pods, exposed via a service called `kube-dns` . This service has an IP and that IP should be present in the /etc/resolv.conf of all the pods. Who populates it though? Its the kubelet. check the config file of kubelet in `/var/lib/kubelet/config.yaml` under the section called "clusterDNS"... the IP would be the IP of the `kube-dns` service.
 
 ## Other things....
 
@@ -2406,24 +2629,251 @@ curl https://kube-master:6443 -k \
      --cacert adminca.crt
 ```
 Alternatively, `kubectl proxy` will start a "server" on localhost and uses the credentials from your kubeconfig, so you dont have to pass certs and keys everytime like above.
+
+# `kubectl`
+`kubectl` talks to `kube-apiserver` in JSON for GET and POST requests...
+
+To inspect the output in json format `-o json`
+```sh
+kubectl get pods -o json
+kubectl get nodes -o json
+```
+
+
+## JSONPath 
+### Vanilla JsonPath (without k8s)
+]]...**The root element is "$"**... hence the right path for `vehicles.car.color` is actually ` $.vehicles.car.color` and if the entire JSON is a list then `[0].color` is actually ` $[0].color`
+
+]]... The output of all JSONPath queries is always an ARRAY. so expect the output in `[ ... ]`
+
+]]... You can also put conditions..or Criteria...
+- if conditions are represended by `?(...)`
+- Every item iterated is represented by `@`
+eg:  `$[?(@>40)]` will filter a json array of numbers to get only the numbers greater than 40. 
+Other conditions are  `@ == 40`, or `@ != 40` , or `@ in [40,41,42]` or `@ nin [40,41,42]` 
+
+Concrete example `$.car.wheels[?(@.location == "rear-right")].model` ..or `$.prizes[*].laureates[?(@.firstname == "Malala")]`
+
+]]... "\*" **wildcard is for ANY or ALL**  ... `$.bus.wheels[*].model` or `$.*.wheels[*].model`
+
+]].. List. Multiple indices... `$[0,3]` ..for range you have... `$[0:4]` for range and SKIP(HOP) you have...`$[0:10:2` shows every alternate value
+
+
+
+
+Filter and Format the output of kubectl as you like..
+
+```sh
+kubectl get pods -o jsonpath='{.items[0].spec.containers[0].image}'
+```
+
+
+
+Use "[\*]" for ALL...
+```sh
+# get names of ALL nodes
+kubectl get nodes -o jsonpath='{.items[*].metadata.name}'
+# get h/w arch of ALL nodes
+kubectl get nodes -o jsonpath='{.items[*].status.nodeInfo.architecture}'
+# get CPU of ALL nodes
+kubectl get nodes -o jsonpath='{.items[*].status.capacity.cpu}'
+```
+
+Combine results "{...}{\n}{...}"
+```sh
+kubectl get nodes -o jsonpath='{.items[*].metadata.name}{.items[*].status.capacity.cpu}'
+
+# or add \n or \t between them
+kubectl get nodes -o jsonpath='{.items[*].metadata.name}{"\n"}{.items[*].status.capacity.cpu}'
+kubectl get nodes -o jsonpath='{.items[*].metadata.name}{"\t"}{.items[*].status.capacity.cpu}'
+```
+
+For Loops..
+Lets say you want to..
+```sh
+FOR each NODE,
+   PRINT nodename, cpucount
+END
+
+# in json path it would be
+{range .items[*]}
+   {.metadata.name}{"\t"}{.status.capacity.cpu}{"\n"}
+{end}
+```
+
+```sh
+kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.capacity.cpu}{"\n"}{end}'
+```
+> **Note**
+> The above could be easily done by `-o custom-columns` output option
+
+## custom-columns 
+`kubectl get nodes -o custom-columns=<COLUMN_NAME>:<JSONPATH> `
+
+```sh
+kubectl get nodes -o custom-columns=NODE:.metadata.name, CPU:.status.capacity.cpu
+```
+>**Warning**
+>You must exclude the "items" key because `custom-columns` assums the query is for each "item" in the list 
+
+## sorting the output 
+`kubectl get nodes --sort-by=<JSONPATH>`
+```shell
+kubectl get nodes --sort-by='{.status.capacity.cpu}'
+```
 # Cluster Setup
 You have 3 options
 - use a cloud provider based solution - EKS, AKS, GKE
 - use `kubeadm`.. or alternatives `kops` , `kubespray`
 - Install the hardway manually.
 
-### Where to look for config files for control plane components?
+Before installing you should ask yourself
+- Purpose?
+	- Education? Development & Testing? Production?
+	- Education : minikube, k3s, single node cluster
+	- Dev&Test : multi node cluster (1master, Nworker) with kubeadm , or quick setup via cloud providers EKS GKE ..
+	- Production: multi node cluster(Nmasters, Nworkers) with HA.
+- Cloud or OnPrem ?
+	- OnPrem: kubeadm
+	- Cloud: GKE EKS AKS
+- Workloads
+	- How many?
+	- What kind?
+		- Web?
+		- Big Data/Analytics?
+	- Application Resource Requirements?
+		- CPU Intensive?
+		- Memory Intensive?
+		- Storage Intensive?
+	- Traffic?
+		- Heavy Traffic?
+		- Burst Traffic?
+
+### HA for Control Plane Components
+Control Plane components (kube-apiserver, kube-controller-manager, kube-scheduler, etcd) should not go down. If they did, then it would be impossible to guarantee HA for deployments and replicasets.. if worker goes down, its game over.
+
+#### Active-Active mode (for load balancing)
+**Kube-apiserver** must be deployed in active-active mode, behind a load balancer like nginx on the master nodes.
+![[kube-65.png]]
+
+#### Active-Standby mode (for failover)
+**kube-scheduler** and **kube-controller-manager** must be in active-standby HA setup for failover. Happens via a leader election process.
+![[kube-66.png]]
+**kube-controller-manager** has the following startup options
+- `--leader-elect=True`
+- `--leader-elect-lease-duration=15s`
+- `--leader-elect-renew-deadline=10s`
+- `--leader-elect-retry-period=2s`
+	- acts as a heath check to make sure current leader is not dead, if dead someone else immediately becomes the leader.
+
+#### HA for etcd (Separate Nodes)
+Recommended to host etcd on separate node pool away from other control plane components. So that **data is safe** even if Kubernetes goes down...
+
+
+### Setup via `kubeadm` 
+`kubeadm` helps setup a K8s cluster with best practises. Installing all the control plane components across nodes , making sure the components properly point to each other, modifying certificates etc is a tedious task that `kubeadm` automates. 
+![[kube-67.png]]
+![[Pasted image 20230511004409.png]]
+Steps:
+1. Provision VMs(nodes). < Mark one as master, other as workers >
+2. Install Container Runtime on them. eg: containerd(+runc) or docker 
+3. Install `kubeadm` , `kubelet`, `kubectl` on all the nodes.
+4. Initialise the master node(s) using `kubeadm`
+5. Setup Pod networking..
+6. Allow the worker nodes to join the master node (join the cluster).
+
+> **Note**
+> Why is `kubelet` required on master nodes?
+> For `kubeadm` setup , control plane components like etcd are installed as pods (static pods). And Pods can be created only via `kubelet`s. 
+
+##### Braindump (ignore)
+Master
+- 10.128.0.0/20
+
+
+## Cluster Troubleshooting
+#cka 
+- Application Failure
+- Control Plan Failure
+- Worker Node Failure
+- Networking Failure
+
+#### Application Failures
+Check each of the following components... `webservice-->webpod--->dbservice---->dbpod` . Check every **object and link** until you find the root cause.
+- Webservice
+	- Check if the service is available on the nodeport with `curl http://webservice-ip:nodeport`
+	- Check if the service has discovered the **endpoints** of the pods.. `kubectl describe service webservice`. Compare the selectors of services and the labels on the Pods.
+- Web Pod
+	- Check the status of the Pod, and number of **restarts**.
+	- Check events with `kubectl describe pod webpod`
+	- Watch the logs `kubectl logs webpod` . You will not get logs of previous container, so use `-f` to watch while it fails or use `kubectl logs webpod --previous` to see logs of prev container.
+	- Check if pod has correct creds (username and password) to connect to database.
+- dbservice
+	- Do checks like a regular service. as described above.
+	- Check if ports, targetPorts are correct and as expected by consumer deployments like web deployment. Check the yaml of the consumer deployments too first.
+- dbpod
+	- Do checks like a regular pod. as described above.
+	- Check if username and password is right.
+
+#### Control Plane Failures
+Check Statuses --> Check Logs ---> 
+##### Where to look for config files for control plane components?
 If setup by `kubeadm`, all components would exist as **static pods** . So you will look for configs in `/etc/kubernetes/manifests/*`  . However, do confirm the path by checking the **kubelet**'s config in `/var/lib/kubelet/config.yaml` . You might have to confirm this one's path too by inspecting the final source of truth - the service file for the **kubelet** in `/etc/systemd/system/kubelet.service.d/10-kubeadm.conf` . You can get that location by inspecting the output of `systemctl status kubectl`. 
 
 If setup the "hard way", all components exist as **normal processes** on master nodes. You just inspect the service file for the control plane component eg :`/etc/systemd/system/kube-apiserver.service` 
 
-### How to debug failure of control plane components?
+##### How to debug failure of control plane components?
 If setup by `kubeadm`, all components would exist as **static pods**. So you will look for pod logs `kubectl logs etcd-controlplane`. 
 > **Warning**
 > If `kubectl` itself fails because `kube-apiserver` failed or so, you will have to inspect container logs directly using `crictl` or `ctr` . 
 > `crictl ps`  ... `crictl ps -a`  ... `crictl logs <containerid>` ...
 
 If setup the "hard way", all components exist as **normal processes(systemd)** on master nodes. So you will look for service logs `journalctl -u etcd.service -l`
+
+##### Check Status
+If control plane components are deployed as pods (kubeadm), ==> Check `kube-system` in particular. `kubectl get pods -n kube-system`
+
+If control plane components are deployed as systemd services ==> Check the `systemctl status service.
+- `systemctl status kube-apiserver`
+- `systemctl status kube-controller-manager`
+- `systemctl status kube-scheduler`
+- `systemctl status kubelet` (on worker too)
+- `systemctl status kube-proxy` (on worker too)
+
+##### Check Logs
+If control plane components are deployed as pods(kubeadm) ==> Check `kube-system` in particular. `kubectl logs kube-apiserver-master -n kube-system`
+
+If control plane components are deployed as systemd services ==> Check the logs of the host's logging solution. `journalctl -u kube-apiserver`
+
+
+#### Worker Node Failures
+`kubectl get nodes` ... check the status and make sure that they are READY.
+
+If any one is NotReady, `kubectl describe <nodename>` and check for statuses of the following
+- `OutOfDisk`
+- `MemoryPressure`
+- `DiskPressure`
+- `PIDPressure`
+- `Ready` 
+They all need to be `False` (Except for Ready, which should be `True`)
+
+Sometimes if the worker nodes (kubelets) are unable to talk to the master nodes, the statuses are set to `Unknown`. Check the last time of HeartBeat to get the logs at that time.
+
+Check for disk space problems with `df -h`. Check for PID problems with `top` . Check memory problems with `free`.
+
+Check kubelet logs with `systemctl status kubelet` and `journalctl -u kubelet`
+
+Check if certs are alright for kubelet (issued by correct entity? not expired? ...) with `openssl x509 -in /var/lib/kubelet/worker-1.crt -text`
+
+
+
+
+#### Networking failures
+TODO: summarise https://www.udemy.com/course/certified-kubernetes-administrator-with-practice-tests/learn/lecture/24452872#overview  
+
+- Pods Stuck in `ContainerCreating` ?
+- 
+
 # Cluster Maintenance
 - OS upgrades
 - implications of losing a worker node.. replacing a node
@@ -2463,18 +2913,18 @@ You can find the current version being used by running `kubectl get nodes` comma
 > **Note**
 > Kubernetes supports only latest 3 minor versions at any given time.
 
-### Kubernetes Version upgrade
+### Kubernetes Version upgrade 
+#cka
 Recommended upgrade process is **one version hop at a time** , NOT jumping directly to the latest version. Upgrade the Master nodes first, and then the worker nodes. During master downtime, you cannot access kubectl etc but application will still be running. Best strategy to upgrade worker nodes is to first provision new nodes and gradually decommission old nodes.
 
 `kubadm upgrade plan` can tell you what is the latest version available.
 
 Upgrade Steps in brief:
 - Master Nodes (Control Plane)
-	- Check current version `kubeadm upgrade plan`. `kubectl get nodes` and check version of api-server pods manually.
+	- Check current version `kubeadm upgrade plan`.  Check  `kubectl get nodes` and check version of api-server pods manually.
 	- Drain the node, cordon.
 	- upgrade `kubeadm` to **immediate next version** , not the ultimate final target version!
-	- Run `kubeadm upgrade apply <version>`
-	- 
+	- Run `sudo kubeadm upgrade apply <version>`
 
 ```shell
 # WARNING: while upgrading kubeadm, make sure to just upgrade 
@@ -2484,7 +2934,7 @@ Upgrade Steps in brief:
 		#.  CHECK DOCS for upgrade proces.
 		#.  below is just "pseudocode-ish"
 # drain the master node
-kubectl drain controlplane
+kubectl drain controlplanejmt
 # upgrade kubeadm version to the required K8s version...
 apt-get upgrade -y kubeadm=1.27.0-00
 # see what changes can be done after upgrade

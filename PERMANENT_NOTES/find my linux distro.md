@@ -1,0 +1,1 @@
+`uname -a`  or `cat /etc/os-release` 

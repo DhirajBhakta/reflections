@@ -944,7 +944,6 @@ Harlinks help you create backup
 - Switching & Routing & Default Gateway.
 - DNS configurations, & CoreDNS.
 - Network Namespaces.
-- Docker Networking...
 
 ## Switches & Routers
 `ip link` lists all **network interfaces..** and `ip addr` lists all **network interfaces AND ip addresses** . `ip route` or `route` displays the routing table.
@@ -992,6 +991,11 @@ Your packets will stilll not pass through. By default linux does not allow packe
 
 #### Routers vs Gateways ?
 TBD
+
+## Network Namespaces
+Refer to [[docker]] section on **Networking and Network Namespaces**. 
+
+It also builds on above discussion on how to create `veth` pairs (virtual cables) to connect two networks (namespaces) and how to use a **bridge** to connect multiple network namespaces (star schema) and then use a gateway to connect to other similar networks (with namespaces) outside the host.
 
 ## DNS
 Add the (DNS) entry(s) on `/etc/hosts`
