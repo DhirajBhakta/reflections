@@ -4,40 +4,28 @@
     "type": "split",
     "children": [
       {
-        "id": "5fa10cf5d625eb15",
+        "id": "a8b6438ff0ae681f",
         "type": "tabs",
         "children": [
           {
-            "id": "9b2847908787bd6d",
+            "id": "3a20fa7b06ae3948",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "FLEETING_NOTES/Docker_and_Kubernetes/docker.md",
+                "file": "PERMANENT_NOTES/INDEX--Linux Daily Driver.md",
                 "mode": "source",
                 "source": false
               }
             }
           },
           {
-            "id": "feb13dd3a71af90b",
+            "id": "6a4d0a553c2f7ab3",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "FLEETING_NOTES/Docker_and_Kubernetes/kubernetes.md",
-                "mode": "source",
-                "source": false
-              }
-            }
-          },
-          {
-            "id": "adb6fee6d8eb427f",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "FLEETING_NOTES/Operating_Systems/linux.md",
+                "file": "PERMANENT_NOTES/how to check if a port is open (port->PID).md",
                 "mode": "source",
                 "source": false
               }
@@ -72,7 +60,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "tag:#Scheduling",
+                "query": "reverse tunnel",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -101,7 +89,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 329.5
+    "width": 449.5
   },
   "right": {
     "id": "6868528d1830efe9",
@@ -117,7 +105,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "FLEETING_NOTES/Docker_and_Kubernetes/docker.md",
+                "file": "PERMANENT_NOTES/INDEX--Linux Daily Driver.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -134,7 +122,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "FLEETING_NOTES/Docker_and_Kubernetes/docker.md",
+                "file": "PERMANENT_NOTES/INDEX--Linux Daily Driver.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -157,7 +145,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "FLEETING_NOTES/Docker_and_Kubernetes/docker.md"
+                "file": "PERMANENT_NOTES/INDEX--Linux Daily Driver.md"
               }
             }
           }
@@ -166,7 +154,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 300,
+    "collapsed": true
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -178,54 +167,55 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "9b2847908787bd6d",
+  "active": "3a20fa7b06ae3948",
   "lastOpenFiles": [
-    "FLEETING_NOTES/Docker_and_Kubernetes/kubernetes.md",
-    "FLEETING_NOTES/assets/kube-58.png",
-    "FLEETING_NOTES/assets/Pasted image 20230507234732.png",
-    "FLEETING_NOTES/Docker_and_Kubernetes/docker.md",
-    "FLEETING_NOTES/assets/docker-21.png",
-    "FLEETING_NOTES/assets/docker-20.png",
-    "FLEETING_NOTES/assets/docker-19.png",
-    "FLEETING_NOTES/assets/docker-18.png",
-    "FLEETING_NOTES/assets/docker-17.png",
-    "FLEETING_NOTES/Operating_Systems/linux.md",
-    "FLEETING_NOTES/assets/kube-57.png",
-    "FLEETING_NOTES/assets/kube-56.png",
-    "FLEETING_NOTES/assets/docker-16.png",
-    "FLEETING_NOTES/Cryptography/PKI.md",
-    "FLEETING_NOTES/Cryptography/RSA.md",
-    "FLEETING_NOTES/Econonomics/vc.md",
-    "FLEETING_NOTES/Untitled.canvas",
-    "FLEETING_NOTES/Untitled.md",
-    "FLEETING_NOTES/Econonomics/bitcoin standard.md",
-    "FLEETING_NOTES/Docker_and_Kubernetes/k8s_the_hard_way.md",
-    "FLEETING_NOTES/Econonomics",
-    "FLEETING_NOTES/general/NoteTaking.md",
-    "PERMANENT_NOTES/programmatically fetch current ec2 pricing.md",
-    "FLEETING_NOTES/obsolutely_miscellaneous/unfuck_yourself.md",
-    "FLEETING_NOTES/obsolutely_miscellaneous/productivity.md",
-    "FLEETING_NOTES/obsolutely_miscellaneous/gita.md",
-    "FLEETING_NOTES/obsolutely_miscellaneous/eat_that_frog.md",
-    "FLEETING_NOTES/obsolutely_miscellaneous",
-    "FLEETING_NOTES/Docker_and_Kubernetes/EKS.md",
-    "PERMANENT_NOTES/README.md",
-    "PERMANENT_NOTES",
-    "general/NoteTaking.md",
-    "FLEETING_NOTES/tests/general.md",
-    "FLEETING_NOTES/tests",
-    "FLEETING_NOTES/testing.md",
-    "FLEETING_NOTES/ssl.md",
+    "PERMANENT_NOTES/how to view all network interfaces.md",
+    "PERMANENT_NOTES/INDEX--Linux Daily Driver.md",
+    "PERMANENT_NOTES/what is a network interface, say \"eth0\".md",
+    "PERMANENT_NOTES/how to check port opened by a given process (PID->port).md",
+    "PERMANENT_NOTES/how to check if a port is open (port->PID).md",
     "FLEETING_NOTES/ssh.md",
-    "FLEETING_NOTES/sed.md",
-    "FLEETING_NOTES/rust/general.md",
+    "PERMANENT_NOTES/INDEX--Kubernetes.md",
+    "PERMANENT_NOTES/containerPort is merely for documentation.md",
+    "PERMANENT_NOTES/INDEX--Docker.md",
+    "FLEETING_NOTES/Docker_and_Kubernetes/docker.md",
+    "PERMANENT_NOTES/what is a container runtime.md",
+    "PERMANENT_NOTES/D-Bus.md",
+    "FLEETING_NOTES/assets/docker-22.png",
+    "FLEETING_NOTES/assets/docker-22.png.crdownload",
+    "PERMANENT_NOTES/CRI-O.md",
+    "PERMANENT_NOTES/what is a package manager.md",
+    "PERMANENT_NOTES/what is a package.md",
+    "().md",
+    "PERMANENT_NOTES/find my linux distro.md",
+    "PERMANENT_NOTES/user mode vs kernel mode.md",
+    "PERMANENT_NOTES/static linking vs dynamic linking in c.md",
+    "FLEETING_NOTES/assets/linux-00.svg",
+    "FLEETING_NOTES/assets/Unconfirmed 394798.crdownload",
+    "PERMANENT_NOTES/steps in compilation of c program.md",
+    "PERMANENT_NOTES/kernel modules.md",
+    "PERMANENT_NOTES/journalctl.md",
+    "FLEETING_NOTES/assets/linux-03.png",
+    "FLEETING_NOTES/assets/linux-03.png.crdownload",
+    "FLEETING_NOTES/assets/nikhil.png",
+    "FLEETING_NOTES/assets/linux-02.png",
+    "FLEETING_NOTES/assets/linux-00.png",
+    "FLEETING_NOTES/assets/linux-00.png.crdownload",
+    "PERMANENT_NOTES/why arent ALL kernel modules dynamically loaded via modprobe?.md",
+    "PERMANENT_NOTES/init system . systemd systemctl.md",
+    "PERMANENT_NOTES/linux booting process.md",
+    "PERMANENT_NOTES/what is a service?.md",
+    "FLEETING_NOTES/assets/kube-61.png",
+    "FLEETING_NOTES/assets/kube-47.png",
+    "FLEETING_NOTES/assets/kube-46.png",
+    "FLEETING_NOTES/assets/kube-45.png",
+    "FLEETING_NOTES/Untitled.canvas",
+    "FLEETING_NOTES/Econonomics",
+    "FLEETING_NOTES/obsolutely_miscellaneous",
+    "PERMANENT_NOTES",
+    "FLEETING_NOTES/tests",
     "FLEETING_NOTES/rust",
-    "FLEETING_NOTES/python/web_servers.md",
     "FLEETING_NOTES/python",
-    "FLEETING_NOTES/networking",
-    "FLEETING_NOTES/lesson_3_reflections",
-    "FLEETING_NOTES/lesson_2_reflections.txt",
-    "FLEETING_NOTES/lesson_1_reflections.txt",
     "Untitled.canvas"
   ]
 }

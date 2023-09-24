@@ -1,0 +1,1 @@
+[[boyer-moore voting algorithm ("Majority" algorithm)]]

@@ -1,4 +1,4 @@
-# Introduction
+## Introduction
 
 K8s exists to simplify the task of building, deploying and maintaining distributed systems.
 Its important to understand the **core challenges of distributed systems** that led to the development of k8s.
@@ -141,7 +141,7 @@ _continuously_ take actions to ensure that the current state matches the desired
 <hr/>
 <hr/>
 
-# Kubernetes
+
 
 ### Basic Architecture
 
@@ -182,13 +182,12 @@ Node: A machine. ( host/machine/Ec2/VM etc ) with defined CPU and RAM<br>
 	      - if no heartbeat for 40s, marks the node as _UNREACHABLE_ (Node monitor grace period=40s)
 	      - It gives that node 5mins to come back up, after which it will evict all the pods on that node so that they can be run on other healthy nodes (POD eviction timeout=5min)
       - **the Replication Controller** _watches_ the containers/pods..
-	      - ensures current=desired pods.
+		- ensures current=desired pods.
 	- All the above "built-in" controllers are packaged as a single process called "kube-controller-manager"
 	- the `ReplicaSet` uses the replication Controller.
 	- **...XYZ Controller** _watches_ custom resources. You can write your own controllers for your CRDs..
-     - **the etcd** (key value store of cluster state)
-      - stores the current state config and desired state config
-      - etcd is distributed, reliable key-value store
+     - **the etcd** (key value store of cluster state) distributed, reliable key-value store
+	      - stores the current state config and desired state config
 - multiple worker Nodes
   - worker node is where actual applications are running.
   - ...is where containers run.
@@ -208,10 +207,11 @@ Node: A machine. ( host/machine/Ec2/VM etc ) with defined CPU and RAM<br>
       - A K8s "Service" is actually implemented via Kubeproxy. A Service really does not exist. Kubeproxy listens to new Services being created on etcd via APIServer, and then updates the routetable (iptables) of the node it runs on. Since every node runs a KubeProxy process, every node will have its routetables updated to reach the service endpoints...
     - **Container runtime**
       - Kubernetes doesnt care what container runtime you use. containerd? docker? rkt? cri-o? no issues.
-      - Note that nearly everything on K8s is a container. ControllerManager, Scheduler, APIServer, DNSserver...all of these are containers.. Hence the container runtime has a massive role to play in K8s.
+      - Note that nearly everything on K8s is a container. ControllerManager, Scheduler, APIServer, DNSserver...all of these are containers(they could be run as a process too) Hence the container runtime has a massive role to play in K8s.
   - each node has one or more containers running on it
 
-![](https://learning.oreilly.com/api/v2/epubs/urn:orm:book:9781617297984/files/OEBPS/Images/1-1.jpg)
+![](https://drek4537l1klr.cloudfront.net/stoneman2/v-7/Figures/01_img_0001.jpg)
+![](https://drek4537l1klr.cloudfront.net/stoneman2/v-7/Figures/01_img_0002.jpg)
 
 - API
   - define your applications
@@ -243,6 +243,7 @@ What happens behind the scenes?
 	- The **API server** updates the data back in **etcd** 
   
 ### Kubernetes API?
+
 
 Everything contained in Kubernetes is represented by a RESTful resource. Each Kubernetes object exists at a unique HTTP path, eg: `https://your-k8s.com/api/v1/namespaces/default/pods/mypod` leads to the representation of a Pod in the default namespace named `mypod`.
 
@@ -280,7 +281,7 @@ Maintaining dockershim was an unnecessary headache so starting v1.24, K8s deprec
 
 _**tldr; you need to get familiar with `crictl` since docker is gone**_
 
-# ETCD 
+### ETCD 
 _port: 2379_
 
 What is etcd? What is a Key-value Store? how is it different from a DB? How does it work?
@@ -305,15 +306,15 @@ etcdctl et / --prefix --keys-only
 > **Note**
 > It is a good practice to host etcd in a separate pool of nodes, away from other kubernetes control plane components.
 
-## Consistency Guarantees
+#### Consistency Guarantees
 You can read from any etcd node and you are guaranteed to get the same value.
 You can write to any etcd node, and it will go **through the leader** node..The leader ensures copies are distributed to other nodes too. The write is considered "complete" if the leader gets ACKs from (majority of) all other nodes in the etcd cluster.
 
-### Leader Election - RAFT Protocol
+#### Leader Election - RAFT Protocol
 All nodes start a random timer, the first one whose timer times out will ask for votes from the other nodes to be the leader.
 The leader sends notifications to other nodes at regular intervals saying "im alive!". if any node fails to get this notification, it will kickoff the leader election process again... 
 
-### How many etcd nodes? = 3,5,7...
+#### How many etcd nodes? = 3,5,7...
 //TODO: [ ] Explain "Quorum" [What is quorum in distributed systems? (educative.io)](https://www.educative.io/answers/what-is-quorum-in-distributed-systems) 
 - **Atleast 3**. For Quorum.
 - **Odd number of nodes** to guarantee quorum in the network paritions if it happens..
@@ -322,7 +323,7 @@ The leader sends notifications to other nodes at regular intervals saying "im al
 
 
 
-# Kubernetes Resources (Objects)
+## Kubernetes Resources (Objects)
 
 - Pods
 - ReplicaSets
@@ -340,8 +341,6 @@ Some objects are controller objects (Deployment, ReplicaSet, DaemonSet). A contr
 - `Deployment` Runs Pods.
 - `Kubernetes` Runs Deployments
 ![](https://learning.oreilly.com/api/v2/epubs/urn:orm:book:9781617297984/files/OEBPS/Images/1-4.jpg)
-
-## Principal Principles
 
 ### [Controller Model](https://kubernetes.io/docs/concepts/architecture/controller/)
 
@@ -398,8 +397,6 @@ recognizes it.
 
     It does that by working with the container runtime using a known API called the Container Runtime Interface (CRI). The CRI lets the node manage containers in the same way for all the different container runtimes - it uses a standard API to create and delete containers, and to query their state. While the pod is running, the node works with the container runtime to ensure the pod has all the containers it needs.
 
-![](https://drek4537l1klr.cloudfront.net/stoneman2/v-7/Figures/01_img_0001.jpg)
-![](https://drek4537l1klr.cloudfront.net/stoneman2/v-7/Figures/01_img_0002.jpg)
 
 ### Kubernetes Manifests (YAML files)
 
@@ -566,6 +563,8 @@ To periodically test if an application is healthy.
 
 If your app **crashes** then the process dies, so K8s can restart the pod. But if your app **freezes**, then... K8s cannot know that app has gone down.
 Say your app runs into an infinite loop because of some bug. But the container is still running, so K8s does not kill it and restart the pod.
+
+**important**: the container runtime indeed takes care of restarting the crashed container in the pod, a set number of times. After a limit, it gives up.. and THEN if the livenessProbe limit is reached, this incident is reported to kube-apiserver, and the replicaset will create a brand new pod. [restart policy](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy)
 
 ```yaml
 apiVersion: v1
@@ -770,7 +769,7 @@ ca- You might want to have multi-contianer pods
 
 #### What should I put in a Pod?
 
-You shouldnt place a Wordpress container and a MySQL container in a singe Pod. Why? because you wouldnt want to scale them together as a unit lol!!
+You shouldnt place a Wordpress container and a MySQL container in a singe Pod. Why? because you wouldnt want to scale them together as a unit.
 
 The right question to be asked is "Will these containers work correctly if they land on different machines?". If the answer is "No", then place both containers in the same Pod.
 
@@ -794,6 +793,8 @@ Pods die often, and their IPs keep changing... how do we deal with this?
 - a "service" is NOT a daemon..its just an abstraction on top of `iptables`
 - **DNS**: Everytime you create a service, you get a new DNS entry. You dont have to hardcode service IP address.
 - This **DNS** itself runs as pods and a service
+>**Note**
+>When a pod wants to communicate with a service by its name, it makes a DNS query. `core-dns` resolves the DNS query to the cluster-internal IP address of the service. When the pod sends traffic to the Service's IP address, `kube-proxy` in iptables mode ensures that traffic is correctly forwarded to one of the pods selected by the service.
 
 
 
@@ -818,7 +819,8 @@ Every Pod gets its own private IP address, but Pods are ephemeral, Pods die easi
 `Service` gives a permanent IP, `Service` can be attached to the Pod.
 A service is also a `loadbalancer`
 
-> Note: A Service is NOT a pod. Even though it has an IP address, it really does not exist per se. It only lives in memory. A Service is "implemented" via route tables and **Kube proxy** . The kube proxy(which runs on every node) continuously listens to creation of new Service resources on **etcd** via APIServer and then updates the node's route table(iptables).
+> **Note**:
+>  A Service is NOT a pod. Even though it has an IP address, it really does not exist per se. It only lives in memory. A Service is "implemented" via route tables and **Kube proxy** . The kube proxy(which runs on every node) continuously listens to creation of new Service resources on **etcd** via APIServer and then updates the node's route table(iptables).
 ![](../assets/kube-07.png)
 #### Types of Services
 - **ClusterIP** : Services are reachable by pods/services in the cluster
@@ -972,8 +974,8 @@ Basic concept behind service discovery in Kubernetes: _Deploy a Service resource
 ![](../assets/kube-17.png)
 
 - ClusterIP is a virtual IP address that doesn't exist on the network.
-- Pods access the n/w through the **kube-proxy** running on the node, and that uses packet filtering to send the virtualIP to the real endpoint.
-- Services can exist intependently of any other parts of the app
+- Pods access the n/w through the **kube-proxy** running on the node, and that uses packet filtering to send the virtual-IP to the real endpoint.
+- Services can exist independently of any other parts of the app
 - Services keep their IP addresses as long as they exist
 - Services have a controller that keeps the endpoint list updated whenever there are changes to Pods, so clients always use the static Virtual IPs and the Kube-Proxy always has the up-to-date endpoint list
 
@@ -1207,11 +1209,6 @@ spec:
 
 ```
 
-##### Why bother with pods? Why doesnt Kubernetes handle the containers directly (bypassing the pods)?
-
-Kubernetes doesn't really run containers - it passes the responsibility for that onto the container runtime installed on the node, which could be Docker or containerd or something more exotic. **That's why the pod is an abstraction**, it’s the resource which Kubernetes manages whereas the container is managed by something outside of Kubernetes.
-
-
 
 ### ⛳️ `Ingress Controller`
 
@@ -1369,17 +1366,6 @@ spec:
 ```
 > Is the ReplicaSet pointless if you just have 1 replica??
 > Not at all... ReplicationController ensures that 1 replica is always running. So if your Pod goes down, the ReplicationContoller brings it up automatically.
-
-
-
-#### How exactly is a `ReplicaSet` Different from a `Deployement` ? They seem the same...
-
-
-### ⛳️ `StatefulSet`
-
-Mostly same as Deployments (have concept of "replicas")
-
-But each replica has a sticky identity., identity which doesnt go away when a pod is restarted.
 
 ### ⛳️ `DaemonSet`
 
@@ -2171,7 +2157,7 @@ To verify that your pod was scheduled by your new scheduler, check the events. `
 All of these have IP address
 - Node
 - Pod
-- Service
+- Service(except for headless service)
 
 ### Packets..Basics..**
 ![](../assets/kube-37.png)
@@ -2208,12 +2194,12 @@ All of these have IP address
 - Pod contains one or more containers sharing same network namespace
 - Pod IPs are allocated via **IPAM functionality** of the **CNI**(Container Network Interface) plugins
     - Most basic involves assigning a **subnet** to each node and give out IPs to pods on that node...
-- `kube-apiserver` process is started with a flag `--cluster-cidr=172.16.0.0/16` which determines the rangle all pod IPs should be in
+- `kube-controller-manager` process is started with a flag `--cluster-cidr=172.16.0.0/16` which determines the rangle all pod IPs should be in
     - this is the range of IP addresses "within the cluster"
 
 ### Service addresses
-- `kube-apiserver` process is started with a flag `--service-cluster-ip-range=172.15.100.0/23` which determines the rangle all services should be in
-- `kube-apiserver` process handles this and tells the `kubelets` processes about what IPs are assigned to what services
+- `kube-controller-manager` process is started with a flag `--service-cluster-ip-range=172.15.100.0/23` which determines the rangle all services should be in
+- `kube-controller-manager` process handles this and tells the `kubelets` processes about what IPs are assigned to what services
     - as well as the `endpoints` which are IPs of pods behind that service
 
 
@@ -2444,6 +2430,7 @@ You need cluster-wide storage, so Pods can access the same data from any node.
 
 **Where can a container write data**
 
+![](https://learning.oreilly.com/api/v2/epubs/urn:orm:book:9781617297984/files/OEBPS/Images/5-11.jpg)
 - its own writeable layer ( a container is nothing but layers of read only layers and one writable layer on top)
   - this data gets lost on container restart.
 - **EmptyDir** type volume
@@ -2459,97 +2446,10 @@ You need cluster-wide storage, so Pods can access the same data from any node.
   - if the node goes offline, you will lose the data.
   - also, Danger! Mounting a HostPath can give you complete access to the filesystem on the node (if / is mounted)
   - limit what the container can see by declaring subpaths in this case.
+  - If node is dead, your data is gone. Also you cannot guarantee pod placement on this node.
 - **Persistent Volumes and Claims**
   - distributed storage systems
   - AzureDisk, ElasticBlockStore, NFS, GlusterFS
-
-## Object Ownership in Kubernetes
-
-Controllers use a label selector to find objects that they manage, and the objects themselves keep a record of their owner in a metadata field.
-
-When you delete a controller, its managed objects soon will get deleted. Kubernetes runs a garbage collector process that looks for objects whose owner has been deleted, and it deletes them too.
-
-If you fiddle with the labels, you can break relationships.
-
-## Health Checks
-
-Liveness health checks run application-specific logic(eg:loading a web page) to verify that the application is not just still running, but is functioning properly.
-![](../assets/kube-08.png)
-
-- Liveness Probe
-  - Since "liveness" is application specific, you have to specify them in your pod manifest.
-- Readiness Probe
-  - Readiness describes when a container is ready to serve user requests. Containers that fail readiness checks are removed from service load balancers.
-
-## Kubernetes YAML file &mdash; Defining Deployments in Application Manifests
-
-Advantages over manually running commands
-
-1. YAML files are declarative
-2. You can write comments, to explain your decisions.
-
-### Structure &mdash; 3 parts
-
-1. metadata
-2. specification
-3. status ( added by kubernetes automatically )
-
-A `template` section has its own metadata and specification
-
-#### Examples
-
-1. [YAML for defining a pod](cfg/kube-01.yaml)
-2. [YAML for definign a deployment](cfg/kube-02.yaml)
-
-A Simple web app
-
-- needs three Kubernetes resources
-  - 2 Deployments
-  - 1 service
-
-### Routing external traffic to Pods
-
-Type of service called "LoadBalancer"
-
-### Routing traffic outside Kubernetes
-
-Type of service called "ExternalName"
-
-
-## Storing data
-
-- volumes
-- mounts
-- claims
-
-_What happens if a container died and killed all the data it contained along with it_??
-
-=>>
-"EmptyDir" volumes share the lifecycle of the Pod. These volumes are the Pod lvl, so death of container != death of the contents of EmptyDir... it lives on.
-
-_What happens if a Pod died and killed all the data it contained along with it_??
-
-==>
-"HostPath" volumes share the lifecycle of the Node. Data is physically stored on the node, and data is maintained between Pod replacements
-
-_What happens if a Node died and killed all the data it contained along with it_??
-
-==>
-Persistent Volume
-
-![](https://learning.oreilly.com/api/v2/epubs/urn:orm:book:9781617297984/files/OEBPS/Images/5-11.jpg)
-
-## Scaling applications = more Pods
-
-- a "Pod" is the unit of Compute in Kubernetes
-- Deployments manage Pods ( they actually manage replicasets which inturn manage Pods)
-
-![](https://learning.oreilly.com/api/v2/epubs/urn:orm:book:9781617297984/files/OEBPS/Images/6-1.jpg)
-
- the Deployment is a controller that manages ReplicaSets, and the ReplicaSet is a controller that manages Pods.
-
-core of scaling: you run as many Pods as you need, and they all sit behind one Service. When consumers access the Service, Kubernetes distributes the load between Pods.
-
 
 ## Contexts
 
@@ -2563,7 +2463,7 @@ Contexts are used to manage different clusters
 Kubernetes Operators
 
 
-# K8s without control plane
+## K8s without control plane
 - no api server
 - no scheduler
 - no controller manager
@@ -2605,7 +2505,7 @@ You could also install control plane components like apiserver, etcd, controller
 1. if they have the nodename as suffix
 2. if they have `ownerReferences` set to the node in the pod manifest. `kubectl get pod/<name> -o yaml` 
 
-# K8s REST APIs
+## K8s REST APIs
 All resources in K8s are grouped under **API groups** . 
 ### API Groups
 - `/api` | **Core** Group.
@@ -2786,10 +2686,6 @@ Steps:
 > Why is `kubelet` required on master nodes?
 > For `kubeadm` setup , control plane components like etcd are installed as pods (static pods). And Pods can be created only via `kubelet`s. 
 
-##### Braindump (ignore)
-Master
-- 10.128.0.0/20
-
 
 ## Cluster Troubleshooting
 #cka 
@@ -2859,11 +2755,22 @@ They all need to be `False` (Except for Ready, which should be `True`)
 
 Sometimes if the worker nodes (kubelets) are unable to talk to the master nodes, the statuses are set to `Unknown`. Check the last time of HeartBeat to get the logs at that time.
 
+
+
 Check for disk space problems with `df -h`. Check for PID problems with `top` . Check memory problems with `free`.
 
 Check kubelet logs with `systemctl status kubelet` and `journalctl -u kubelet`
 
-Check if certs are alright for kubelet (issued by correct entity? not expired? ...) with `openssl x509 -in /var/lib/kubelet/worker-1.crt -text`
+Check if certs are alright for kubelet (issued by correct entity? not expired? ...) with `openssl x509 -in /var/lib/kubelet/worker-1.crt -text` . The certs for kubelet(client cert) is configured at `/var/lib/kubelet/config.yaml` . The kubeconfig for kubelet is at `/etc/kubernetes/kubelet.conf` ==> this is where control plane address is registered.
+Once you edit these, **remember to restart kubelet with `systemctl restart kubelet`**...
+
+
+If `failed to assign IP address to Pod`, this is an IPAM problem ==> CNI is messed up. Check if CNI is even installed and configured properly. containerd has startup properties related to cni. Check if `cluster-cidr` used to bootstrap kubernetes(via kubeadm) is also set in cni config in /etc/cni/net.d . `--cluster-cidr` is found on kube-proxy configmap or ...kube-controller-manager startup options. **look at the logs of the cni pods** this will also spit out the pod cidr _assumed_ by the cni plugin `ip-alloc-range **`
+
+
+if pod is `stuck in PENDING state` , the control plane component responsible for assigning the pod to the node has failed ==> `kube-scheduler` has failed. Check logs of `kube-scheduler`
+
+If you scale a deployment or replicaset, and the number of pods doesn't change, the control plane component responsible for detecting number of pods is `kube-controller-manager`. Check logs
 
 
 
@@ -3012,12 +2919,12 @@ kubectl uncordon node01
 ```
 You will get an error while DRAINing a node if there are standalone pods with NO ReplicaSet.  If you use `--force` to forcefully drain, such pods are lost forever.
 
-# Security
+## Security
 `kube-apiserver` is at the center. All commands and communication goes through kube-apiserver. So first line of defence is to control access to kube-apiserver.
 
 All communication to `kube-apiserver` is secured with TLS. 
 
-## TLS
+### TLS
  Who talks to who ?
  - **kube-apiserver** (exposes https service)
 	 - `apiserver.crt` and `apiserver.key`
@@ -3035,13 +2942,14 @@ All communication to `kube-apiserver` is secured with TLS.
 	- clients:
 		- **kube-apiserver**: `apiserver.crt` and `apiserver.key` OR separate crt+key pair could be used.
 
-### Case Study | keys and certs for `kube-apiserver`
+### keys and certs for `kube-apiserver`
 Since `kube-apiserver` is a "server" and also a "client" to `etcd-server` and the `kubelet`, it has the following options 
 - "server" | `--tls-cert-file` and `--tls-private-key-file` and `--client-ca-file`
 - "etcd client" | `--etcd-cafile` and `--etcd-certfile` and `--etcd-keyfile`
 - "kubelet client" | `--kubelet-client-certificate` and `--kubelet-client-key`
 
-### Creating keys manually
+### [Creating keys manually](https://kubernetes.io/docs/tasks/administer-cluster/certificates/)
+
 #### CA key and CA root certificate
 Create a private key (ca.key)
 ```shell
@@ -3141,6 +3049,22 @@ kubectl certificate approve jane
 OR
 kubectl certificate deny jane
 ```
+After signing , the certificate is now embedded in the `kubectl get csr -o yaml` output. With this cert (and key previously generated by Jane herself), Jane can make calls to API server with curl
+```
+curl https://controlplane:6443/api/v1/pods \
+--key jane.key \
+--cert jane.crt \
+--cacert ca.crt
+```
+or with  kubectl
+```shell
+kubectl get pods \
+	--server controlplane:6443 \
+	--client-key jane.key \
+	--client-certificate jane.crt \
+	--certificate-authority ca.crt 
+```
+But this is too tedious and hence we place this in kubeconfig  = `~/.kube/config`
 
 > **Note**:
 > **Kube-controller-manager** is responsible for CSR creating, signing, approving etc. Not **kube-apiserver** !
@@ -3154,17 +3078,8 @@ kube-controller-manager \
 	...
 	...
 ```
-se
 ### KubeConfig ~/.kube/config
-You are supposed to pass client crt and ca and key for each of the `kubectl` commands you issue
-```shell
-kubectl get pods \
-	--server my-playground:6443 \
-	--client-key admin.key \
-	--client-certificate admin.crt \
-	--certificate-authority ca.crt 
-```
-But this is too tedious and hence we place this in kubeconfig  = `~/.kube/config`
+As seen earlier, you are supposed to pass client crt and ca and key for each of the `kubectl` commands you issue . This gets messy and hence you place it in `~/.kube/config`.
 
 A kubeconfig has ..
 - clusters
@@ -3197,7 +3112,6 @@ users:
 	  client-key
 ```
 ### Authentication
-- Files | Username & password (Basic Auth)
 - Files | Username & tokens (Bearer Auth)
 - Certificates
 - External Authentication Providers - eg: LDAP
@@ -3207,17 +3121,6 @@ What kind of Users we have?
 - < User >  | Admins: Perform administrative tasks on the cluster
 - < User >  |  Developers: Deploy applications
 - < ServiceAccount > | 3rdPartyApps: `Bots` which want to access cluster for integration purposes. Eg: Prometheus. FluxCD
-
-#### BasicAuth (Static username:password)
-You start the `kube-apiserver` with an option `--basic-auth-file=user-details.csv` 
-
-This csv file contains password|user|userID
-```csv
-tonyisgreat, dhiraj, u001
-mypassword, someuser, u002
-```
-
-All GET,POST requests to `kube-apiserver` must now have the username:password . 
 
 #### BearerAuth (Static username:token)
 You start the `kube-apiserver` with an option `--token-auth-file=user-details.csv`
@@ -3238,9 +3141,6 @@ You might want to restrict access to people, limit access to just their namespac
 - Webhook mode
 - AlwaysAllow mode
 - AlwaysDeny mode
-
-> **Info**
-> Authorization mode(s) set on the cluster can be viewed by checking the startup command of `kube-apiserver`. If its a static pod, check `/etc/kubernetes/manifests` . If its a systemd process, check `/etc/systemd/system/kube-apiserver.service/*` 
 
 `--authorization-mode=...` need to provided as an argument to `kube-apiserver` during startup to tell it to use the specified authorizers. By default, `--authorization-mode=AlwaysAllow` If you dont provide anything. But say if you provided `--authorization-mode=Node,RBAC,Webhook` , they will be **chained** (Chain of Responsibility pattern) . If NodeAuthorizer rejects, it will be passed on to RBACAuthorizer and so on..until allowed..or denied by the last authorizer.
 
@@ -3383,156 +3283,10 @@ spec:
 > Note all Networking solutions provide support foor **NetworkPolicy** .
 > **Flannel does NOT support NetworkPolicy** , whereas kube-router, Calico, Weave-net, Romana do support. 
 
-# Helm
 
-Package Manager for Kubernetes
+# MISC
+### `ip link`
+### `ip addr`
+`ip addr add 192.168.1.10/24 dev eth0` to assign the IP address to the network interface
 
-### Helm Chart
 
-bundle of YAML files.
-`Helm install chartname` makes it simple to install complex stuff
-
-# Playing with Kubernetes locally (Single Node Cluster) via K3s
-
-##### Step 0 : Install k3s
-
-`curl -sfL https://get.k3s.io | sh -s - --docker --disable=traefik --write-kubeconfig-mode=644`
-
-Note that this also installs `kubectl` for you!
-
-##### Step 0.1: Check that your cluster is up and running
-
-`kubectl get nodes`
-
-![](../assets/kube-02.png)
-
-##### Step 1.1 : run a pod with a single container
-
-`kubectl run test-db --image=postgres`
-
- `kubectl port-forward test-db 5432:5432`
-
-##### Step 1.2 : list all the pods in the cluster
-
-`kubectl get pods`
-
-##### Step 1.3 : show detailed information about the pod
-
-`kubectl describe pod test-db`
-
-`kubectl get pods -o wide` --> detailed
-
-`kubectl  get pod hlo -o json` --> much more detailed
-
-
-##### Step 1.4 : Lets try deleting a container
-
-![](https://drek4537l1klr.cloudfront.net/stoneman2/v-7/Figures/02-08_img_0004.jpg)
-
-##### Step 2.1 : Lets create a deployment
-
-`kubectl create deployment es --image=elasticsearch:2`
-
-then list the pods `kubectl get pods`
-
-You can observe that creating a deployment --> creates  pod(s). Its a _deployment-managed-pod_ :)
-
-##### Step 3.1 Let's deploy using a YAML file
-
-`kubectl apply -f pod.yaml`
-
-### A Note about debugging . ( "How do I `docker exec....` ")`
-
-[How do i get a shell into my application container?](https://kubernetes.io/docs/tasks/debug-application-cluster/get-shell-running-container/)
-
-- Your container runtime may not give you access to work
-with containers directly
-- a managed Kubernetes cluster won’t give you control of
-Docker or containerd
-
-`kubectl` to the rescue!
-
-You can run commands inside containers with kubectl and connect a terminal session, so you can connect into a Pod’s container as though
-you were connecting to a remote machine.
-
-##### Check the internal IP address of the first Pod we ran
-
-`kubectl get pod hello-kiamol -o customcolumns=NAME:metadata.name,POD_IP:status.podIP`
-
-##### run an interactive shell command in the Pod
-
-`kubectl exec -it hello-kiamol -- sh`
-
-##### inside the Pod, check the IP address
-
-`hostname -i`
-
-##### and test the web app
-
-`wget -O - http://localhost | head -n 4`
-
-##### leave the shell
-
-`exit`
-
-![](../assets/kube-04.png)
-
-# Misc Notes
-
-## Bash autocompletion
-
-```bash
-echo "source <(kubectl completion bash)" >> ${HOME}/.bashrc
-```
-
-## Helm
-
-### Verdaccio local docker image with k3s and helm
-
-Basically the deployment.yaml takes images which it can pull only from docker.hub or some registered **registries**. local images is not possible with k3s
-
-##### Why local images is not possible with k3s?
-
-its the containerd runtime causing this limitation. If you use docker as the runtime, then you can use local images with `imagePullPolicy:Never`
-
-##### Why not use docker as runtime with k3s then?
-
-```
-curl -sfL https://get.k3s.io | sh -s - --docker
-```
-
-is the command to run k3s in docker... However, in arch linux, I got an error saying `kubelet uses cgroupfs but docker is using systemd` .Couldnt debug further, and resolved to find out how to import local images into containerd somehow
-
-##### `import` local images into k3s containerd
-
-```
-docker save --output verdaccio.tar verdaccio/verdaccio:local 
-sudo k3s ctr images import verdaccio.tar
-```
-
-Post this, `helm install npm --set image.tag=local .` inside `charts` directory works like a charm!
-
-# Debugging
-
-### logs
-
-`kubectl logs <podname>`
-
-### exec into a container
-
-`kubectl exec -it <podname> sh`
-
-### Copy files from the container into the local machine
-
-`kubectl cp <podname>:/usr/share/nginx/html/index.html  /tmp/index.html`
-
-
-# Questions
--- check the huge list of questions already maintained in notebook--
-1. What is the need to scale up or scale down the pods when the resources are fixed (CPU, MEM)?
-2. kubectl expose vs kubectl create service vs kubectl run (a pod) with --port or --expose option ? and why are options different for different types of services? what exactly are services?
-
-
-# Resources
-- [Article Series](https://medium.com/google-cloud/kubernetes-101-pods-nodes-containers-and-clusters-c1509e409e16)
-- [Great author](https://tonylixu.medium.com/)

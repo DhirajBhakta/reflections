@@ -35,11 +35,15 @@ For example, this is the content of `vi` package in arch linux
 -   var/lib/ex/
 ```
 
-Every linux distribution (or specifically, the package manager) has its own package format.
+Every linux distribution (or specifically, the package manager) has its own **package format**
 - Debian created `.deb` package format
 - RHEL created `.rpm` package format
 - Arch linux uses pacman, which uses "zipped tar"(`bsdtar`) format. Pretty simplistic. 
 
 
 > Its PRECOMPILED. No need to "build" from source. You already have the executable in the archive(tar). 
+
+### [Arch linux ](https://wiki.archlinux.org/title/Creating_packages)
+You need to include a file called "PKGBUILD"  — a package description file. This file is sourced by `makepkg` to create the binary
+
 
