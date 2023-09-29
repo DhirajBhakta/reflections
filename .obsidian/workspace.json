@@ -13,19 +13,43 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "PERMANENT_NOTES/INDEX--Linux Daily Driver.md",
+                "file": "FLEETING_NOTES/Docker_and_Kubernetes/kubernetes.md",
                 "mode": "source",
                 "source": false
               }
             }
           },
           {
-            "id": "6a4d0a553c2f7ab3",
+            "id": "22c8048340e75983",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "PERMANENT_NOTES/how to check if a port is open (port->PID).md",
+                "file": "PERMANENT_NOTES/INDEX--Kubernetes.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "25e25725794a6aad",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "PERMANENT_NOTES/approaches to give storage to Pod.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "57b110afdf6b08ec",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "PERMANENT_NOTES/PVC and Pods.md",
                 "mode": "source",
                 "source": false
               }
@@ -60,7 +84,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "reverse tunnel",
+                "query": "",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -89,7 +113,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 449.5
+    "width": 359.5
   },
   "right": {
     "id": "6868528d1830efe9",
@@ -105,7 +129,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "PERMANENT_NOTES/INDEX--Linux Daily Driver.md",
+                "file": "FLEETING_NOTES/Docker_and_Kubernetes/kubernetes.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -122,7 +146,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "PERMANENT_NOTES/INDEX--Linux Daily Driver.md",
+                "file": "FLEETING_NOTES/Docker_and_Kubernetes/kubernetes.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -145,7 +169,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "PERMANENT_NOTES/INDEX--Linux Daily Driver.md"
+                "file": "FLEETING_NOTES/Docker_and_Kubernetes/kubernetes.md"
               }
             }
           }
@@ -169,53 +193,53 @@
   },
   "active": "3a20fa7b06ae3948",
   "lastOpenFiles": [
-    "PERMANENT_NOTES/how to view all network interfaces.md",
-    "PERMANENT_NOTES/INDEX--Linux Daily Driver.md",
-    "PERMANENT_NOTES/what is a network interface, say \"eth0\".md",
-    "PERMANENT_NOTES/how to check port opened by a given process (PID->port).md",
-    "PERMANENT_NOTES/how to check if a port is open (port->PID).md",
-    "FLEETING_NOTES/ssh.md",
+    "FLEETING_NOTES/assets/kube-71.png",
+    "PERMANENT_NOTES/approaches to give storage to Pod.md",
     "PERMANENT_NOTES/INDEX--Kubernetes.md",
+    "FLEETING_NOTES/Docker_and_Kubernetes/kubernetes.md",
+    "PERMANENT_NOTES/PVC and Pods.md",
+    "PERMANENT_NOTES/pod networking.md",
+    "PERMANENT_NOTES/INDEX--Linux Daily Driver.md",
+    "PERMANENT_NOTES/serviceaccounts in k8s.md",
+    "FLEETING_NOTES/assets/kube-00.jpeg",
+    "FLEETING_NOTES/assets/kube-00.jpeg.crdownload",
+    "PERMANENT_NOTES/kube-proxy and iptables.md",
+    "PERMANENT_NOTES/subnets.md",
+    "FLEETING_NOTES/Effective_Feature_management/general.md",
+    "FLEETING_NOTES/assets/linux-15.png",
+    "FLEETING_NOTES/assets/networking-00.png",
+    "FLEETING_NOTES/assets/linux-17.png",
+    "FLEETING_NOTES/assets/linux-16.png",
+    "PERMANENT_NOTES/how to check if a port is open (port->PID).md",
+    "PERMANENT_NOTES/how to check port opened by a given process (PID->port).md",
+    "FLEETING_NOTES/assets/Pasted image 20230926164359.png",
+    "PERMANENT_NOTES/ip is the new ifconfig.md",
+    "PERMANENT_NOTES/what is iptables.md",
+    "FLEETING_NOTES/Docker_and_Kubernetes/docker.md",
+    "PERMANENT_NOTES/what is a network namespace.md",
+    "PERMANENT_NOTES/what is a network interface, say \"eth0\".md",
+    "FLEETING_NOTES/assets/linux-00.webp",
+    "FLEETING_NOTES/assets/linux-00.webp.crdownload",
+    "FLEETING_NOTES/assets/linux-14.png",
+    "FLEETING_NOTES/assets/linux-13.png",
+    "FLEETING_NOTES/assets/linux-12.png",
+    "FLEETING_NOTES/assets/linux-00.jpg.crdownload",
+    "FLEETING_NOTES/assets/linux-08.png.crdownload",
+    "FLEETING_NOTES/assets/linux-07.png.crdownload",
+    "FLEETING_NOTES/Operating_Systems/linux.md",
+    "How to find my IP address?.md",
+    "PERMANENT_NOTES/how to view all network interfaces.md",
+    "FLEETING_NOTES/ssh.md",
     "PERMANENT_NOTES/containerPort is merely for documentation.md",
     "PERMANENT_NOTES/INDEX--Docker.md",
-    "FLEETING_NOTES/Docker_and_Kubernetes/docker.md",
     "PERMANENT_NOTES/what is a container runtime.md",
     "PERMANENT_NOTES/D-Bus.md",
-    "FLEETING_NOTES/assets/docker-22.png",
     "FLEETING_NOTES/assets/docker-22.png.crdownload",
-    "PERMANENT_NOTES/CRI-O.md",
-    "PERMANENT_NOTES/what is a package manager.md",
-    "PERMANENT_NOTES/what is a package.md",
-    "().md",
-    "PERMANENT_NOTES/find my linux distro.md",
-    "PERMANENT_NOTES/user mode vs kernel mode.md",
-    "PERMANENT_NOTES/static linking vs dynamic linking in c.md",
-    "FLEETING_NOTES/assets/linux-00.svg",
     "FLEETING_NOTES/assets/Unconfirmed 394798.crdownload",
-    "PERMANENT_NOTES/steps in compilation of c program.md",
-    "PERMANENT_NOTES/kernel modules.md",
-    "PERMANENT_NOTES/journalctl.md",
-    "FLEETING_NOTES/assets/linux-03.png",
     "FLEETING_NOTES/assets/linux-03.png.crdownload",
-    "FLEETING_NOTES/assets/nikhil.png",
-    "FLEETING_NOTES/assets/linux-02.png",
-    "FLEETING_NOTES/assets/linux-00.png",
     "FLEETING_NOTES/assets/linux-00.png.crdownload",
-    "PERMANENT_NOTES/why arent ALL kernel modules dynamically loaded via modprobe?.md",
-    "PERMANENT_NOTES/init system . systemd systemctl.md",
-    "PERMANENT_NOTES/linux booting process.md",
-    "PERMANENT_NOTES/what is a service?.md",
-    "FLEETING_NOTES/assets/kube-61.png",
-    "FLEETING_NOTES/assets/kube-47.png",
-    "FLEETING_NOTES/assets/kube-46.png",
-    "FLEETING_NOTES/assets/kube-45.png",
     "FLEETING_NOTES/Untitled.canvas",
     "FLEETING_NOTES/Econonomics",
-    "FLEETING_NOTES/obsolutely_miscellaneous",
-    "PERMANENT_NOTES",
-    "FLEETING_NOTES/tests",
-    "FLEETING_NOTES/rust",
-    "FLEETING_NOTES/python",
     "Untitled.canvas"
   ]
 }

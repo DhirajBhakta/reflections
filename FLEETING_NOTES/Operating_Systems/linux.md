@@ -961,7 +961,7 @@ ip link
 ip addr add 192.168.1.11/24 dev eth0
 
 # Now PC1 can talk to PC2
-ping 182.168.1.11
+ping 192.168.1.11
 ```
 
 Now Assume there's a similar LAN (LAN2) with PC3 and PC4 with its own switch. 
@@ -969,7 +969,7 @@ Now Assume there's a similar LAN (LAN2) with PC3 and PC4 with its own switch.
 How can Pc1 in LAN1 talk to PC4 in LAN2? You need a **Router**. 
 > A **Router** connects two or more networks (LANs). It has multiple NICs (or virtual NICs), one each for the network it is connecting to. So it has multiple IP addresses, one in each network.
 
-This router now has 2 IP addres in our example. `192.168.1.1` in LAN1 and `192.168.2.1` in LAN2. The Router is still just a device on the networks, we need to configure it as a **Gateway** to allow other devices to send packets across LANs **Via the Router(Gateway)**. 
+This router now has 2 IP address in our example. `192.168.1.1` in LAN1 and `192.168.2.1` in LAN2. The Router is still just a device on the networks, we need to configure it as a **Gateway** to allow other devices to send packets across LANs **Via the Router(Gateway)**. 
 ```shell
 # add to the routing table of PC1
 ip route add 192.168.2.0/24 via 192.168.1.1

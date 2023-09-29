@@ -1,3 +1,3 @@
 `ifconfig` is deprecated. Use `ip addr` and `ip link` henceforth... 
 
-## `ip link` 
+Find more info here : [[what is a network interface, say "eth0"]]
