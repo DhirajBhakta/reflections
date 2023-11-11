@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "a8b6438ff0ae681f",
+        "id": "b182bfcbf016e35b",
         "type": "tabs",
         "children": [
           {
-            "id": "3a20fa7b06ae3948",
+            "id": "20a4c02b1a9a9575",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -20,36 +20,12 @@
             }
           },
           {
-            "id": "22c8048340e75983",
+            "id": "e25a35319ae5535d",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "PERMANENT_NOTES/INDEX--Kubernetes.md",
-                "mode": "source",
-                "source": false
-              }
-            }
-          },
-          {
-            "id": "25e25725794a6aad",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "PERMANENT_NOTES/approaches to give storage to Pod.md",
-                "mode": "source",
-                "source": false
-              }
-            }
-          },
-          {
-            "id": "57b110afdf6b08ec",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "PERMANENT_NOTES/PVC and Pods.md",
+                "file": "PERMANENT_NOTES/find.md",
                 "mode": "source",
                 "source": false
               }
@@ -84,7 +60,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "",
+                "query": "api-server",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -109,7 +85,8 @@
               "state": {}
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "horizontal",
@@ -191,15 +168,23 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "3a20fa7b06ae3948",
+  "active": "20a4c02b1a9a9575",
   "lastOpenFiles": [
+    "PERMANENT_NOTES/INDEX--Linux.md",
+    "FLEETING_NOTES/Docker_and_Kubernetes/kubernetes.md",
+    "PERMANENT_NOTES/how to check port opened by a given process (PID->port).md",
+    "FLEETING_NOTES/assets/kube-73.png",
+    "FLEETING_NOTES/assets/kube-72.png",
+    "FLEETING_NOTES/assets/Pasted image 20231007221344.png",
+    "FLEETING_NOTES/assets/kube-70.png",
+    "PERMANENT_NOTES/CRI-O.md",
+    "PERMANENT_NOTES/find.md",
+    "PERMANENT_NOTES/grep.md",
     "FLEETING_NOTES/assets/kube-71.png",
     "PERMANENT_NOTES/approaches to give storage to Pod.md",
     "PERMANENT_NOTES/INDEX--Kubernetes.md",
-    "FLEETING_NOTES/Docker_and_Kubernetes/kubernetes.md",
     "PERMANENT_NOTES/PVC and Pods.md",
     "PERMANENT_NOTES/pod networking.md",
-    "PERMANENT_NOTES/INDEX--Linux Daily Driver.md",
     "PERMANENT_NOTES/serviceaccounts in k8s.md",
     "FLEETING_NOTES/assets/kube-00.jpeg",
     "FLEETING_NOTES/assets/kube-00.jpeg.crdownload",
@@ -211,18 +196,12 @@
     "FLEETING_NOTES/assets/linux-17.png",
     "FLEETING_NOTES/assets/linux-16.png",
     "PERMANENT_NOTES/how to check if a port is open (port->PID).md",
-    "PERMANENT_NOTES/how to check port opened by a given process (PID->port).md",
-    "FLEETING_NOTES/assets/Pasted image 20230926164359.png",
     "PERMANENT_NOTES/ip is the new ifconfig.md",
     "PERMANENT_NOTES/what is iptables.md",
     "FLEETING_NOTES/Docker_and_Kubernetes/docker.md",
     "PERMANENT_NOTES/what is a network namespace.md",
     "PERMANENT_NOTES/what is a network interface, say \"eth0\".md",
-    "FLEETING_NOTES/assets/linux-00.webp",
     "FLEETING_NOTES/assets/linux-00.webp.crdownload",
-    "FLEETING_NOTES/assets/linux-14.png",
-    "FLEETING_NOTES/assets/linux-13.png",
-    "FLEETING_NOTES/assets/linux-12.png",
     "FLEETING_NOTES/assets/linux-00.jpg.crdownload",
     "FLEETING_NOTES/assets/linux-08.png.crdownload",
     "FLEETING_NOTES/assets/linux-07.png.crdownload",
@@ -231,9 +210,6 @@
     "PERMANENT_NOTES/how to view all network interfaces.md",
     "FLEETING_NOTES/ssh.md",
     "PERMANENT_NOTES/containerPort is merely for documentation.md",
-    "PERMANENT_NOTES/INDEX--Docker.md",
-    "PERMANENT_NOTES/what is a container runtime.md",
-    "PERMANENT_NOTES/D-Bus.md",
     "FLEETING_NOTES/assets/docker-22.png.crdownload",
     "FLEETING_NOTES/assets/Unconfirmed 394798.crdownload",
     "FLEETING_NOTES/assets/linux-03.png.crdownload",

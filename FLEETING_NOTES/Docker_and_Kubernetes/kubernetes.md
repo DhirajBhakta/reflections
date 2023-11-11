@@ -2129,8 +2129,53 @@ kube-scheduler \
    --config=/etc/kubernetes/my-scheduler-config.yaml
    ...
 ```
-Prior to this, you do need to create ServiceAccount, ClusterRole, ClusterRoleBinding .
 
+**_Prior to this, you do need to create ServiceAccount, ClusterRole, ClusterRoleBinding ._**
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: my-scheduler-as-kube-scheduler
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:kube-scheduler
+subjects:
+- kind: ServiceAccount
+  name: my-scheduler
+  namespace: kube-system
+---
+
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: my-scheduler-as-volume-scheduler
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:volume-scheduler
+subjects:
+- kind: ServiceAccount
+  name: my-scheduler
+  namespace: kube-system
+---
+
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-scheduler-config
+  namespace: kube-system
+data:
+  my-scheduler-config.yaml: |
+    apiVersion: kubescheduler.config.k8s.io/v1beta2
+    kind: KubeSchedulerConfiguration
+    profiles:
+      - schedulerName: my-scheduler
+    leaderElection:
+      leaderElect: false
+```
 To use this scheduler, specify the `schedulerName` in the Pod's spec. 
 ```yaml
 apiVersion: v1
@@ -2149,6 +2194,13 @@ To verify that your pod was scheduled by your new scheduler, check the events. `
 
 >**Warning**
 >Running multiple schedulers (multiple instances of the same binary), would cause race conditions in scheduling the same pod. So with +1.18 K8s, you can **specify multiple scheduler profiles in the same scheduler**. 
+![[kube-70.png]]
+
+#### Scheduler Profiles (New)
+Running multiple schedulers as separate processes(pods) will cause race conditions. You need leader election to work properly and what not. 
+![[kube-72.png]]
+There is a new way to run multiple schedulers in the SAME process(pod), via **scheduler profiles** ..
+![[kube-73.png]]
 
 ## Networking
 - **Prerequisite**: Read [[linux]] section on **Linux Networking** and **DNS** .
@@ -3413,7 +3465,7 @@ volumes:
      configMap:
         name: app_config_map
 ```
-- None of the controlplane components should be at a higher version than kube-apiserver. `kube-scheduler` and `kube-controller-manager` can be at X-1 `kubelet` and `kube-proxy` can be at X-2. BUT `kubelet` can be `X-1` to `X+1`
+- None of the controlplane components should be at a higher version than kube-apiserver. `kube-scheduler` and `kube-controller-manager` can be at X-1 `kubelet` and `kube-proxy` can be at X-2. BUT `kubectl` can be `X-1` to `X+1`
 - Kubernetes supports only recent 3 minor versions
 - DONT JUMP directly to target version during upgrade, Upgrade one minor version at a time.
 - Get the target version of `kubeadm` too!
@@ -3559,7 +3611,7 @@ spec:
      - digital signature
      - key encipherment
      - server auth
-  request: $(cat jane.csr|base64 -d|tr -d"\n")
+  request: $(cat jane.csr|base64|tr -d"\n")
 ```
 
 ```sh

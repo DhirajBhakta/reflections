@@ -14,16 +14,16 @@ print
 - Print 5 lines AFTER match --> `-A5`
 - Print 5 lines BEFORE match --> `-B5`
 - Print 5 lines around match(context) --> `-C5`
-
-## Secondary tips
 - Print line number of each match --> `-n`
-- 
+- ...
+- Count number of matches (count lines) --> `-c`
+- Show file names only --> `-l`
 - 
 
 
 # Grep variants
 
-### egrep = enhanced grep  `grep -E`
+#### egrep = enhanced grep  `grep -E`
 more meta characters that you can use
 
 ```bash
@@ -32,7 +32,7 @@ $ cat /usr/bin/egrep
 # you will see that its just invoking `grep -E` lol
 ```
 
-### fgrep = fixed grep `grep -F`
+#### fgrep = fixed grep `grep -F`
 patterns are treated as strings, not regular expressions
 ```bash
 $ cat /usr/bin/fgrep
@@ -40,17 +40,40 @@ $ cat /usr/bin/fgrep
 # you will see that its just invoking `grep -F` lol
 ```
 
-### `grep -v` inverted search
+#### `grep -v` inverted search
 show everything that did not match the pattern
+Typically used as a filter
+```sh
+grep -i password * | grep -v junk
+```
+I want to search for "every", but not "everyone", "everybody", "everywhere"
+```sh
+grep every * | grep -v everyone | grep -v everybody | grep -v everywhere
+#OR
+grep every * | grep -Ev '(everybody|everyone|everywhere)'
+```
 
-### Search across multiple files
+#### Search across multiple files
 `grep -i run-parts /etc/cron.d/*`
 
  you can also just write all the filenames at the end separated by space
 
-
-### Search within a directory 
+#### Search within a directory 
 `grep -R pattern dir`
+
+#### Show only the matched string `-o`
+Useful when
+- you want to count the total occurrences of a word (there may be more than 1 match on single line, simple grep will count the matches as 1)
+```sh
+grep every * | grep -Ev '(everybody|everyone|everywhere)' | grep -o every | wc -l
+```
+- you want to see what the matches are
+```sh
+grep -o "is.*line" testfile
+> is line is the 1st lower case line
+> is line
+> is is the last line
+```
 
 
 # Regexp
@@ -85,18 +108,27 @@ Match 'A' or 'B'
 ### `[3-9]`
 Match all digits 3 to 9
 
+### `[^A-Z]`
+DOESNT include any caps alpha characters.
+
 ### `^` and `$`
 `^` is start of the line, and end of the line is marked by `$`
 
-## Case studies
-1. `grep 127.0.0.1 /etc/hosts`
-    this actually works! 12.0.0.1 is a regular expression lol. the "dot" stands for any character
+## Examples
+
+1. `grep -c "^$" messages.log python.log`  
+	 count empty lines in both these files.
+2. `grep -w .... messages.log`
+	match all 4 letter words i.
+3. `grep 127.0.0.1 /etc/hosts`
+     the "dot" stands for any character
+     So it will not work as intended. Use `grep "127\.0\.0\.1 /etc/hosts"` to escape dot.
     just try `grep 127...... /etc/hosts` and you'll see the same output
 
-2. `grep -F 127.0.0.1 /etc/hosts`
+4. `grep -F 127.0.0.1 /etc/hosts`
     then this will ignore meta characters. "dot" will not have any meaning. does exact string match . patterns are 
 
-3. `grep -v '^#' /etc/services | head`
+4. `grep -v '^#' /etc/services | head`
     to not see any comments
 
     `grep -ve '^#' -ve '^$' /etc/services`
@@ -107,13 +139,12 @@ Match all digits 3 to 9
     Quite useful in say checking the configs of say sshd_config 
     ` grep -Ev '^(#|$)' /etc/ssh/sshd_config ` where i dont want to see disabled lines and empty lines
 
-4. ```bash
+5. ```bash
     echo "color" > file
     echo "colour" >> file
-    ```
-    `grep -E 'colou?r' file1`
+	grep -E 'colou?r' file1`
 
-5. `grep -i 'permitroot' -C5 /etc/ssh/sshd_config `
+6. `grep -i 'permitroot' -C5 /etc/ssh/sshd_config `
     Show me 5 lines before and after (the context) of matches with "permitroot" case insensitive
 
 6. List TCP port of single digit
@@ -130,6 +161,7 @@ Show all the words which start with "a" and end with "ss"
     `grep -E '^m.d...e$' /usr/share/dict/words`
 
 10. `grep '^[A,E].*o' file` Match all strings starting with A or E and ending with o.
+11. `grep -i "^[^aeiou]" /usr/share/dict/linux.words` Match all lines NOT starting with a vowel.
 
 
 

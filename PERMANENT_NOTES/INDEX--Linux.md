@@ -8,6 +8,10 @@
 [[why arent ALL kernel modules dynamically loaded via modprobe?]]
 [[steps in compilation of c program]]
 [[static linking vs dynamic linking in c]]
+
+### Shell
+[[grep]]
+[[find]]
 ### Querying about the machine
 [[find my linux distro]]
 
