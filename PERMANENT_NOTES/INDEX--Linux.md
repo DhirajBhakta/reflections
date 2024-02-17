@@ -12,6 +12,21 @@
 ### Shell
 [[grep]]
 [[find]]
+### Installation (archlinux)
+[[creating a liveusb]]
+[[archlinux installation]]
+vmlinuz? initramfs? /boot/initramfs-linux-fallback.img ? mkinitcpio? /etc/mkinitcpio.conf
+networkManager vs netctl ? wpa_supplicant?
+grub ?
+
+### Disk Management
+[[lsblk]]
+[[partitioning a disk - fdisk]]    [[Logical volumes, LVM]]
+[[formatting a disk - mkfs]]
+[[repairing a disk - fsck]]
+[[dd command]]
+
+
 ### Querying about the machine
 [[find my linux distro]]
 

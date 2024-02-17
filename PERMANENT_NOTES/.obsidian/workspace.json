@@ -1,35 +1,46 @@
 {
   "main": {
-    "id": "6bd382d5a1209502",
+    "id": "a25c09c24dcdf249",
     "type": "split",
     "children": [
       {
-        "id": "6330448918d005c1",
+        "id": "acb008f5e3abd60b",
         "type": "tabs",
         "children": [
           {
-            "id": "e0628664a1b6bc8e",
+            "id": "02446005ab8c4b09",
             "type": "leaf",
             "state": {
               "type": "empty",
               "state": {}
             }
+          },
+          {
+            "id": "f078c6a19b952e1c",
+            "type": "leaf",
+            "state": {
+              "type": "release-notes",
+              "state": {
+                "currentVersion": "1.4.14"
+              }
+            }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
   },
   "left": {
-    "id": "2f4ccee0382adb07",
+    "id": "f71bc2825396b2cf",
     "type": "split",
     "children": [
       {
-        "id": "d614964baedaa115",
+        "id": "cefd96fbca95a7c0",
         "type": "tabs",
         "children": [
           {
-            "id": "4e993d168adb8072",
+            "id": "badf5784979b6d2b",
             "type": "leaf",
             "state": {
               "type": "file-explorer",
@@ -39,7 +50,7 @@
             }
           },
           {
-            "id": "5e294cd272a9e4af",
+            "id": "f7355100e55242fe",
             "type": "leaf",
             "state": {
               "type": "search",
@@ -54,7 +65,7 @@
             }
           },
           {
-            "id": "80e829ab6ff36623",
+            "id": "cb2abe0aa5efd9d0",
             "type": "leaf",
             "state": {
               "type": "bookmarks",
@@ -68,15 +79,15 @@
     "width": 300
   },
   "right": {
-    "id": "261c15b8eceb7e6b",
+    "id": "c4c277c072bc285c",
     "type": "split",
     "children": [
       {
-        "id": "e5bc5809d8176645",
+        "id": "56e0f4d94559a439",
         "type": "tabs",
         "children": [
           {
-            "id": "44b9b3281b40bc40",
+            "id": "3128f120cb6b17dd",
             "type": "leaf",
             "state": {
               "type": "backlink",
@@ -92,7 +103,7 @@
             }
           },
           {
-            "id": "1e8b6e8fa7d10798",
+            "id": "a4076e743f25fb1c",
             "type": "leaf",
             "state": {
               "type": "outgoing-link",
@@ -103,7 +114,7 @@
             }
           },
           {
-            "id": "4d237d3699c9924e",
+            "id": "ea7da1aa7d361aca",
             "type": "leaf",
             "state": {
               "type": "tag",
@@ -114,7 +125,7 @@
             }
           },
           {
-            "id": "4cc54407ee4a418d",
+            "id": "4133b4e19ccca20b",
             "type": "leaf",
             "state": {
               "type": "outline",
@@ -138,8 +149,6 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "e0628664a1b6bc8e",
-  "lastOpenFiles": [
-    "Databases/scylladb.md"
-  ]
+  "active": "f078c6a19b952e1c",
+  "lastOpenFiles": []
 }

@@ -1,0 +1,1 @@
+The officially supported DB drivers are mostly made by the people who developed the DB. The drivers would probably be **aware of the topology of the db nodes**, and hence would be able to route requests with least latency...getting you the best performance. 
