@@ -9,22 +9,6 @@ TODO:
 - Threads
 - Processes
 
-## Concurrency vs Parallelism
-![](../assets/js-05.png)
-
-- Goals of Concurrency|Asynchronicity
-    - To have a non blocking application
-    - To make your application usable (should not hang)
-    - **NOT** to increase performance
-    - You can do concurrency in just **one thread**. Event loop for example. One thread can time slice between tasks...
-    - Every concurrent application is not a candidate for being parallel. Chatty threads (threads depending on each other), are not meant to be run parallely.
-    - Concurrency enables parallelism
-    - Concurrency simplifies synchronization
-- Goals of Parallelism
-    - _speed_ , max performance
-![](../assets/js-06.png)
-![](../assets/js-07.png)
-
 ### Asynchronous code does NOT use threads under the hood.
 Before we knew async, we thought that _if one (main) thread is blocking, why not just create another thread and run the blocking code there?_ 
 
