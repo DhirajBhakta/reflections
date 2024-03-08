@@ -1,8 +1,5 @@
 ## Intro
 
-We have RDBMS, NoSQL datastores, stream processors, batch processors, message brokers. <u>Which one is best suited for your application?</u>
-
-This book is about Principles of data systems.
 
 - databases
 - caches

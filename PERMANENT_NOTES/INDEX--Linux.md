@@ -63,6 +63,8 @@ TODO: [[building from source]]
 
 
 # Networking 
+[[DMA — Direct Memory Access]]
+
 
 [[how to check if a port is open (port->PID)]]
 [[how to check if a port is open (port->PID)|which process is listening on given port(port->PID)]]
