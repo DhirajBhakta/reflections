@@ -2,5 +2,12 @@
   "vimMode": true,
   "showLineNumber": true,
   "newFileLocation": "current",
-  "attachmentFolderPath": "FLEETING_NOTES/assets"
+  "attachmentFolderPath": "FLEETING_NOTES/assets",
+  "pdfExportSettings": {
+    "includeName": true,
+    "pageSize": "Letter",
+    "landscape": false,
+    "margin": "0",
+    "downscalePercent": 100
+  }
 }

@@ -1142,6 +1142,18 @@ You add more task queues when you want to scale workflows independently...
 ## Development Environment
 "Temporalite" with sqlite
 
+
+### Talks
+1. when to use workflow engines?
+	1. interactions where one user stays for minutes.. another user for days.. the entire user "context" can be held in a workflow. 
+	2. Workflows to link "bill fetch" to a "bill payment"..assuming you do payment after fetch.. you can link it all in one and watch their course of progress, easier to log and debug when the context is sandboxed.
+		1. parts need NOT be in sequence
+		2. might include human in the loop
+		3. you did X->Y->Z and something went wrong in X.. you realized it late.. you can just execute that part X and carry on.. 
+	3. Useful when you have hundreds of forms.. you can decouple parts of it.. make parts of workflow, and autogenerate the UI for it..and even have the ability to rearrange the parts whenever you want. 
+![[Pasted image 20240318140329.png]]
+1. how to know if youre using it well?
+2. are workflow models the future?
 ## KTLO
 
 #### [Making (code) changes to workflows ](https://docs.temporal.io/go/versioning/)
@@ -1202,6 +1214,8 @@ For temporal server to detect failure timely
 
 ## Rabbit Scenario
 --- 
+
+
 
 # Resources
 - [Example temporal application](https://github.com/temporalio/background-checks)

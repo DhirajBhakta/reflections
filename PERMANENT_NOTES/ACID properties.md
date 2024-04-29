@@ -1,20 +1,25 @@
-_The goal of ACID properties is to always keep the db in a consistent state._
-### What is a Transaction? 
+https://jepsen.io/consistency
+
+_ACID Properties are the guarantees provided by DB Transactions._
+
+("C" does not belong in ACID. It was just put there to make the acronym work!)
+
+#### What is a Transaction? 
 a collection of queries, which form a unit of work. All of these queries should be done OR all should not be done.. The DB should be consistent before and after the transaction.
 
-## Atomicity
+### Atomicity
 "Atom" = "Unit"
 "Unit" = a collection of queries
 All queries in the unit must succeed. If one fails, all should rollback. 
 
-## Isolation
+### Isolation
 _Can my inflight transaction see changes made by other transactions?_
 
 Suppose there's an ongoing transaction ( debit 100 for X + credit 100 for Y) and in the mean time, another transaction appears ( debit 50 forX + credit 50 for Z )...what happens?
 
 Without something called "Isolation Levels", we get "Read Phenomena"
 
-### Read Phenomena
+#### Read Phenomena
 "Read Phenomena" are undesirable effects that can happen when multiple concurrent transactions are reading data from the DB. These lead to unexpected outcomes.
 ##### Dirty Read
 _The inflight transactions READS a row that was written by another transaction but NOT YET COMMITTED._ 
@@ -61,11 +66,20 @@ OR, you can implement locks on the row, not allowing any updates until the trans
 Transactions are serialized. 
 Transactions run one after another, nothing is running in parallel. No concurrency issues. 
 
-## Consistency
-_Atomicity and Isolation --> lead to consistency_
+### Consistency (or Linearizability)
 
-Its about maintaining the correctness,integrity of data in the db. Includes enforcement of business rules as per the application.
+**"Consistency" doesn't really belong to the ACID properties, its not a guarantee provided by the database. Its there just to make the acronym work!**
+
+>**Warning**: "C" actually does NOT belong in ACID. It was just put there to make the acronym work!
+>Consistency here refers to honoring application level "invariants" or "integrity" or "correctness", its less about database guarantees, but more about application's domain's invariants.
+>Database guarantees is actually limited to just AID: Atomicity, Isolation, Durability.
+
+Its about maintaining the correctness,integrity of data in the db. Includes enforcement of business rules as per the application. 
 Even if an error happens in a transaction, it must be rolled back to ensure the db is in a consistent state before and after the transaction.
+
+A and I => C
+Atomicity and Isolation => enable "Consistency"
+
 
 - Consistency in Data
 	- Sometimes it matters, sometimes it does not.
@@ -73,15 +87,21 @@ Even if an error happens in a transaction, it must be rolled back to ensure the 
 	- Enforced by Atomicity and Isolation.
 - Consistency in Reads
 	- Sometimes it matters, sometimes it does not.
-	- _If a transaction committed a change, will a new transaction immediately see the change?_  : -> Strong consistency, Eventual consistency.
+	- _If a transaction committed a change, will a new transaction immediately see the change?_  : -> Strong consistency(Linearizability), Eventual consistency.
 	-  Both RDBMS and NoSQL suffer to get strong consistency. Think read replicas. 
-
-## Durability
+### Durability
 _Committed transactions must be persisted in a durable non-volatile storage._
 
 
 
 
-# TBD
-- what exactly is a "commit" ?
+
+### Transactions are super costly!
+for eg: to enforce the strongest Isolation level "Serializable", you need 2PC 2 phase commits, which slows down the performance significantly due to Locks.
+
+Do you really need Transactions? Do you really need Locks?
+
+Perhaps you can ease out the hard constraints on normalization, and denormalize tables such that related data **are on the same node**. You can then avoid having Locks on multiple tables for a single request.
+
+Perhaps you can choose eventual consistency. 
 

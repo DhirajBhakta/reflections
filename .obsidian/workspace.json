@@ -8,42 +8,19 @@
         "type": "tabs",
         "children": [
           {
-            "id": "7e2d27f33ce83f21",
-            "type": "leaf",
-            "state": {
-              "type": "release-notes",
-              "state": {
-                "currentVersion": "1.5.3"
-              }
-            }
-          },
-          {
-            "id": "5d26c36ca90ce394",
+            "id": "41297838824d9d7d",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "PERMANENT_NOTES/INDEX--Event-Driven-Architecture.md",
-                "mode": "source",
-                "backlinks": true,
-                "source": false
-              }
-            }
-          },
-          {
-            "id": "c5ecdad17e1d4b3a",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "PERMANENT_NOTES/events vs commands.md",
+                "file": "FLEETING_NOTES/distributed_systems/general.md",
                 "mode": "source",
                 "source": false
               }
             }
           },
           {
-            "id": "c5ac34733bf310ba",
+            "id": "cd7a0cfd3f0d78ba",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -55,46 +32,48 @@
             }
           },
           {
-            "id": "bc4e3b3592504e1f",
+            "id": "af365ebaf1e59ed2",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "PERMANENT_NOTES/INDEX--Linux.md",
+                "file": "FLEETING_NOTES/DDIA/general.md",
                 "mode": "source",
                 "source": false
               }
             }
           },
           {
-            "id": "d393efbed6d94941",
+            "id": "19de27f3f6066764",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "FLEETING_NOTES/python/logging.md",
+                "file": "FLEETING_NOTES/DDIA/general.md",
                 "mode": "source",
                 "source": false
               }
             }
           },
           {
-            "id": "41297838824d9d7d",
-            "type": "leaf",
-            "state": {
-              "type": "image",
-              "state": {
-                "file": "FLEETING_NOTES/assets/linux-23.png"
-              }
-            }
-          },
-          {
-            "id": "cd7a0cfd3f0d78ba",
+            "id": "4825ac174605dd68",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "FLEETING_NOTES/obsolutely_miscellaneous/clear thinking.md",
+                "file": "PERMANENT_NOTES/INDEX--Distributed Systems.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "dd1ba9181a24e9a1",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "PERMANENT_NOTES/CAP theorem.md",
                 "mode": "source",
                 "source": false
               }
@@ -130,7 +109,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "",
+                "query": "quorum",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -151,7 +130,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 300,
+    "collapsed": true
   },
   "right": {
     "id": "b3d4aba317331d81",
@@ -228,39 +208,49 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "c5ac34733bf310ba",
+  "active": "19de27f3f6066764",
   "lastOpenFiles": [
-    "FLEETING_NOTES/assets/ddia-19.png",
-    "FLEETING_NOTES/assets/ddia-18.png",
-    "FLEETING_NOTES/DDIA/ch3.md",
+    "FLEETING_NOTES/assets/ddia-51.png",
+    "FLEETING_NOTES/assets/ddia-50.png",
+    "FLEETING_NOTES/assets/ddia-49.png",
+    "FLEETING_NOTES/C/general.md",
     "FLEETING_NOTES/DDIA/general.md",
-    "FLEETING_NOTES/assets/ddia-13.jpeg",
-    "README.md",
-    "FLEETING_NOTES/python/logging.md",
-    "FLEETING_NOTES/computer_architecture/general.md",
-    "FLEETING_NOTES/computer_architecture/computer-architecture.md",
-    "FLEETING_NOTES/computer_architecture/cpu.md",
-    "PERMANENT_NOTES/DMA — Direct Memory Access.md",
-    "FLEETING_NOTES/assets/linux-24.png",
-    "PERMANENT_NOTES/INDEX--Linux.md",
-    "FLEETING_NOTES/assets/linux-23.png",
-    "FLEETING_NOTES/assets/linux_00.jpeg",
-    "FLEETING_NOTES/assets/linux-00.png",
-    "FLEETING_NOTES/assets/linux-00.jpg",
-    "FLEETING_NOTES/DDIA/ch2.md",
-    "FLEETING_NOTES/DDIA/ch1.md",
-    "FLEETING_NOTES/DDIA/Untitled.md",
-    "FLEETING_NOTES/assets/ddia-17.png",
-    "FLEETING_NOTES/DDIA/sql_nosql.md",
-    "FLEETING_NOTES/assets/ddia.png",
-    "FLEETING_NOTES/DDIA/ch5.md",
-    "FLEETING_NOTES/assets/ddia-00.png",
-    "PERMANENT_NOTES/INDEX--DDIA.md",
+    "FLEETING_NOTES/assets/ddia-48.png",
+    "FLEETING_NOTES/distributed_systems/general.md",
+    "FLEETING_NOTES/assets/ddia-48.webp",
+    "PERMANENT_NOTES/INDEX--Distributed Systems.md",
+    "PERMANENT_NOTES/CAP theorem.md",
+    "PERMANENT_NOTES/ACID properties.md",
+    "PERMANENT_NOTES/subnets.md",
+    "PERMANENT_NOTES/Transactions are costly.md",
+    "PERMANENT_NOTES/INDEX--Databases.md",
+    "PERMANENT_NOTES/consistency models.md",
+    "PERMANENT_NOTES/gevent is BAD sometimes.md",
+    "PERMANENT_NOTES/grep.md",
+    "FLEETING_NOTES/assets/ddia-47.png",
+    "FLEETING_NOTES/assets/ddia-46.png",
+    "FLEETING_NOTES/assets/ddia-45.png",
+    "FLEETING_NOTES/asse",
+    "FLEETING_NOTES/assets/ddia-44.png",
+    "FLEETING_NOTES/obsolutely_miscellaneous/productivity.md",
+    "FLEETING_NOTES/assets/ddia-33.png",
+    "FLEETING_NOTES/ZooKeeper/general.md",
+    "FLEETING_NOTES/ZooKeeper",
+    "FLEETING_NOTES/assets/ddia-44.webp",
+    "FLEETING_NOTES/assets/ddia-43.png.crdownload",
     "FLEETING_NOTES/obsolutely_miscellaneous/clear thinking.md",
-    "PERMANENT_NOTES/INDEX--Event-Driven-Architecture.md",
-    "PERMANENT_NOTES/events vs commands.md",
-    "PERMANENT_NOTES/D-Bus.md",
-    "PERMANENT_NOTES/INDEX--Algorithms.md",
-    "Untitled 1.md"
+    "FLEETING_NOTES/obsolutely_miscellaneous/unfuck_yourself.md",
+    "FLEETING_NOTES/System_Design/general.md",
+    "FLEETING_NOTES/System_Design/notes.md",
+    "FLEETING_NOTES/System_Design/ch6.md",
+    "FLEETING_NOTES/System_Design/ch5.md",
+    "FLEETING_NOTES/System_Design/ch4.md",
+    "FLEETING_NOTES/System_Design/ch1.md",
+    "FLEETING_NOTES/Temporal/general.md",
+    "Untitled.canvas",
+    "FLEETING_NOTES/Operating_Systems/linux.md",
+    "FLEETING_NOTES/networking/networking.md",
+    "FLEETING_NOTES/assets/tracing-01",
+    "FLEETING_NOTES/assets/2015-part-1-293-mcqs-by-ima.pdf"
   ]
 }

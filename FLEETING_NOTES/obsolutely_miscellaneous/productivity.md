@@ -1,4 +1,5 @@
-
+Why be productive? To be a nice little compliant worker drone and maximize your contribution to capitalism?..
+Productivity makes you feel _content and fulfilled._ Its frustrating and stressful to be behind at work or studies, and that frustration bleeds into personal life. Being productive at any place means being able to "switch off" when you leave that place for the day, and be totally present in whatever you're doing and not worry about unclosed loops.
 # The case against productivity tools
 - todo lists, wunderlust, google tasks
 

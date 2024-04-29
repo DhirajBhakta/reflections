@@ -9,9 +9,10 @@ The easiest way to improve DB performance(latency,throughput) is to scale up/sca
 [[LSM Trees & Compaction]]
 [[B Trees & B+Trees]]
 [[ACID properties]]
+[[transactions are costly]]
 [[LWT - light weight transactions]]
 [[prepared statements]]
-
+[[consistency models]]
 # Data
 ### Item Size
 [[databases should NOT store large blobs]]
