@@ -9,6 +9,8 @@ Book Overview
 - Learn key principles in the above tools, which you can use to make any system scalable and highly available.
 - Learn how each tool in a given area(say caching) is similar to other tools in the same area, and what sets it apart.
 - Storage & Retrieval — How storage engines lay out the data on disk for faster writes OR(AND) faster reads. Indexing approaches
+Other References:
+- [Tag: Jepsen (aphyr.com)](https://aphyr.com/tags/jepsen)
 
 #### Tools which store and process data
 - DATABASES
@@ -23,17 +25,123 @@ Book Overview
 	- Spark
 - STREAM PROCESSING
 	- Flink
+	- Storm
 
 The categorisation shouldn't end at such a broad level. There are different approaches to caching, different ways to build search indexes.. 
 
 Some tools don't fit neatly into any ONE category. Redis is used as a cache as well as a message queue. Kafka is a message queue but has database-like durability guarantees.
 
+#### Multiple Data Stores — Keeping them In Sync
 Complex application, _multiple different data access patterns_..  **One database to rule them all?** — Such a system does not exist. You have to mix and match different available data stores for your needs
+> Every piece of s/w(incl "general purpose" DBs) is designed for a **particular usage pattern** (access pattern). You need to figure out the mapping between s/w products and the circumstances in which they are a good fit.
+
+Data is often used in several ways(written in several ways, read in several ways). There is unlikely to be ONE s/w that is suitable for ALL different circumstances in which data is used. You inevitably have to _cobble together_ several different s/w to provide the required functionality.
 - multiple specialised data stores (databases, indexes, caches, analytic systems etc.) – and  maybe _stitch_ them together by implementing mechanisms to move data from one store to another
 - each data store may have different  [[#Data Models]].
-- These data systems can be broadly categorised into 2 (**primary source** of data, **derived source** of data)...derived via an "ETL" process (eg: cache, indexes, denormalised values)..._redundant data_, derived data stores can be **recreated** if lost. Derived data stores are key for performance (are created just for performance...)
+- These data systems can be broadly categorised into 2 (**primary source** of data, **derived source** of data)...derived via an "ETL" process (eg: cache, indexes, denormalised values)..._redundant data_, derived data stores can be **recreated** if lost. Derived data stores are key for performance (are created just for performance...). Note that even smaller parts of Stream Processors, Batch Processors may keep a small copy(redundant) of the primary DB to speed up local computation.
 	- Knowing this flow(dataflow) helps you understand inputs and output of each data system in your complex application, and which data system depends upon which..
+	- Only when you _zoom out_ and consider all the dataflows across the entire org, it becomes apparent how many different data stores(redundant) you need to keep and how to define data flows to tie them all up together(to keep them in sync).
 	- Nobody says, "_postgres is supposed to be used as a primary source of data_", its totally up to you how to use a given a data store.
+- Questions to ask
+	- Be very clear about inputs and outputs
+	- Where is data written first?
+	- Which representations(materialized views)(redundant secondary data stores) are derived from which sources?
+	- How do you get data into all right places in the right formats?
+- How to keep all the data stores in sync (consistent)?
+	- Redundancy: Each store has its own copy of the same data, stored in its own representation that is optimized for its own purposes.
+	- If an item is updated in the primary DB, it needs to be updated in the cache, search indexes(ES, Lucene), data warehouse, secondary DB for whatever purpose of data access...
+	- **ordering is important here**, changes need to be applied in same order on all data stores that are kept in sync, same order being applied on the primary DB (total ordering).
+	- Can sync them with BatchProcesing ETL ... need to wait for end of the day. Full Copy of DB --> ETL --> bulk load into another data store.
+	- Can sync them with **_dual writes_**  ... application code itself writes to N stores (updating search index, updating cache entries) **This has a race condition problem** (2 writes updating the same value, can make data stores permanently inconsistent with each other) , or write to one store may fail and write to another store can succeed. Atomic Commit problem [[#Distributed Transactions — 2 Phase Commit]] . But using 2PC for this hurts performance a lot! (locks and mutual exclusions)
+	- Can Sync them via CDC ... this is the best approach (total ordering guaranteed)
+- Write Path and Read Path:
+	- **Write Path**: new information going though ETL (Batch Processing / Stream Processing) and ending up on derived redundant data stores. 
+	- **Read Path**: Querying primary or derived data stores. _You create a derived data store in the first place..to make the read path cheaper._
+	- _If you do more work in write path, you get to do less work on the read path._ (Trade off). eg: No Index(DB index or ES term index) means less work on the write path, but more work on the read path. The goal of derived data stores is to shift the boundaries of read path and write path.
+		- precomputations (eager computations)
+		- caches
+		- full text search indexes
+	- Write path is eager evaluation; Read path is lazy evaluation.
+	- Options:
+		- **Precompute search results for ALL queries**: Nearly zero work on read path. But Overwhelming amount of work on the write path.
+		- **Precompute search results only for fixed set of most common queries**: _cache_ of common queries. A _materialized view_. 
+![[ddia-66.png]]
+![[ddia-63.png]] (You Need to avoid **dual writes** to keep all data stores in sync)
+![[ddia-64.png]]
+
+##### Distributed Transactions(2PC,XA) vs Logs for syncing secondary datastores with the primary
+_**Distributed Transactions vs Asynchronous Log Based systems**_
+Related: [Pattern: Transactional outbox (microservices.io)](https://microservices.io/patterns/data/transactional-outbox.html)
+Related: [[#Total Ordering vs Causal Ordering]]
+
+**Dual Writes** with [[#Distributed Transactions — 2 Phase Commit|2PC]](Atomic Commit Protocol) is the "classic" way to keep data stores in sync. 
+- Distributed Transactions decide on an ordering of writes by using **locks and mutex**.
+- They use Atomic Commit to ensure changes take place **exactly once**.
+- Synchronous
+	- Hence, if one participant fails, the entire distributed TXN is aborted. Every single secondary data store will just not accept the write just because ONE system failed to accept a write.
+- Distributed Transactions **provide Linearizability** [[#Strongest Consistency — Linearizability]] ,
+	- which in-turn provides guarantees like "read-your-own-writes". The moment you read something _immediately after writing_, you have the guarantee that its not stale
+	- _Do you really need such timing guarantees??_
+- Poor Performance.
+
+CDC/EventSourcing (Logs Approach) can also be used to keep data stores in sync. 
+- They use a log for ordering. Order of state changes is extremely important. Hence you need a [[#Message Broker — Log Based Message Brokers|Log based message broker like Kafka]] , AMQP style message brokers will not work here.
+- They depend on **deterministic retry** and **idempotence** to enforce **exactly once** guarantees(technically its "effectively once")
+- Asynchronous
+	- Fault in one system is contained locally. Writes to all other systems go through without any problem.
+	- The Faulty consumer can _catch up_ when its fixed (thanks to [[#Message Broker — Log Based Message Brokers|durability and ordering guarantees of log based message brokers(Kafka)]]). It just need to maintain the _Consumer Offset_ at its side.
+- Log Based systems -> Implies its asynchronously applied.. do not provide timing guarantees. Not Linearizable. Does not provide "read-your-own-writes consistency".
+	- _Do you really need such timing guarantees??_
+- Best Performance.
+
+> **Note**: **_Ordered Log of Events with idempotent consumers BEATS distributed transactions for keep heterogenous data stores in sync_**
+> Asynchronous Log-based derived data(CDC/EventSourcing) with idempotent writes is the most promising approach for integrating different data systems . NOT distributed transactions.
+
+##### Comparing building secondary data-stores to building (secondary) indexes in single node DB
+_parallels of batch/stream processing to triggers/stored procs_
+[[#Building an Index — General approach|Building an index]] (on a single node) is similar to [[#Replication — Adding new replica|Setting up a new follower]] (across multiple nodes) or setting up CDC for building up a secondary redundant data store, in that.. all these systems involve
+- an initial snapshot
+- an _offset_ marking the position where initial snapshot was taken
+- processing subsequent events from the _offset_ to get the index/new follower/new datastore up-to-date.
+
+single node (db internal) systems that keep indexes or materialized views up-to-date are remarkably similar to multi-node multi-datastore systems which need to be kept in sync(albeit implemented via batch/stream processing).
+
+This makes it look like batch/stream processing are elaborate implementations of single node (db internal) triggers, stored procs, materialized view maintenance routines. The derived data stores are like different index types.
+
+##### Comparing building secondary data-stores to Spreadsheets (reactive programming), React-Redux, The Observer Pattern.
+> "_Spreadsheets have dataflow programming capabilities that are miles ahead of most mainstream programming languages_"
+
+You can put a formula in one cell in a spreadsheet, whenever the input to the formula changes, the formula is automatically re-calculated!
+In react, whenever the state changes, the corresponding view automatically re-renders.
+This is the **Observer Pattern*
+
+When a record in DB is updated, 
+- we want the index to be automatically updated
+- any materialized views (aggregations, cached views) to be updated
+- = = = (next few points are a fantasy at this point) = = =
+- Any secondary data store (redundant) to be updated via CDC/EventSourcing.
+- Any distributed cache to be automatically updated.
+- Any search index(ES) to be automatically updated.
+
+Stored procs/Triggers are too awkward to make the above happen, hence you depend on stream processing / Batch processing. Why awkward? the following gets hard for stored procs/Triggers
+- version control
+- rolling upgrades
+- dependency/package management
+- monitoring, metrics
+- making API calls, n/w calls
+- integration with other external systems
+
+There's a need for a mental model shift, paradigm shift. Most programming languages don't allow you to **_subscribe to changes to a variable_**. You can only read it periodically. Observer pattern isn't a built in feature. 
+Databases follow the same approach. Triggers/Stored Procs and even CDC is an afterthought in DB design. Noone currently takes it seriously to build it as a first class citizen. **You have to POLL the DB to check if the content of data has changed**. Once you shift the model to subscribing to data changes, a lot of opportunities open up.
+> _Application code responds to state changes in one place by triggering state changes in another place_
+
+Take this to the extreme, and you would have local DBs inside mobile devices subscribe to changes from primary server DB via websockets(or SSE), and avoid round trip time. (Traditionally, mobile apps are stateless. New changes are detected only upon page reload(polling for changes). No concept of subscription to changes.)
+**What about the events lost when the device is offline?** The device can use the "Consumer Offset" and fetch all the events from where it left off from a [[#Message Broker — Log Based Message Brokers|Log based message broker(Kafka)]]
+> **Note**: Most Games already have such realtime architecture.
+> Its just that other corporate CRUD apps are stuck in the request-response limbo since decades. _Stateless clients_ and _request-response_ interactions is very deeply ingrained in our DBs, libraries, frameworks, protocols.
+
+
+
 
 
 #### Data Processing styles — Request-Response(Online), Batch, Stream
@@ -56,6 +164,10 @@ Complex application, _multiple different data access patterns_..  **One database
 	- processes "events" soon after they occur
 		- lower latency than batch.
 	- NOT meant to respond to requests(from user)
+- Combination of Batch and Stream Processing
+	- **Lambda Architecture**
+	- **Kappa Architecture**
+	
 
 #### Scalability — How to describe/measure load
 > **Note**
@@ -349,6 +461,15 @@ An "index" is a special additional structure derived from primary data,  which *
 >_The techniques described, indexes, etc are just to **get around the awkwardness of writing to disk**. Its very hard to lay out data in a way that you can access them back faster on disk.
 >Had you done all this in-memory, it would have been far more easier. So many data structures can be implemented in-memory without worrying about storage details. But memory is NOT durable, all data get wiped out on power loss...hence...the following techniques/indexes.
 
+
+#### Building an Index — General approach
+1. SCAN over a [[#Isolation Level — Read Committed|Consistent Snapshot]] of a table to pick out all the _field values_ being indexed.
+2. Sort the field values
+3. Write to index
+4. Process the _Backlog_ of writes that were made since the consistent snapshot was taken (table was not locked when creating an index, hence writes can keep coming in the meantime)
+5. = = = 
+6. For every subsequent write, update/write to the index and keep the index in sync with the main table.
+
 #### Storage & Retrieval — Indexes |  Hash Indexes
 ![[ddia-01.png]]
 A hash Index is an in-memory hash-table which can give you the location of a key on disk in O(1). 
@@ -549,8 +670,11 @@ Keeping everything In Memory
 	- But DB can manage memory more efficiently than OS, as it can work at the granularity of individual records rather than entire memory pages. 
 
 #### OLAP - Column Oriented Storage 
-
+TODO
 #### OLAP - Parquet format
+TODO
+
+
 
 #### Encoding & Evolution — Backward & Forward Compatibility
 _Old and new code, and old and new data formats may potentially coexist._
@@ -1197,6 +1321,7 @@ Safety Guarantees provided by Transactions are called **ACID Properties**.
 
 **Philosophy of Transactions:** "_If the DB in in danger of violating its guarantee of atomicity, isolation or durability, it would rather ABANDON the transaction entirely than allow it to remain half-finished_"
 NoSQL(specially leaderless replicated ones) don't adhere to this, and use "**Best Effort philosophy**": "_The DB will do as much as it can, and if it runs into an error, it won't undo anything. Its the application's responsibility to recover from errors._"
+
 #### Transactions — New Concepts learnt
 - **Dirty Reads** : One TXN reads another TXN's _uncommitted changes_. 
 	- What if the other TXN aborts? or even succeeds by updating the value to something new ? The value you read is stale now. no longer valid.
@@ -1228,18 +1353,19 @@ NoSQL(specially leaderless replicated ones) don't adhere to this, and use "**Bes
 	- Problems with concurrent reads
 		- Dirty Reads
 		- Non-Repeatable Reads
-
 Applications don't need to worry about partial failures, they simply retry (because failed TXNs are totally rolled back).
 By using a Transaction, the application can pretend that there are no crashes(atomicity), that nobody else is concurrently accessing the database(isolation), and that storage devices are perfectly reliable(durability). Even though crashes, race conditions and disk failures do occur, the transaction abstraction hides those problems so that the application doesn't need to worry about them.
 
 #### Transactions — Do you really need it?
-Transactions come at a price of performance. Some applications don't need transactions, but may need _some_ safety properties which can be gotten **without transactions.**
+Transactions come at a price of performance. **Serializability and Atomic Commit come at a very large cost of performance and inability to scale beyond single leader etc**...Some applications don't need transactions, but may need _some_ safety properties which can be gotten **without transactions.**
 
 But there are some "beliefs" that are not entirely true
 - "_Serious applications with valuable data/financial applications NEED Transactions as a requirement._"
 - "_Transactions hamper scalability significantly_"
 - "_Any large scale system needs to ABANDON Transactions to have high availability and performance._"
 
+Often, simple solutions appear to work correctly when concurrency is low (so low that they don't appear to step on each other), but bugs begin to appear at high volume and high concurrency.
+But is Transactions the only way out? Most applications may just do fine with weaker guarantees, causal consistency, eventual consistency etc.. and Transactions can be abandoned for better performance and scalability.
 #### Transactions — ACID Properties
 _The **Safety Guarantees** provided by Transactions._
 
@@ -1806,6 +1932,9 @@ Consistency is about bringing the state of replicas to same value in the face of
 _**Consensus** is the point of Linearizability. Getting everyone to agree on the same thing._
 [[#Consensus]]
 
+Some event happened (Italy won world cup) and it was recorded in a replicated DB. One user reads the event and exclaims "italy won!!", another user reloads the dashboard and sees the stale result that match is not yet finished. This is NOT Linearlizable!
+One you read an up-to-date value, you (and others) should NEVER read a stale value.
+
 
 #### Ordering & Causality — Why do you need it?
 _Ordering preserves Causality_
@@ -1820,7 +1949,7 @@ Why is causality important?
 	- A and B were concurrent
 	- _If A happened before B, there might be a chance that B might depend on A. There IS a causal dependency between them._
 - in **Consistent Snaphots** in **Snapshot Isolation**, "Consistent" means _consistent with causality_.
-- **SSI Serializable Snapshot Isolation** avoid write skews. Write skews break causal dependencies. 
+- **SSI Serializable Snapshot Isolation** prevent write skews. Write skews break causal dependencies. 
 	- Alice an Bob decide to go off call at the same time, but before that, each one of them checks if atleast _somebody_ else is on call. Going off call is causally dependant on observation of who is currently on call.
 
 #### Total Ordering vs Causal Ordering
@@ -1836,7 +1965,28 @@ Where do we find Total Ordering ?
 - Single Leader Replication — **replication log**; defines the total order of write operations . Obviously, it will be causally ordered too. Implemented by monotonically increasing sequence number to each operation in the replication log. The follower must apply the writes in the same order.
 - What about multi leader or leaderless replication?
 	- can they create monotonically increasing _unique_ sequence numbers as a group? No. So is pushing ALL writes through the single leader the ONLY option? NO.
-	- See [[#Lamport Clock — Implementing Total Order]] and [[#Total Order Broadcast]]
+	- Maybe Causal Ordering is enough? See [[#Lamport Clock — Implementing Causal Order]]and [[#Total Order Broadcast]]
+		- Total Order Broadcast is really hurts performance though.
+
+Some Key Terms for digesting the further explanations..
+Related: [Broadcast Ordering - Martin Kleppman lecture](https://youtu.be/A8oamrHf_cQ?si=5RdfFibDaHXCs0VJ)
+Related: [Broadcast Algorithms - Martin Kleppman lecture](https://youtu.be/77qpCahU3fo?si=qW-bfPVvfHnueP50)
+- **Total Order:**(The Ideal) All events have a defined position on a SINGLE TIMELINE, (regardless of whether the events are causally related or not).
+	- Total Ordering is a _Foundation for correctness (and coordination)_ in distributed systems which need to order the events as per causality. (Causal Ordering is a _sideeffect_ of Total Ordering. But you don't _need_ total ordering to guarantee Causal Ordering)
+	- Total Ordering is observed in Single Leader Replication, where the single leader prepares the "totally ordered" replication log, and sends the same to followers, which apply the events in the same order. But this isn't scalable beyond single node(leader). 
+	- If you partition the single node(leader) across multiple nodes, then you need **consensus** to implement total ordering of events, which has bad performance.(Too many leader elections) [[#Consensus — Limitations]]
+- **Total Order Broadcast:** A protocol for reliably delivering messages in the same order to all nodes.
+- **Consensus to Implement Total Ordering of events**: Total Ordering is obtained by _repeated Consensus_. Each event's position in the total order is determined via consensus (all nodes agree on the position and the order)
+- = = = 
+- **Partial Order:** Only causally related events have a defined order, concurrent events can be ordered arbitrarily.
+- **Causal Consistency** and **Partial Order**: A weaker consistency model where only causally related events are ordered. (Concurrent events can be ordered arbitrarily)
+- **Lamport Timestamps:** A way to generate a total order of events that respects causality (NOT Total ordering. This is partial ordering since it only respects ordering within causally related events)
+	- Sequence Numbers (monotonically increasing counters) are the intuitive basis for this algorithm. (Avoiding time-of-the-day clocks, since clocks can have skews).
+	- `NodeID + Counter
+- = = = 
+- Total Order ==> Implies ==> Causal Order
+- Total Ordering provides strong guarantees, but has bad performance, expensive. Causal Ordering provides an acceptable middle ground. **Choose your guarantees wisely**, in most cases, you DON'T need total ordering of events(Overkill and impractical), you just need Causal Ordering.
+- [[#Total Ordering vs Causal Ordering]]
 
 
 #### Causal Consistency – Poor man's Linearizability
@@ -1856,7 +2006,7 @@ Causal Consistency can be implemented via
 - version vectors
 - SSI Serializable snapshot isolation.
 
-#### Lamport Clock — Implementing Total Order
+#### Lamport Clock — Implementing Causal Order
 TODO
 _How to generate monotically increasing unique sequence numbers across nodes, as a group.?_
 
@@ -2049,12 +2199,99 @@ In 2 PC, coordinator is not elected (dictator).
 In 2 PC, vote must be collected from EVERY node (not just a quorum of nodes)
 In 2PC, it BLOCKS if the coordinator dies, until..it recovers..
 #### Consensus — Limitations
+**(_Same as Limitations of Total Order Broadcast_)**
 - **Performance impact** Consensus usually means synchronous replication, impacting performance.
 - frequent leader elections - terrible performance. _Can_ spend more time doing election than actual work.
 - cant add or remove nodes. **Memberships are static**
+- Requires a majority of nodes to be functioning correctly to guarantee progress.
+- Consensus is not scalable. Hence should NOT be used at scale. (NOT to be used on the hot path of your high volume application).
+- Most Consensus algorithms are designed for situations in which throughput of a single node is sufficient to process the entire stream of events. These algorithms don't provide a mechanism to use multiple nodes to share the work of ordering the events.
+	- Basically, "single Leader".
+
+#### Consensus & Leader Election — Deadlock
+_Consensus requires a Single Leader_
+_Leader Election requires Consensus_
+_W T F_
+
+TODO
+
+#### Consensus | Total Order Broadcast | Linearizability — Equivalence
+TODO
+Total Order Broadcast (TOB) and consensus are two fundamental concepts in distributed systems that, at first glance, might seem distinct. However, they are actually deeply intertwined, to the point of being equivalent in their power and capabilities.
+
+**Understanding the Equivalence**
+
+- **Total Order Broadcast:** Ensures that all messages are delivered to all nodes in the same order, reliably and without duplicates.
+    
+- **Consensus:** A process where nodes propose values and agree on a single winning value.
+    
+
+**How TOB is Like Repeated Consensus Rounds:**
+
+Imagine you want to achieve total order broadcast. You can break it down into a series of consensus decisions:
+
+1. **Each Round, One Message:** In each round, every node proposes the message it wants to send next.
+2. **Consensus Decides the Winner:** The consensus algorithm determines which of the proposed messages gets to be the next one delivered to everyone.
+3. **The Log Grows:** This chosen message is appended to the log, and everyone agrees it's in that position.
+4. **Repeat:** The process repeats for the next message, and the next, building a totally ordered log.
+
+**Why This Works:**
+
+- **Agreement:** Consensus ensures everyone agrees on the _same_ message to be delivered next.
+- **Integrity:** Consensus prevents duplicates - only the chosen message is added.
+- **Validity:** Only valid, proposed messages are considered.
+- **Termination:** Consensus guarantees a decision is reached, ensuring no messages are lost.
+
+**The Flip Side: Consensus from TOB**
+
+If you have total order broadcast, you can also solve consensus:
+
+1. **Proposal Phase:** Each node broadcasts its proposed value.
+2. **Wait and Order:** Since TOB guarantees order, everyone will see the proposals in the same sequence.
+3. **Decision:** The _first_ value in the sequence becomes the agreed-upon consensus value.
+
+**Why This Matters**
+
+Understanding this equivalence is powerful:
+
+- **Theoretical Foundation:** It shows these two problems are fundamentally linked, impacting the design and complexity of distributed systems.
+- **Implementation Insight:** If you have a solution for one, you automatically have a solution for the other! This can guide your architectural choices.
+
+This means that if you have a solution for one, you can effectively solve the other two.
+
+Here's why they're equivalent:
+
+**1. Linearizability Implies Total Order Broadcast:**
+
+- **Linearizability:** Requires operations on a single object to appear as if they happen instantaneously at a single point in time. This implies a total order of operations.
+- **Building TOB from Linearizability:** You can create a totally ordered log by using a linearizable register with an atomic "increment-and-get" operation. Each message gets a sequence number from this register, ensuring a total order.
+
+**2. Total Order Broadcast Implies Consensus:**
+
+- **TOB:** Ensures messages are delivered to all nodes reliably and in the same order.
+- **Building Consensus from TOB:** Each node broadcasts its proposal. The first proposal to be delivered by TOB becomes the agreed-upon value.
+
+**3. Consensus Implies Linearizability:**
+
+- **Consensus:** Allows nodes to agree on a single value from a set of proposals.
+- **Building Linearizability from Consensus:** Each operation on a replicated object is treated as a proposal. The consensus algorithm determines the order of operations and the final value of the object.
+
+**Caveats and Nuances:**
+
+- **Theoretical Equivalence:** This equivalence is a theoretical result. In practice, implementing one solution might be more efficient than another.
+- **Specific Operations:** The equivalence holds for the most general forms of these problems. For example, a simple linearizable read/write register is easier to implement than full consensus.
+- **System Model:** The equivalence is usually considered in the context of asynchronous systems with crash-stop failures (nodes can crash but don't act maliciously).
+
+**Key Takeaway:**
+
+Understanding the equivalence between linearizability, total order broadcast, and consensus is a powerful concept in distributed systems. It helps us understand the underlying complexity of these problems and guides our design decisions when choosing appropriate tools and techniques.
+
+
+
 #### Consensus — ZooKeeper , etcd
 _"Membership & Coordination & Configuration Services"_
 _Resemble traditional databases, but SHOULD NOT be used like one... _
+Why not? - Consensus(total order broadcast) is NOT scalable. Hence should not be used at scale. Not to be used on the hot path of your high volume application.
 
 >**Note**: Outsourcing Coordination
 > ZooKeeper free applications from implementing consensus directly, which is notoriously difficult.
@@ -2090,6 +2327,28 @@ _Resemble traditional databases, but SHOULD NOT be used like one... _
 
 
 ---
+#### Batch Processing & Stream Processing
+**Batch Processing**
+- Input Data (files) is _Bounded_. 
+- Use-cases
+	- To create search indexes
+	- To populate another DB (eg: analytics DB, recommendations systems) and create redundancy for performance.
+
+**Stream Processing**
+- Input Data(events) is _Unbounded._ Infinite. Never ends.
+- For _Impatient Users_ who want to see analytics at _real time_. 
+- Process every "event" as it happens.
+- "Stream" = data incrementally made available over time.
+	- eg: stdin, stdout in Unix
+	- eg: TCP connections delivering audio/video over internet
+	- eg: Lazy lists(generators) in programming languages
+	- eg: filesystem APIs - FileInputStream in Java
+
+The lines b/w Batch Processing and Stream Processing is blurring. Spark(Spark Streaming) performs stream processing on top of batch processing by breaking large batches into _microbatches_. Flink performs batch processing on top of a stream processing engine.
+
+The combination of Batch Processing and Stream Processing is called **Lambda Architecture** See [How to beat the CAP theorem - thoughts from the red planet - thoughts from the red planet (nathanmarz.com)](http://nathanmarz.com/blog/how-to-beat-the-cap-theorem.html) 
+![[ddia-65.png]]
+Lambda Architecture is extremely difficult to get right, hence **Kappa Architecture** was proposed by a co-author of Apache Kafka. See [Questioning the Lambda Architecture – O’Reilly (oreilly.com)](https://www.oreilly.com/radar/questioning-the-lambda-architecture/) 
 
 #### Batch Processing
 very old form of computing(1940s)..punch cards, "jobs" for computing aggregate stats from large inputs... resembles MapReduce
@@ -2309,3 +2568,532 @@ _Model entire workflow as ONE job, rather than breaking it up into multiple sub-
 
 >**Note**: backward compatible
 >Workflows implemented in Pig, Hive, Cascading (MapReduce Wrappers)... can be switched from MapReduce to Tez/Spark with a simple configuration change, **without modifying code**
+
+
+#### Stream Processing 
+_unbounded, infinite_
+
+- Sorting doesn't make sense (since events are infinite)
+
+#### Stream Processing - Event
+- "Files" are input to Batch Processing
+- "Events" are input to Stream Processing
+Event = an immutable self contained object containing details of **what happened** and at **what time** (time-of-day clock at the node which generated the event).
+
+Examples:
+- user action (clicks, making purchase, visiting a page..).
+- temperature sensor / CPU utilization ... metrics.
+
+Encoding a "Event"
+- simple text
+- JSON
+- Binary
+
+Where does this "Event" go?
+- appended to a file
+- inserted into a RDBMS / document DB
+- sent over n/w to another node/cluster for centralized stream processing
+
+**Producer/Publisher**: Generates the Event
+**Consumer/Subscriber**: Processing the Event
+**Topic/Stream**: A way to group multiple Events. A publisher may push to one or more topics. A subscriber may listen on one or more topics.
+
+#### Stream Processing — The need for Message Brokers
+Why not just let **producers** append events to a file or insert into a DB and let **subscribers** _POLL_ continuously to pull events? 
+- polling is wasteful/expensive. Most polls may return empty response.
+- More often you poll, more the polls return empty response. High unnecessary overhead
+- Bad for low latency systems
+- **Better to have a PUSH based model than polling(PULL based)**.
+
+Why not use **DB "Triggers"** to do PUSH based message delivery?
+- awkward to write trigger code
+- Triggers aren't primary focus of DB developers. Not feature rich.
+
+Why not use **Direct Delivery (TCP/UDP/Brokerless/Webhooks)** - _No Intermediary nodes_ ?
+- TCP/UDP is primarily designed for one-to-one delivery (Ignore multicast for now). You may want to fanout/load balance among consumers.
+- What happens if producers send messages faster than consumers can process them?
+	- Drop the message.
+	- Buffer them in a Queue.
+		- What if Queue Overflows?
+	- Backpressure (Congestion Control and Avoidance) (Unix Pipes and TCP enforce this)
+- What happens if consumer nodes crash? are messages lost?
+	- Write to Disk? Replication?
+- But still, Direct Delivery is used in certain areas
+	- **UDP Multicast** for stock market feeds streams.. extreme low latency. UDP is unreliable, _but application layer implements fault tolerance and recover lost packets_. (make Producer store sent events, and retransmit on demand if packet loss is detected at application layer.)
+	- **Brokerless messaging libraries** : ZeroMQ, nanomsg implement publish/subscribe over TCP/IP multicast
+	- **StatsD** collects metrics("events") over UDP from all machines.
+	- **Webhooks** HTTP/RPC. Directly call the API and send a POST request to send "message" or "event" via _callbackURL_ whenever the event occurs.
+	- ...
+	- _Main problems still remains ... What if the consumer is offline when the event occurred? What if producer crashes? you lose all messages_
+
+#### Messaging Patterns(in message brokers)
+**Load Balancing:**
+- Delivered to just ONE consumer.
+- Distributes messages across multiple consumers to share processing load. Helps Parallelize the load.
+- Can lead to message reordering when combined with redelivery.
+	- You should NOT use the load balancing feature if you want ordering of messages to be maintained (FIFO).
+	- Message reordering is not a problem if messages are completely independent of each other. But if there is causal relationship, then there's a problem.
+
+**Fan-out:**
+- Delivers each message to all consumers.
+- Useful for independent consumers observing the same event stream. Each of the consumers may do their own thing with the event. (Similar to N batch jobs reading same input file.)
+
+#### Message Brokers
+_AKA Message Queue_ ... _The Persistent Middleman_
+_a "database" optimised for handling message streams_
+
+Runs as a server. Producers and Consumers connect to it as clients. Data is **centralised**. Can now tolerate clients as they come and go (eg:crash)
+![[ddia-52.png]]
+
+- The burden of durability is now transferred to this centralized broker.
+- May write messages to Disk to behave like an "unbounded/infinitely long queue" to support slow consumers.
+- No need to drop messages or back-pressure
+As a side effect of centralizing the messages, the producer just needs an ACK from the broker, not from the consumer.. and doesn't even need to wait for processing to complete — _Asynchronous Event Processing_.
+(Note that this can increase Queue backlog, and take significantly longer for the last message to even start getting processed)...
+
+
+How to handle message loss due to consumers crashing?
+- Client must explicitly tell the broker (ACK) when it has finished processing a message, so that broker can remove it from the queue.
+- If timed out without ACK, the broker redelivers the message to another consumer.
+
+> **Note**: Transient Messaging Mindset
+> Message Brokers _might_ write messages to disk for durability... But they want to _quickly delete them after they've been delivered to consumers..._
+> Receiving a message is **destructive**, the ACK causes the message to be deleted from the broker
+> Contrast to [[#Message Broker — Log Based Message Brokers|Log Based Message Brokers]] which keep them forever.
+
+#### Message Broker — Log Based Message Brokers
+_(Kafka, Kinesis..)_
+_Logs(messages) are not deleted after consumption(like DBs)._
+
+> Reading a message does NOT delete it from the log
+
+Keep adding "messages" to the end of the log. Consumers do `tail -f` style reception to get new messages. **Logs are NOT deleted after consumption**. 
+
+**Partitioning** (For Scale)(For Very high Throughput)
+The logs can be split across machines(partitioned) for **parallel read/write**, **not deleted** after consumption.
+`Topic = group of partitions holding the same message type`
+Messages **within a partition** are _totally ordered_. There is no ordering guarantee across partitions. 
+
+**Consumer Offsets**  
+- (Bookmarks) (Similar to "log sequence numbers" in single leader replication) (monotonically increasing sequence numbers)
+- Consumers consume message from a partition _sequentially_. Need to know "where i left off"(Bookmark)
+- Consumers track their progress by recording the last message offset they processed for a _given partition_. **Offset is under consumer's control, not broker's**. 
+	- Since offset is under Consumer's control, the consumer can play with the offset and **replay the older messages** any number of times. — Sort of like BatchProcessing.
+- Consumers (if died), can reconnect and consume messages from last recorded offset.
+- 
+_Not need for ACK since consumers maintain their own offsets_.
+![[ddia-53.png]]
+
+**Messaging Patterns**
+- **Fanout** : Fanout is trivial since every consumer maintains its own offset
+- **Load Balancing**: Not trivial. _One Partition is assigned to a single consumer._ 
+	- Can cause **head of the line blocking**. 
+	- ...Please ensure that **messages are fast to process, and aren't expensive or long running**. Else all other messages get blocked in the queue. Other consumers cannot process them, since load balancing is "coarse grained".. "one partition is assigned to a single consumer".
+#### Message Brokers — AMQP style vs Log based message brokers
+_when to choose which?_
+
+**AMQP style Message brokers**
+- Messages are expensive to process (high load on workers) 
+- Message ordering is not important
+- Once you process a message, its gone forever 
+
+**Log Based Message Brokers**
+- Messages are cheap to process, processed really fast (low load on workers)
+	- (Because all messages in a given partition are assigned to a single consumer, it can cause "head-of-the-line" blocking if one message takes really long to process)
+- Message ordering is important
+- Very high throughput, thanks to partitioning.
+- Repeatable processing, same message can be processed again and again by same or new consumers (Messages are not deleted)
+- No need for broker to maintain ACKs for each message cuz
+	- consumers maintain their own offset anyway
+	- why ACK when you're anyways not deleting any message
+- Reduced bookkeeping (no ACKs) on broker implies more resources to use to ensure higher throughput!
+
+
+
+#### Change Data Capture (CDC)
+_Replication logs contain change "events"....an event stream_
+
+The Challenge: [[#Multiple Data Stores — Keeping them In Sync]]
+
+CDC : Process of observing all data changes written to a source DB(Primary) (Logical Replication Log [[#Replication Logs — Implementation]]) and extracting them in a form in which they can be **replicated to other systems**. Better if CDC is available _as a stream_ for _real time update_.
+- **Order Matters:** Maintaining the order of changes is crucial for keeping derived systems consistent... Hence a  [[#Message Broker — Log Based Message Brokers|Log based message broker]] (Kafka) is most suitable here..., since it preserves ordering (AMQP style message brokers have reordering issue in LoadBalanced mode of message delivery)
+![[ddia-54.png]]
+>**Note**: Leader and followers
+>CDC sort of makes the primary DB the leader, and other derived data stores(caches,indexes,..) the followers
+
+**Implementing CDC**
+- Use Triggers (bad performance, and awkward) 
+- decode/parse the replication logs (eg: Debezium)
+
+**Initial Snapshots**
+You cannot expect DB to have the replication logs from epoch. Too much to store. They'd be deleted/archived. Even if available, they'd take way too long to apply.
+Hence you need to _bulk load_, with **initial snapshot** ([[#Isolation Level — Repeatable Read|Consistent Snapshot]])
+
+... Once initial snapshot is applied, you need to know the **offset** in the replication log to start picking up new changes
+
+**Log Compaction**
+Alternative to Initial Snapshots.....(_avoid the overhead of taking complete snapshot of the DB_)
+[[#Segmentation and Compaction| Compaction]] can be used to squash together log records (from epoch). Size of this compacted log will be more or less  = size of DB. The Compacted log is guaranteed to contain the latest value for every item(most recent write).
+Kafka supports log compaction (even the messages stored in kafka partitions can be squashed/compacted)
+
+_Kafka Connect_ integrates Kafka with a lot of CDC tools for a wide range of DBs
+![[ddia-55.jpeg]]
+
+- **System of Record:** The primary database holding authoritative data.
+- **Derived Data System:** System consuming change events to maintain a view of the data.
+- **Log Compaction:** Process of removing duplicate updates from the log to save space.
+
+
+#### Event Sourcing
+_log of events is the source of truth... NOT the mutable state in DB._
+_mutable state is DERIVED from the log of events_
+_current state is DERIVED by **replaying the event log**_
+_current state is a function of the logs and time._
+
+>**Note**: Shift in mental model.
+>Mutable DB's(conventional) store "current state" to **optimize the reads**.
+>This is most convenient for serving queries.
+>OTOH, if you store the changelog, you can obtain the "current state". events are never modified(immuatable), all updates are new events themselves...
+>Also, if you just store the changelog..you now have multiple ways to "render" the "current state" optimized for different access patterns(reads). ... _deriving **several views** from the same event log_
+
+Events = user actions
+Events are **immutable**
+
+in CDC, events(replication log) look like : 
+- _"one entry was deleted from enrollments table + one cancellation reason was added to the student feedback table"_
+In EventSourcing, the events(user action) look like
+- "_student cancelled their course enrollment_"
+
+>**Note**: Although specialized DBs(eg: EventStore) exist for event sourcing, conventional DB or even a log based message broker(Kafka) can be used too.
+![[ddia-56.png]]
+
+But **Current state is definitely required**... (you can't just show history on the UI)... 
+The log of events must be _transformed_ into application state that is suitable for queries.
+- must be **deterministic**: you should be able to **replay** the events and arrive at the same state
+![[ddia-57.png]]
+
+Log Compaction is not possible since you need the full history of events to be maintained. Prior events cannot be overridden. **Events are immutable** = no compaction.
+
+**Snaphots of current state** is merely a performance optimization to speed up reads. The intention is that the system is able to store all raw events forever and reprocess the full event log whenever required.
+
+>**Note**: Command != event
+>A Command _becomes_ an event, once validated. Every command doesn't go into the event store. Every event does.
+>Commands can fail. Events are immutable facts.
+
+
+#### Event Sourcing — CQRS Command Query Responsibility Segregation
+Separate the form in which data is written... from the form in which data is read.
+
+Writes just become changelogs ---> these logs can "render" multiple different "views" in the form of one or more datastores which can speed up all kinds of queries (access patterns).
+
+Write optimized(eventlog) --> Read optimized(application state) in various data stores.
+![[ddia-58.png]]
+**Although redundancy is a problem here..**, but its fine if some system keeps them all in sync.
+
+Also note, this is **eventual consistency**, you wont be able to have read-after-write consistency. You need to wait until the changelogs materialize into something that can be queried.
+
+#### Stream Processing - Usecases
+_What to do with (event)streams?_
+
+- Pushing events as emails, push notifications, stream to real time dashboards...
+- InputStream -> N OutputStreams (pipeline)
+- **Maintaining Materialized Views**
+	- Write to a DB, cache, search index.. [[#Multiple Data Stores — Keeping them In Sync]]
+- **Analytics(on stream)** - fixed time interval
+	- rate of some event per time interval
+	- rolling average over a time period
+	- avg QPS over last 5 mins
+	- p99 latency of requests over last 5 mins
+	- compare current stats to last week's stats - detect trends/alerts
+	- ... Storm, Flink, Spark Streaming, Kafka Streams have all been designed with stream analytics in mind.
+- **Complex Event Processing (CEP)** & **Search (on stream)**
+	- Store Queries (grep pattern matchers) which describe _patterns_ of events that should be matched. When a match is found the engine _emits a complex event_. 
+	- Queries are stored long term. Every single event will flow through them.
+	- Media monitoring services subscribe to news feeds from media outlets, and search for topics of interest (company names, products)...
+	- Real Estate website, ask to be notified when a new property appears on the market.
+	- Fraud Detection systems: usage pattern -> block card (_likely to have been stolen_)
+	- Monitoring: manufacturing systems - status of machines, malfunction detection
+	- Trading Systems: Execute trades automatically upon signals
+	- Military Intelligence: detect signs of attack
+	- Note: ElasticSearch can search the stream BEFORE indexing the documents. (_ElasticSearch Percolator_)
+
+
+#### Types of Windows
+Why Windows? - You want to _aggregate_ data in a stream. Windows enforce _boundaries_ on an infinite stream data set. You need some boundary to calculate an aggregate metric. ... You need to choose a window type (of a window size).
+
+**Tumbling Window:** Fixed-size, non-overlapping (e.g., every 1 minute)
+Every event belongs to *exactly one window*.
+![[ddia-59.png]]
+
+**Hopping Window:** Fixed-size, overlapping (e.g., 5-minute window, sliding every 1 minute(Hop=1min))
+Overlapping windows provide a _smoothing effect_. 
+![[ddia-60.png]]
+
+**Sliding Window:** Includes all events within a certain time interval of each other.
+Window moves when a new event occurs (pushed to the queue. queue = buffer = window)
+A sliding window can be implemented by keeping a _buffer_ of events sorted by time, removing old events when they expire from the window.
+![[ddia-61.png]]
+
+**Session Window:** Groups events by user activity, with no fixed duration, ending when the user is inactive. GROUP BY sessionID.
+
+#### Event Time != Time at which event was processed
+    
+- **Event Time:** When the event actually occurred (recorded in a timestamp).
+- **Processing Time:** When the event is being processed by the stream processor.
+- Delays in the system can cause the processing time to be much later than the event time, leading to incorrect results. Delays can occur due to..
+	- queueing
+	- network faults
+	- contention in the message broker
+	- contention in the worker
+
+Say a device is collecting events(in offline mode) and attaching time to the event as per its own time-of-the-day clock. It buffers the events and then sends them to the central stream processor(when the internet connection is available). How should the stream processor arrive at the correct time? (you cannot trust the device clock, might be manipulated by the device owner(?))
+- Find the offset: time at which the event was _sent_ as per device clock MINUS time at which the event was _received_ by the server as per server clock.
+- Apply the offset to the event time reported by the device.
+
+
+**Straggler events** (late arrivals)
+Say you're computing some metric (average) over a given time window(say 1min). An event that happened in that time window can arrive really late, you cannot be sure when it will arrive. These are _straggler events_. Delays can occur due to ..
+- events buffered on another machine, delayed due to n/w interruption
+What can you do ?
+- Ignore the straggler events. Track the dropped events. Raise an alert if too many dropped events. Ignoring is good if stragglers are rare.
+- Publish correction 
+
+
+#### Stream Processing — Stream Joins
+Why Stream Joins?
+- combine/enrich data from multiple streams/tables _in real time_.
+- Joins are complex since... unbounded infinite data.
+- eg:
+	- Correlating search events with click events for --> click-through rate analysis.
+	- Enriching click events with user information from DB.
+
+###### Stream-Stream Join (Window Join)
+_Output is a Stream_
+Combine events from two or more streams based on a common attribute (e.g., session ID)
+- Requires maintaining state for a time window, indexed by a common attribute (say sessionID)
+- How big should the time window be?(~1hour) But user might search and keep the tab open for weeks and then click on the result.
+
+Search event stream(event=query+results) <--> Click stream(event=clicked result)
+- Whenever a search event or click event occurs, it is added to the appropriate index
+- Stream Processor checks the other index if another event for _same sessionID_ has already arrived.
+	- If there's a matching event, you emit an event with the search result that was clicked.
+	- If the search event expires without seeing a matching click event, you emit an event saying which search results were not clicked.
+![[ddia-62.jpeg]]
+
+###### Stream-Table Join (Stream Enrichment)
+_Output is a Stream_
+Enrich a stream with data from a DB table (often updated by another stream).
+
+User activity stream <--> User Profile table
+- _Augmenting_/Enriching user activity events with profile information
+- events indexed/related by UserID
+
+Querying the DB for every event is BAD. It overwhelms the DB and adds a lot of latency due to n/w overhead.
+- Load a copy of the DB into the stream processor
+- (in memory if small enough) or (index on disk)
+- Updates to DB can arrive as CDC
+
+
+###### Table-Table Join (Materialized View Maintenance)
+_Output is a Table_
+Maintain a materialized view of a join between two tables, updating it as the tables change
+eg: Twitter Home Timeline cache(per-user inbox) for every user.
+- depends on followers followings table
+- depends on posts table
+Changes to any of these tables _might_ cause the home timeline to change.
+
+
+###### SCD: "Slowly Changing Dimension"
+_data warehousing term_
+**What if data being JOINed, changes over time?**
+eg: tax rates  (table), product prices (table)
+You need to apply the current tax rate to the invoices (tax rate depends on time).
+Use explicit timestamps in events and choose the correct join window.
+
+Use Unique Identifier(Versioning)
+- everytime the tax rate changes, it is given a new ID.. 
+- invoice includes the ID for the tax rate at the time of sale.
+
+
+#### Stream Processing — Fault Tolerance
+Simply restarting a failed task wont work, unlike Batch processing where the whole job can be restarted(or just a granular task(map/reduce) can be restarted)...... cuz streams are infinite.
+- **Microbatching (Spark Streaming):** Divide the stream into small, fixed-size batches, treated like mini-batch jobs.
+	- batch size = 1 second
+	- performance overhead: smaller batches -> greater scheduling and coordination overhead.
+- **Checkpointing (Flink):** Periodically save the state of operators to durable storage for recovery. 
+	- If failed, restart from last checkpoint.
+- **Atomic Commits (Dataflow, VoltDB):** Transactional guarantees within the stream processor. 
+	- XA - distributed transactions.
+- **Idempotence:** If an operation is idempotent (repeatable without changing the outcome), it can be safely retried. Often requires additional metadata like unique IDs or message offsets(Kafka - log based message brokers).
+
+
+---
+## Beyond the Traditional Approaches...
+In this section we see how we can move beyond traditional approaches, mainly for performance
+- going beyond request/response model
+- going beyond using TXNs for ACID properties,.. and relying on log-based approach for good-enough integrity semantics.
+
+> Reliable stream processing can preserve integrity without requiring distributed transactions (atomic commit protocol). => they can achieve the same correctness with **much better performance**
+> 1. Write operation must be represented as a _single message_, which can be written atomically (like event sourcing)
+> 2. all other state updates must be derived from the _single message_ above.
+> 3. pass a client-generated `requestID` through all levels of processing to allow for end-to-end deduplication of messages and add idempotence to naturally non-idempotent operations
+> 4. messages must be immutable to allow for reprocessing (to recover from bugs with retry)
+
+Dataflow systems can maintain integrity guarantees **without** atomic commit, linearizability , synchronous cross-partition coordination (or succinctly, **without distributed transactions**).
+Although strict uniqueness constraints require timeliness(Linearizability) and coordination(Linearizability), _many applications are actually fine with loose constraints that may be temporarily violated and **fixed up later (with an apology + compensating transaction)** as long as integrity is preserved throughout._
+
+Apologies?
+The log based approach might have you make apologies for inconsistencies to the customer, but they significantly reduce the apologies you have to make for downtime/inability to scale and handle extreme loads at peak time.
+
+
+#### Request Response model vs Dataflow stream join model
+_Subscribing to stream of changes, rather than querying the current state when needed._
+
+Example usecase:
+You have a REST API: /v1/purchase/item/:id
+The item is priced in one currency and is paid in another currency. You need the most up-to-date currency conversion rate to process this purchase.
+Conventionally, **You will make a DB call over the network** to fetch the currency conversion rate **for every single API call**.
+- Inefficient, Latency issues
+- n/w call adds lag
+- **_Not suitable for high throughput_**
+
+Enter the dataflow approach, leveraging [[#Stream-Table Join (Stream Enrichment)|Stream-Table Joins]]. Instead of repeatedly asking, a service **_subscribes_ to a stream of updates about the exchange rate**. It then stores the latest rate in a local database (possibly in-memory), turning the join into a simple local lookup. **This eliminates the need for network round-trips for every transaction, drastically improving performance and resilience.**
+
+
+#### Exactly-Once Processing — Converting a non-idempotent operation to an idempotent operation
+_With End-to-End "requestID" to dedupe_
+_**Operation Identifiers**_
+
+You have a "pay" API to transfer money from one account to another
+```sql
+BEGIN TRANSACTION;  
+UPDATE accounts SET balance = balance + 11.00 WHERE account_id = 1234; UPDATE accounts SET balance = balance - 11.00 WHERE account_id = 4321; COMMIT;
+```
+You DON'T want to process the request twice and debit the money twice from the poor guy's account.
+
+Lets take this step by step. 
+The write request is made via a TCP connection. In many databases, a TXN is tied to a client connection. If the client sends several queries, the DB knows they belong to the same TXN because they're sent on the same TCP connection
+- If the client suffers a n/w problem and has a _timeout_. The client may try to **retry**. .. . with a NEW TCP connection. 
+- now this is beyond TCP duplication suppression.
+- If the client retries, and since the TXN is NOT idempotent, the fund transfer will end up happening twice!
+
+2PC atomic commit might solve this? Yes... but...
+
+Lets say the user sent the /pay API request from a browser via a really crappy internet connection.  He might retry twice and HTTP POST request will be done twice. No amount of guarantees on the DB can save you here. Not even 2PC.
+- from the browser's point of view, its a separate new request.
+- from the DB's point of view, its a separate new transaction.
+- ... there doesn't seem to be any error.
+
+**The Solution**: perform end-to-end deduplication instead of relying on DB(Transaction) or network semantics. **Use a unique `requestID`**
+(..OR a hash generated from all the fields to arrive at an operationID)
+```sql
+ALTER TABLE requests ADD UNIQUE (request_id);
+
+BEGIN TRANSACTION;
+
+INSERT INTO requests  
+(request_id, from_account, to_account, amount) VALUES('0286FDB8-D7E1-423F-B40B-792B3608036C', 4321, 1234, 11.00);
+
+UPDATE accounts SET balance = balance + 11.00 WHERE account_id = 1234; UPDATE accounts SET balance = balance - 11.00 WHERE account_id = 4321;
+
+COMMIT;
+```
+Now 
+- if the browser sends the POST request twice, they both will have same `requestID`, the second request will NOT go through
+
+Observe that the `requests` table kind of acts as a "Event Log" (Event Sourcing). The `INSERT INTO requests..` need not really be in the same TXN (think about it...).
+_Perhaps the problem can be solved with Event Sourcing...without Atomic commit transactions at all??_
+
+. . . 
+Transactions are expensive, specially distributed transactions (atomic commit) across heterogenous storage technologies (XA). How do we implement fault tolerance without Transactions?
+
+
+Lets assume we are NOT going to use Transactions here for performance reasons.
+Instead, we are left with a log based approach. But log based approach works only if writes are _idempotent._ The above SQL is clearly NOT idempotent.
+
+
+#### Single Partition — Ordering
+_Single Partition can also guarantee Unique Constraints_
+
+On a single node Unique constraint is just as easy as checking if a key exists in a hashset.
+Once replication comes in, enforcing Unique constraint is easy in **Single Leader** mode, if the Leader rejects the write due to Unique constraint violation, other followers don't see the write.
+To scale the Leader, you add partitioning, and **unique constraints can be enforced WITHIN a partition**. Every partition knows that its the only partition capably of accepting that _particular_ write and it sort of behaves like a single node for the data meant for that partition.
+Further, replicating the partitions - - -> you will need to have **one leader per partition** which accepts all the writes and sends replication logs to follower partitions. 
+
+Enforcing Unique Constraint is easy when
+- its Single Node RDBMS
+- Replicated RDBMS with Single leader accepting all writes
+- WITHIN single partition
+- WITHIN single partition that's replicated, with single leader per partition accepting all writes for that partition
+
+So, _Uniqueness checking can be scaled out by partitioning based on the value that needs to be Unique._ eg:`requestID`
+If you want usernames to be Unique, you can partition by hash of username...
+
+
+#### Single Log Partition — Using a Log for Enforcing Uniqueness Constraint
+The Log ensures all consumers see the messages in the same order — Total Order Broadcast.
+Total Order Broadcast is equivalent to consensus.
+[[#Consensus]] is required for enforcing Uniqueness Constraint.
+
+If the Log is partitioned based on the value that needs to be Unique, the stream processor can consume all messages in a single Log Partition **sequentially**, on a single Thread. The stream processor can now decide which of the conflicting usernames (violating unique constraint) came first!
+1. every request (for a username) is encoded as a message, and appended to a partition determined by hash of username (**partition by username**)
+	1. (The client that wants the username writes the message to the log partition)
+2. a stream processor sequentially reads requests from the log partition
+	1. it maintains a local DB
+	2. local DB can be used to check if duplicates occur in the log partition.
+	3. If the request is valid(username available), it emits a success message to a output stream. If the username is already taken, it emits a rejection message to the output stream
+3. The client that requested the username **watches** the output stream and waits for success/reject message corresponding to the request.
+
+The approach can be scaled out by increasing the number of partitions (high throughput)
+
+> Fundamental Principle
+> _Writes that may conflict are routed to the **same partition** and processed sequentially_
+
+
+
+#### Multi-Partition — Cross partition coordination
+_Several partitions are involved_
+_...one containing the requestID_
+_...one containing the payee account_
+_...one containing the payer account_
+
+To make a debit+credit using TXNs, you'd do an **atomic commit** across all the partitions involved. ... _bad throughput/bad performance_
+
+How to avoid atomic commit here? Is there a way to still use log-based approach for increasing performance?
+
+1. requestID is appended to the requestID partition (By the client)
+2. a stream processor sequentially reads requests from requestID log partition
+	1. For each requestID, it emits 2 messages to 2 output streams
+		1. debit instruction to payer account A (+requestID)
+		2. credit instruction to payee account B (+requestID)
+3. a stream processor consumes the credit stream from credit log partition, dedupes by requestID and applies the credit on account B.
+4. a stream processor consumes the debit stream from debit log partition, dedupes by requestID and applies the debit on account A.
+
+
+Why cannot the client directly do step2 and add debit and credit instructions to streams directly without appending requestID message to requestID partition?
+- either both should happen(debit+credit) or both should not happen.
+- appending a requestID is atomic in nature (with or without TXNs). 
+	- Its as simple as appending a line to a file in a single node. 
+	- or updating a variable in a single node.
+	- **Single object writes are atomic always**. 
+	- _requestID either appears in the log , or it doesn't_
+- In step2, if the stream processor(consumer) crashes, it can always reprocess the old messages(old requestIDs) any number of times and emit debit and credit instructions
+	- They would be deduped in their respective partitions using requestID
+
+If you want to make sure that the payer does not go into negative balance,
+- additional work in step1.
+- can validate the transaction before placing the debit and credit instructions.
+
+**End to end requestID** used in stages while processing **different partitions** has now given the same correctness as using an atomic commit protocol across partitions.
+
+Integrity(Correctness) by Exactly-once semantics is central to streaming systems. A faulty processing of an event can be retried(to make it succeed), and deduplication (idempotence) will take care that it goes through only once. => it is guaranteed to _succeed exactly once_.
+
+
+**Downsides of this approach**:
+- NOT linearizable. If you hurriedly query the balance you may see accountID1 is debited _but accountID2 is not yet credited!_. If you query it sometime later, you can see both debits and credits have been applied. **This is eventual consistency**. 
+	- This is asking for _read-after-write_ consistency.
+	- This "inconsistent state" is temporary.
+	- You can _hold_ the query request, **watch** for the output stream for results, and then synchronously reply to the query request when you find the result in the output stream.
+	- ... will simply be resolved by waiting and trying again.
+- **Note**: ACID transactions provide both Linearizability and correctness guarantees. 
+	- But with log based approach, you just get correctness _eventually_. 

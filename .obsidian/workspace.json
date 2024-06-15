@@ -8,43 +8,67 @@
         "type": "tabs",
         "children": [
           {
-            "id": "41297838824d9d7d",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "FLEETING_NOTES/distributed_systems/general.md",
-                "mode": "source",
-                "source": false
-              }
-            }
-          },
-          {
-            "id": "cd7a0cfd3f0d78ba",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "FLEETING_NOTES/DDIA/general.md",
-                "mode": "source",
-                "source": false
-              }
-            }
-          },
-          {
             "id": "af365ebaf1e59ed2",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "FLEETING_NOTES/DDIA/general.md",
+                "file": "PERMANENT_NOTES/do you really need relational databases?.md",
                 "mode": "source",
                 "source": false
               }
             }
           },
           {
-            "id": "19de27f3f6066764",
+            "id": "c6afad6da0a565db",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "PERMANENT_NOTES/INDEX--Databases.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "adfa8cc0f7163ae1",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "PERMANENT_NOTES/column oriented storage.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "cc8cffe5db8af5aa",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "PERMANENT_NOTES/why OLAP?.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "68d00609658457ae",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "PERMANENT_NOTES/ACID properties.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "e4600f31df4252bb",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -56,31 +80,31 @@
             }
           },
           {
-            "id": "4825ac174605dd68",
+            "id": "72c3fc10098cb091",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "PERMANENT_NOTES/INDEX--Distributed Systems.md",
+                "file": "PERMANENT_NOTES/locking in databases.md",
                 "mode": "source",
+                "backlinks": true,
                 "source": false
               }
             }
           },
           {
-            "id": "dd1ba9181a24e9a1",
+            "id": "d9f2f51598d9855b",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "PERMANENT_NOTES/CAP theorem.md",
+                "file": "PERMANENT_NOTES/mvcc.md",
                 "mode": "source",
                 "source": false
               }
             }
           }
-        ],
-        "currentTab": 3
+        ]
       }
     ],
     "direction": "vertical"
@@ -130,8 +154,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 358.5024719238281
   },
   "right": {
     "id": "b3d4aba317331d81",
@@ -147,7 +170,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "FLEETING_NOTES/DDIA/general.md",
+                "file": "PERMANENT_NOTES/do you really need relational databases?.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -164,7 +187,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "FLEETING_NOTES/DDIA/general.md",
+                "file": "PERMANENT_NOTES/do you really need relational databases?.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -187,7 +210,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "FLEETING_NOTES/DDIA/general.md"
+                "file": "PERMANENT_NOTES/do you really need relational databases?.md"
               }
             }
           }
@@ -195,8 +218,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -208,48 +230,49 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "19de27f3f6066764",
+  "active": "af365ebaf1e59ed2",
   "lastOpenFiles": [
-    "FLEETING_NOTES/assets/ddia-51.png",
-    "FLEETING_NOTES/assets/ddia-50.png",
-    "FLEETING_NOTES/assets/ddia-49.png",
-    "FLEETING_NOTES/C/general.md",
+    "PERMANENT_NOTES/why OLAP?.md",
+    "PERMANENT_NOTES/column oriented storage.md",
     "FLEETING_NOTES/DDIA/general.md",
-    "FLEETING_NOTES/assets/ddia-48.png",
-    "FLEETING_NOTES/distributed_systems/general.md",
-    "FLEETING_NOTES/assets/ddia-48.webp",
-    "PERMANENT_NOTES/INDEX--Distributed Systems.md",
-    "PERMANENT_NOTES/CAP theorem.md",
-    "PERMANENT_NOTES/ACID properties.md",
-    "PERMANENT_NOTES/subnets.md",
-    "PERMANENT_NOTES/Transactions are costly.md",
     "PERMANENT_NOTES/INDEX--Databases.md",
+    "PERMANENT_NOTES/ACID properties.md",
+    "PERMANENT_NOTES/concurrency bugs.md",
+    "PERMANENT_NOTES/do you really need relational databases?.md",
+    "PERMANENT_NOTES/mvcc.md",
+    "PERMANENT_NOTES/locking in databases.md",
+    "PERMANENT_NOTES/materializing conflicts.md",
+    "PERMANENT_NOTES/aim for sequential operations on hard drive.md",
+    "PERMANENT_NOTES/how to implement serializable isolation level?.md",
+    "FLEETING_NOTES/assets/ddia-73.png",
+    "FLEETING_NOTES/assets/db-01.png",
     "PERMANENT_NOTES/consistency models.md",
-    "PERMANENT_NOTES/gevent is BAD sometimes.md",
-    "PERMANENT_NOTES/grep.md",
-    "FLEETING_NOTES/assets/ddia-47.png",
-    "FLEETING_NOTES/assets/ddia-46.png",
-    "FLEETING_NOTES/assets/ddia-45.png",
+    "FLEETING_NOTES/assets/db-18.png",
+    "FLEETING_NOTES/assets/db-18.png",
+    "FLEETING_NOTES/assets/db-17.png",
+    "FLEETING_NOTES/assets/db-16.png",
+    "FLEETING_NOTES/assets/Screenshot 2024-06-10 at 11.04.19 PM.png",
+    "FLEETING_NOTES/assets/db-15.png",
+    "FLEETING_NOTES/assets/db-14.png",
+    "FLEETING_NOTES/assets/db-13.png",
+    "PERMANENT_NOTES/db_03.png.md",
+    "PERMANENT_NOTES/what is a transaction.md",
+    "PERMANENT_NOTES/why do we need transactions?.md",
+    "PERMANENT_NOTES/how to do partitioning?.md",
+    "PERMANENT_NOTES/rebalancing the partitions.md",
+    "PERMANENT_NOTES/how is data read in Cassandra.md",
+    "PERMANENT_NOTES/multi leader replication.md",
+    "PERMANENT_NOTES/leaderless replication.md",
+    "PERMANENT_NOTES/single leader replication.md",
+    "PERMANENT_NOTES/LSM Trees + SSTables.md",
+    "PERMANENT_NOTES/designing a DB from first principles.md",
+    "PERMANENT_NOTES/hash indexes.md",
+    "PERMANENT_NOTES/INDEX--Distributed Systems.md",
+    "FLEETING_NOTES/Kafka",
     "FLEETING_NOTES/asse",
-    "FLEETING_NOTES/assets/ddia-44.png",
-    "FLEETING_NOTES/obsolutely_miscellaneous/productivity.md",
-    "FLEETING_NOTES/assets/ddia-33.png",
-    "FLEETING_NOTES/ZooKeeper/general.md",
     "FLEETING_NOTES/ZooKeeper",
-    "FLEETING_NOTES/assets/ddia-44.webp",
     "FLEETING_NOTES/assets/ddia-43.png.crdownload",
-    "FLEETING_NOTES/obsolutely_miscellaneous/clear thinking.md",
-    "FLEETING_NOTES/obsolutely_miscellaneous/unfuck_yourself.md",
-    "FLEETING_NOTES/System_Design/general.md",
-    "FLEETING_NOTES/System_Design/notes.md",
-    "FLEETING_NOTES/System_Design/ch6.md",
-    "FLEETING_NOTES/System_Design/ch5.md",
-    "FLEETING_NOTES/System_Design/ch4.md",
-    "FLEETING_NOTES/System_Design/ch1.md",
-    "FLEETING_NOTES/Temporal/general.md",
     "Untitled.canvas",
-    "FLEETING_NOTES/Operating_Systems/linux.md",
-    "FLEETING_NOTES/networking/networking.md",
     "FLEETING_NOTES/assets/tracing-01",
     "FLEETING_NOTES/assets/2015-part-1-293-mcqs-by-ima.pdf"
   ]

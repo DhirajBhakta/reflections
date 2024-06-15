@@ -78,6 +78,14 @@ Perfection is a trade-off you do.. to achieve great things in one task, stressin
 Is this good? Is this bad? I dont know. You may achieve great heights by being a perfectionist. Or you may regret obsessing over one thing for so long when it didnt do any good
 
 
+## Awareness of Time
+> The more distracted your mind is , the more you are aware of Time. 
+> The more focussed you are, the less you are aware of Time.
+
+So If you feel like you're running out of time, just assume that your focus has peaked.
+In the **flow state**, the perception of Time disappears.
+
+
 
 
 # GTD - Getting Things Done

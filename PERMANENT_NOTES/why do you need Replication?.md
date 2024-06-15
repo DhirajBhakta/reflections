@@ -1,0 +1,3 @@
+- Availability HA - tolerate node failures.
+- reduced latency (geographically close)
+- scalability
