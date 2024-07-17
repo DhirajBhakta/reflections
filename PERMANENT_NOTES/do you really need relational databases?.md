@@ -34,7 +34,11 @@ Problems with sharding
 
 
 #### NoSQL - design patterns
-- **Data locality on Disk**
+> **Note**: Where documentDBs should be used
+> _When relations b/w entities is very low.
+> Everything can be captured in self contained documents_
+
+- **Data locality on Disk** — Self Contained Documents
 	- embrace redundancy, denormalization
 	- most data you need is found together at once place
 	- ...gives you _faster reads_, _faster writes_

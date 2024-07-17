@@ -30,3 +30,13 @@ But there are some "beliefs" that are not entirely true
 
 Often, simple solutions appear to work correctly when concurrency is low (so low that they don't appear to step on each other), but bugs begin to appear at high volume and high concurrency.
 But is Transactions the only way out? Most applications may just do fine with weaker guarantees, causal consistency, eventual consistency etc.. and Transactions can be abandoned for better performance and scalability.
+
+---
+#### Transactions — Client side awareness
+_Transactions might've succeeded(committed), but n/w failure caused ACK not to be sent back_ . The client **may retry**. Application needs to take care of dedupe. 
+
+_Mindless retrying might lead to overload (or worsen the overload if it was already overloaded)._ 
+- set a `Max_retries` value
+- use `Exponential Backoff` value
+
+When you retry TXN, make sure the "side effects" are NOT retried. Eg: sending an Email. 

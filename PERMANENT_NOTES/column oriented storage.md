@@ -3,7 +3,7 @@ _enables compression -> smaller size --> can fit in L1 cache --> reduces CPU cyc
 
 All values in a given column are laid out next to each other, say in a single file meant for the column. If you want to reconstruct the row, you visit the Nth value in each column file.
 
-Read performance would suck for OLAP queries if you had row-oriented storage. For a query that requires just 3 out of 100 columns, you would have to load ALL the rows (containing ALL the 100 fields) from disk into memory, parse them, and filter out the rows that you dont need.(and also wasteful column loading.)
+Read performance would suck for OLAP queries if you had row-oriented storage. For a query that requires just 3 out of 100 columns, you would have to load ALL the rows (containing ALL the 100 fields) from disk into memory, parse them, and filter out the rows that you don't need.(and also wasteful column loading.)
 ![[ddia-22.png]]
 ![[ddia-23.png]]
 
@@ -11,6 +11,8 @@ Read performance would suck for OLAP queries if you had row-oriented storage. Fo
 #### OLAP — Column Oriented Storage — Compression 
 If a given column file contains a lot of repeated values, then its a **good candidate for compression**.
 - compression helps increase CPU L1 cache hit rate, best for reducing branch misprediction and heavily reducing CPU cycles to execute the query. using SIMD to its fullest.
+	- (so small that it fits in the CPU cache)
+	- _tight loop_ where memory access is minimal.
 - compression helps perform bitwise AND , bitwise OR to get desired result..all loaded from L1 cache (optimistically). Avoiding function calls and just doing bitwise operations ...this is called **vectorised processing** in CPU jargon.
 How to compress?
 - Bitmap encoding
@@ -30,4 +32,4 @@ How to compress?
 
 Downsides
 - Writes are really slow.
-- Can use LSMTrees to solve this problem.
+	- Can use LSMTrees to solve this problem.

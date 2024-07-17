@@ -4,23 +4,47 @@
     "type": "split",
     "children": [
       {
-        "id": "45bf162f9b137e98",
+        "id": "a3ec1931295255b8",
         "type": "tabs",
         "children": [
           {
-            "id": "af365ebaf1e59ed2",
+            "id": "8ffc1cf40fd27437",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "PERMANENT_NOTES/do you really need relational databases?.md",
+                "file": "PERMANENT_NOTES/INDEX--Clean Code.md",
                 "mode": "source",
                 "source": false
               }
             }
           },
           {
-            "id": "c6afad6da0a565db",
+            "id": "94596b3cc28c8d05",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "PERMANENT_NOTES/design patterns.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "5dc7c73789858c57",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "PERMANENT_NOTES/UML.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "9b7c2ecccf37bb5e",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -32,79 +56,43 @@
             }
           },
           {
-            "id": "adfa8cc0f7163ae1",
+            "id": "a7401da1b54feb9d",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "PERMANENT_NOTES/column oriented storage.md",
+                "file": "PERMANENT_NOTES/graphDB.md",
                 "mode": "source",
                 "source": false
               }
             }
           },
           {
-            "id": "cc8cffe5db8af5aa",
+            "id": "1a1da2a2e44406f4",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "PERMANENT_NOTES/why OLAP?.md",
+                "file": "PERMANENT_NOTES/geospatial index.md",
                 "mode": "source",
                 "source": false
               }
             }
           },
           {
-            "id": "68d00609658457ae",
+            "id": "ecc48bd26109bb02",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "PERMANENT_NOTES/ACID properties.md",
-                "mode": "source",
-                "source": false
-              }
-            }
-          },
-          {
-            "id": "e4600f31df4252bb",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "FLEETING_NOTES/DDIA/general.md",
-                "mode": "source",
-                "source": false
-              }
-            }
-          },
-          {
-            "id": "72c3fc10098cb091",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "PERMANENT_NOTES/locking in databases.md",
-                "mode": "source",
-                "backlinks": true,
-                "source": false
-              }
-            }
-          },
-          {
-            "id": "d9f2f51598d9855b",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "PERMANENT_NOTES/mvcc.md",
+                "file": "PERMANENT_NOTES/TCP vs UDP.md",
                 "mode": "source",
                 "source": false
               }
             }
           }
-        ]
+        ],
+        "currentTab": 3
       }
     ],
     "direction": "vertical"
@@ -133,7 +121,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "quorum",
+                "query": "",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -154,7 +142,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 358.5024719238281
+    "width": 200,
+    "collapsed": true
   },
   "right": {
     "id": "b3d4aba317331d81",
@@ -170,7 +159,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "PERMANENT_NOTES/do you really need relational databases?.md",
+                "file": "PERMANENT_NOTES/INDEX--Databases.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -187,7 +176,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "PERMANENT_NOTES/do you really need relational databases?.md",
+                "file": "PERMANENT_NOTES/INDEX--Databases.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -210,7 +199,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "PERMANENT_NOTES/do you really need relational databases?.md"
+                "file": "PERMANENT_NOTES/INDEX--Databases.md"
               }
             }
           }
@@ -218,7 +207,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 200,
+    "collapsed": true
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -230,44 +220,44 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "af365ebaf1e59ed2",
+  "active": "9b7c2ecccf37bb5e",
   "lastOpenFiles": [
-    "PERMANENT_NOTES/why OLAP?.md",
-    "PERMANENT_NOTES/column oriented storage.md",
-    "FLEETING_NOTES/DDIA/general.md",
+    "PERMANENT_NOTES/UML.md",
+    "PERMANENT_NOTES/INDEX--Clean Code.md",
+    "PERMANENT_NOTES/design patterns.md",
+    "PERMANENT_NOTES/LLD examples.md",
+    "PERMANENT_NOTES/graphDB.md",
     "PERMANENT_NOTES/INDEX--Databases.md",
-    "PERMANENT_NOTES/ACID properties.md",
-    "PERMANENT_NOTES/concurrency bugs.md",
-    "PERMANENT_NOTES/do you really need relational databases?.md",
-    "PERMANENT_NOTES/mvcc.md",
-    "PERMANENT_NOTES/locking in databases.md",
-    "PERMANENT_NOTES/materializing conflicts.md",
-    "PERMANENT_NOTES/aim for sequential operations on hard drive.md",
-    "PERMANENT_NOTES/how to implement serializable isolation level?.md",
-    "FLEETING_NOTES/assets/ddia-73.png",
-    "FLEETING_NOTES/assets/db-01.png",
-    "PERMANENT_NOTES/consistency models.md",
-    "FLEETING_NOTES/assets/db-18.png",
-    "FLEETING_NOTES/assets/db-18.png",
-    "FLEETING_NOTES/assets/db-17.png",
-    "FLEETING_NOTES/assets/db-16.png",
-    "FLEETING_NOTES/assets/Screenshot 2024-06-10 at 11.04.19 PM.png",
-    "FLEETING_NOTES/assets/db-15.png",
-    "FLEETING_NOTES/assets/db-14.png",
-    "FLEETING_NOTES/assets/db-13.png",
-    "PERMANENT_NOTES/db_03.png.md",
-    "PERMANENT_NOTES/what is a transaction.md",
-    "PERMANENT_NOTES/why do we need transactions?.md",
-    "PERMANENT_NOTES/how to do partitioning?.md",
-    "PERMANENT_NOTES/rebalancing the partitions.md",
-    "PERMANENT_NOTES/how is data read in Cassandra.md",
-    "PERMANENT_NOTES/multi leader replication.md",
+    "PERMANENT_NOTES/geospatial index.md",
+    "PERMANENT_NOTES/INDEX--Linux.md",
+    "PERMANENT_NOTES/TCP vs UDP.md",
+    "FLEETING_NOTES/DDIA/general.md",
+    "PERMANENT_NOTES/object oriented programming basics.md",
     "PERMANENT_NOTES/leaderless replication.md",
-    "PERMANENT_NOTES/single leader replication.md",
-    "PERMANENT_NOTES/LSM Trees + SSTables.md",
-    "PERMANENT_NOTES/designing a DB from first principles.md",
-    "PERMANENT_NOTES/hash indexes.md",
+    "PERMANENT_NOTES/MVC.md",
+    "PERMANENT_NOTES/locking in databases.md",
+    "PERMANENT_NOTES/distributed concurency control.md",
+    "FLEETING_NOTES/assets/lld-05.png",
+    "PERMANENT_NOTES/inheritance vs composition.md",
+    "PERMANENT_NOTES/aggregation vs composition.md",
+    "PERMANENT_NOTES/use sync.Once to create singletons in go.md",
+    "PERMANENT_NOTES/INDEX--Golang.md",
+    "PERMANENT_NOTES/arrays are more performant than slices in go.md",
+    "FLEETING_NOTES/assets/lld-00.png",
+    "FLEETING_NOTES/assets/lld-04.webp",
+    "PERMANENT_NOTES/ACID properties.md",
+    "FLEETING_NOTES/assets/db-20.png",
     "PERMANENT_NOTES/INDEX--Distributed Systems.md",
+    "FLEETING_NOTES/assets/lld-04.png",
+    "FLEETING_NOTES/assets/lld-03.png",
+    "FLEETING_NOTES/assets/lld-02.png",
+    "FLEETING_NOTES/assets/lld-01.png",
+    "FLEETING_NOTES/assets/lld-00.jpg",
+    "FLEETING_NOTES/assets/lld-00.jpeg",
+    "PERMANENT_NOTES/SOLID principles.md",
+    "PERMANENT_NOTES/use panic judiciously in go.md",
+    "PERMANENT_NOTES/consistency models.md",
+    "PERMANENT_NOTES/CAP theorem.md",
     "FLEETING_NOTES/Kafka",
     "FLEETING_NOTES/asse",
     "FLEETING_NOTES/ZooKeeper",

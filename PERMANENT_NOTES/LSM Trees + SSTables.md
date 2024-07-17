@@ -28,6 +28,7 @@ You DO need an index of few keys though, not totally ignore the index. But the n
 How reads are handled
 1. first try to find the key in the memtable, then in most recent SSTable(segment on disk), then in the next older segment, so on
 2. Performance will suck if you're looking up a key that doesn't exist in the DB. So you use a**BloomFilter to check if the key exists or not**;
+3. _In general Reads are 100 times slower than writes on LSM Trees._
 
 >**Note**
 >_This is used in LevelDB, RocksDB, Cassandra, Google BigTable, Cassandra, HBase, ScyllaDB.

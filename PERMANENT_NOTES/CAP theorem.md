@@ -8,9 +8,15 @@ https://www.the-paper-trail.org/page/cap-faq/
 https://www.infoq.com/articles/cap-twelve-years-later-how-the-rules-have-changed/
 
 https://mwhittaker.github.io/blog/an_illustrated_proof_of_the_cap_theorem/
+[[PACELC]]
+**_In Presence of a Network Partition_**
+- you can either have Strong Consistency[[consistency models#Strongest Consistency — Linearizability|Linearizability]]
+- OR you have have Availability
+- But not both
+> **Note**: In ABSENCE of n/w partition, you can have both Consistency and Availability though
 
-#### Overview
 Generally defined as : _You can pick only 2 out of 3: Consistency , Availability and Partition Tolerance. You can't have all 3._
+
 
 C = strong consistency (Linearizability) (NOT weak consistency/eventual consistency)
 

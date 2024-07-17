@@ -1,3 +1,16 @@
+TODO:
+1. mvcc
+2. version vectors (AND LAST WRITE WINS LWW):
+2. read **Consistency and Consensus** chapter of DDIA
+3. later:
+	1. 2PC in depth
+	2. PAXOS in depth
+	3. RAFT in depth
+	4. paxos vs raft which is better and why?
+	5. Can the above 3 be used for _distributed transactions_? (2PC for sure, but what about others?)
+	6. What is the point of maintaining an ordered log(in multipaxos and in raft?)
+---
+
 The easiest way to improve DB performance(latency,throughput) is to scale up/scale out the DB and tune . But that isn't enough after a point. 
 [[always use the official drivers]]
 [[clientside driver timeouts should be twice that of server timeouts]]
@@ -13,7 +26,12 @@ The easiest way to improve DB performance(latency,throughput) is to scale up/sca
 - [[hash indexes]]
 - [[LSM Trees + SSTables]]
 - [[B Trees & B+Trees]]
+- [[geospatial index]]
+[[graphDB]]
 
+### Analytical Databases | OLAP
+[[why OLAP?]]
+[[column oriented storage]]
 ### Replication
 [[why do you need Replication?]]
 If data never changes, it would be so simple to copy paste data across replicas. All difficulty in replication lies in **handling changes to replicated data**. Which is why you need the following algorithms...
@@ -54,17 +72,23 @@ TODO:
 - whats the downside of having too many or too less paritions in FIXED partitions mode? too many => too much overhead of rebalancing? why?? ifyou have less partitions, maybe 1 partition will move to new node, if you have more partitiions, maybe 100 from all nodes will move to new node, but net "data" flowing through the network would be the same right?
 - FIXED vs DYNAMIC in detail [Understanding Database Partitioning in Distributed Systems : Rebalancing Partitions | by Priya Patidar | The Developer’s Diary | Medium](https://medium.com/the-developers-diary/understanding-database-partitioning-in-distributed-systems-rebalancing-partitions-fa7fee542fd3)
 ### Transactions | RDBMS | OLTP
+[[distributed concurency control]]
+- optimistic locking
+- pessimistic locking
+[[locking in databases]] TODO
+. . . . .
 [[ACID properties#What is a Transaction?|what is a transaction?]]
 [[why do we need transactions?]]
 - [[concurrency bugs]]
 [[why do we need transactions?#Transactions — Do you really need it?|do we really need transactions?]]
+[[why do we need transactions?#Transactions — Client side awareness|client side awareness]]
 [[ACID properties]]
+
 
 [[how to implement serializable isolation level?#Isolation Level — Serializable|How to implement serialization isolation level?]]
 - [[how to implement serializable isolation level?#Actual Serial Execution|Actual Serial Execution]]
 - [[how to implement serializable isolation level?#2 Phase Locking|2PL]]
 - [[how to implement serializable isolation level?#Serializable Snapshot Isolation (SSI)|SSI]]
-[[locking in databases]]
 [[mvcc]]
 
 [[do you really need relational databases?]] /  [[ACID properties#Transactions are super costly!|Transactions are costly]]
@@ -72,12 +96,51 @@ TODO:
 
 [[LWT - light weight transactions]]
 [[prepared statements]]
-[[consistency models]]
+
+Consistency Models: https://jepsen.io/consistency
+### Problems with Distributed nature
+You want to ensure stuff like
+- One Leader
+- One process holding the distributed lock
+- (application specific) One account with the ID of "1234"
+However, it gets tough to ensure such constraints in a distributed environment due to following reasons
+- [[unreliable networks]] packets lost, reordered,  duplicated, ...arbitrarily delayed in the n/w.
+- [[time-of-the-day clocks are unreliable]]
+- [[process pauses]]
+
+Solutions?:
+- [[unreliable networks#Unreliable Networks — Quorum|Quorum and Timeouts]]
+- [[unreliable networks#Fencing Tokens (monotonically increasing)|Fencing Tokens (monotonically increasing)]]
 
 
-### Analytical Databases | OLAP
-[[why OLAP?]]
-[[column oriented storage]]
+### Distributed Transactions | Consensus
+[[consistency models]] 
+- [[consistency models#Strongest Consistency — Linearizability|Strongest Consistency — Linearizability]] 
+- [[consistency models#Causal Consistency|Causal Consistency]]
+- [[consistency models#Eventual Consistency|Eventual Consistency]]
+[[consistency models#Whats the point of Linearizability?|why do you need Linearizability]]
+[[consistency models#Consistency models vs Isolation levels|consistency models vs isolation levels]]
+[[consistency models#Consistency models vs Isolation levels|Linearizability vs Serializability]]
+
+[[why do you need consensus?]] Why is consensus really required in something like LWT on cassandra? want consensus NOT supposed to be used at high volumes?
+[[2 Phase Commit]]
+[[PAXOS protocol]]
+- paxos made simple (leslie lamport)
+- [[Multi Paxos — using consensus to build up a log of decisions - wtf is this useful for anyways??]]
+[[RAFT protocol]]
+[[even with consensus, what happens if two requests arrive at nearly the same time to acquire a lock ?]]
+
+[[why do you need consensus?#Consensus -> Linearizability -> Total Order| Why Consensus, Linearizability & Total Order Broadcast are equivalent?]]
+
+...
+Post this, learn how scylladb is benefitting by moving away from vnodes/LWT/Paxos --> Tablets/Raft 
+
+---
+### Batch Processing
+
+### Stream Processing
+
+
 # Data
 ### Item Size
 [[databases should NOT store large blobs]]

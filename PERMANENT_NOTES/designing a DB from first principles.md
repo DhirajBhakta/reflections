@@ -31,6 +31,7 @@ To Avoid O(N) scan on the entire dataset.
 		- Good for range queries (Sorted nature of memtable, SSTable)
 	- Cons
 		- Slow reads (in worst case). Memtable--> SStable1-->SStable2... ->SSTableN
+		- In general, reads are 100 times slower than writes on LSM Trees.
 		- compaction in background can take up resources.
 - [[B Trees & B+Trees]]
 	- Pros

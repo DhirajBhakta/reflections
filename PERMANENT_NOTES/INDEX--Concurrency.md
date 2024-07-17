@@ -1,6 +1,6 @@
 [[concurrency vs parallelism]]
-
-## Processes
+[[process vs threads vs event loops vs goroutines]]
+## Processes | 
 
 ## Threads
 

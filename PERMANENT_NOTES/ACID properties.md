@@ -7,11 +7,26 @@ _ACID Properties are the guarantees provided by DB Transactions._
 > Most of "NoSQL" DB's can actually manage to give you "A" and "D" and not "I" 
 > ("C" is out of the picture)
 ## What is a Transaction? 
+_A way to group N writes and reads into ONE logical unit._
 a collection of queries, which form a unit of work. All of these queries should be done OR all should not be done.. The DB should be consistent before and after the transaction.
+
+Either the entire transaction succeeds(commit) or the entire transaction fails(rollback, abort), and application can safely **retry**.
 
 You have a sequence of reads and writes to be done as a part of an "action
 - R(x) .. R(y) .. W(x) .. W(y). . . . COMMIT
 - R(x) .. R(y) .. W(x) .. W(y). . . . ROLLBACK
+
+Transactions were invented in first SQL DB = "IBM System R". General idea is still the same as System R..as in MySQL, Postgres etc.
+
+Safety Guarantees provided by Transactions are called **ACID Properties**. 
+> **Note** :
+> "ACID" is ambiguous, especially "isolation". "ACID Compliant" is mostly a marketing term, you don't really know what you're getting. Implementations are different.
+
+By using a Transaction, the application can pretend that here are no crashes(atomicity), that nobody else is concurrently accessing the database(isolation), and that storage devices are perfectly reliable(durability). Even though crashes, race conditions, and disk failures do occur, the transaction **abstraction** hides those problems so that the application does't need to worry about them.
+
+### Philosophy of Transactions
+**Philosophy of Transactions:** "_If the DB in in danger of violating its guarantee of atomicity, isolation or durability, it would rather ABANDON the transaction entirely than allow it to remain half-finished_"
+NoSQL(specially leaderless replicated ones) don't adhere to this, and use "**Best Effort philosophy**": "_The DB will do as much as it can, and if it runs into an error, it won't undo anything. Its the application's responsibility to recover from errors._"
 
 ### Transactions — ACID Properties
 _The **Safety Guarantees** provided by Transactions._
@@ -71,7 +86,8 @@ Even if an error happens in a transaction, it must be rolled back to ensure the 
 ### Isolation
 _Can my inflight transaction see changes made by other transactions?_
 _Can my transaction AFFECT other inflight transactions?_
-_Can my transaction BE AFFECTED by other inflight transctions? _
+_Can my transaction BE AFFECTED by other inflight transctions?_
+_Isolation level tells you **how much level of concurrency** is allowed_
 
 Suppose there's an ongoing transaction ( debit 100 for X + credit 100 for Y) and in the mean time, another transaction appears ( debit 50 forX + credit 50 for Z )...what happens?
 
@@ -86,6 +102,7 @@ Suppose there's an ongoing transaction ( debit 100 for X + credit 100 for Y) and
 	- **via Serializable Snapshot Isolation (SSI)**:  _next big thing_.  is a much better improvement(not yet de-facto)
 - Increment++ operation and Compare-And-Set(CAS) Operations are "atomic" operations which will prevent another TXN from reading dirty values.
 - **Isolation levels**
+	- _Isolation level tells you **how much level of concurrency** is allowed_
 	- [[#Isolation Level — Read Uncommitted]]
 	- [[#Isolation Level — Read Committed]]
 	- [[#Isolation Level — Repeatable Read (Snapshot Isolation)]]
@@ -103,11 +120,13 @@ Without "Isolation Levels", we get [[concurrency bugs]]
 
 
 ### Isolation Levels
+_Isolation level tells you **how much level of concurrency** is allowed_
 define the degree to which an inflight transaction must be _isolated_ from updates made by other transactions running concurrently. 
 
 As isolation levels increase, performance goes down, since you are restricting concurrency in a way.
 ![[db-19.png]]
-
+#### Isolation Levels and Locking
+![[db-20.png]]
 #### Isolation Level — Read Uncommitted
 _dirty reads are allowed, no dirty writes._
 _any change from outside(other inflight transactions) is visible to the inflight transactions_
@@ -270,4 +289,5 @@ Do you really need Transactions? Do you really need Locks?
 Perhaps you can ease out the hard constraints on normalization, and denormalize tables such that related data **are on the same node**. You can then avoid having Locks on multiple tables for a single request.
 
 Perhaps you can choose eventual consistency. 
+
 
