@@ -1,7 +1,7 @@
-# Navigation 
+### Navigation 
 `gg`: toppp
 `G`: bottom
-### scrolling
+#### scrolling
 
 < C-u > : Scroll up half page  .... < C - b > : Scroll a full page<br>
 < C-d > : Scroll down half page  .... < C - f > : Scroll a full page<br>
@@ -10,17 +10,21 @@ H M L : go to high middle low of viewport
 
 `+ ` or `j0`  : Move to the begining of next line
 
-### word motions
+#### word motions
 w b e 
 
 ### tags
 'lol'
 'lol'
 
-# New things learnt
- ## dot command
+### Folding: `zf` and `zo`
+`:set foldmethod=indent`
+
+
+
+### Tricks
  
-## Surround a word with double quotes `ciw"< C-R >""`
+#### surround a word with double quotes `ciw"< c-r >""`
 ```
 ciw    : change inner word, will delete it and place in default register (")
 "      : will just type " because.... youre still in insert mode.

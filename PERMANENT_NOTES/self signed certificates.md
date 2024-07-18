@@ -1,3 +1,6 @@
+https://pages.cs.wisc.edu/~zmiller/ca-howto/
+
+
 You need a CA to sign certs. 
 
 For self-signed certs, **you create your own CA**. a "CA" here would just be
@@ -56,3 +59,24 @@ You can observe that there is **no CA involved here** , but why?
 
 In this case, the generated key+cert are BOTH server key+cert AND CA key+cert. If these are supplied to a server as server key+cert, then a client, say a browser needs to "trust" it.. So you add the server cert in the browser's trust store / OS's trust store `/usr/local/share/ca-certificates` and run `sudo update-ca-certificates`. 
 
+
+# Alternative way to create CA and certs
+The way specified at the beginning is just to give an idea of how to create the files and in what order.
+Follow these tested commands instead:
+
+**The key is to use `openssl ca` command to sign server certs with given CA**
+
+```sh
+# create a CA (key + cacert)
+openssl genrsa -out ca.key 1024
+# ...create public key using the private key
+openssl req -new -x509 -days 3650  -key ca.key -out ca.cert
+
+# create temporal server key + cert...
+openssl genrsa -out tls.key 1024
+# ...create CSR
+openssl req -new -key tls.key  -out tls.req
+# ...sign the CSR with CA created earlier
+sudo -i;
+openssl ca -days 365 -create_serial -keyfile ca.key -cert ca.cert -outdir . -out tls.cert -extfile <(printf "subjectAltName=DNS:temporal-frontend,DNS:temporal") -infiles tls.req
+```

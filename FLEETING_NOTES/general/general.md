@@ -97,6 +97,53 @@ looks like. <br/>
 
  If you observe the normal way people learn, its usually the opposite. They learn very little and jump right on to do creative stuff. Some things work with trial and error, and you learn a thing or two...but youre just picking grains of sand on a desert
 
+ ### On "the bare minimum" to be a decent programmer
+ One should be able to
+ 1. articulate the problem clearly and precisely
+ 2. articulate how much the problem is worth solving 
+ 3. articulate the steps required to solve the current problem 
+ 4. have a plan B for proposed solution
+ 5. have a way to prove the proposed solution wrong, and then run the simulation to ensure your solution is indeed right. Basically a thorough test case.
+ 6. articulate the latency requirements for the current problem. Not every problem needs sub-millisecond latency.
+ 7. articulate the throughput requirements for my current problem.
+ 8. articulate the concurrency requirements for my current problem.
+ 9. know Little's law really well.
+ 10. articulate the **most common usecase** of the system i am developing.
+ 11. know acceptable ranges of values of all data i am transforming.
+ 12. articulate what happens when data outside that range is fed into my system.
+ 13. articulate the list of input data into my system roughly sorted by likelihood.. and then start solving for the most common thing, and go downwards.
+ 14. has read all available documentation for hardware+platform+tools i use (atleast partially)
+ 15. sit and watch an actual user of my system. To collect feedback informally via bitching/struggling.
+ 16. know the slowest part of the users workflow.
+ 17. know all the information that users of my system will need to make good use of the system (good UX).
+ 18. articulate the finite set of hardware Im designing my solution to work for.
+ 19. articulate how that set of hardware specifically affects the design of my system (SIMD, FPU..)
+ 20. regularly profiled the performance of my system
+ 21. regularly profiled the memory usage of my system
+ 22. use multiple different profiling methods/tools to measure the performance of my system.
+ 23. know how to significantly improve the performance of my system without changing input/output interface of my system
+ 24. know specifically how I can debug live release builds of my system when they fail.
+ 25. know what data im reading(as a part of my solution) and where it comes from and where it goes to (prereq to any kind of parrelism)
+ 26. know how often im reading data that I do not need as a part of my solution. ... Reading 100 data and using just 10 out of it and throwing away 90, youre wasting way too much of CPU cache time and bandwidth
+ 27. know how often im writing(as a part of my solution) and where it is written to. 
+ 28. know how often im writing data i do not need as a part of my solution.... Writing extra things, writing things that are almost the same thing over and over again.
+ 29. can articulate how all the data i use is laid out in memory.
+ 30. never use the phrase "future proof" , cuz nothing is. You cant know problems that occur in the future very precisely.
+ 31. can schedule my own time well.
+ 32. be vigilant about not wasting others' time.
+ 33. actively seek constructive feedback and take it seriously.
+ 34. not actively avoiding any uncomfortable conversations/conflicts.
+ 35. consistently interact with other professionals, professionally. No yelling, no hitting.
+ 36. not require multiple reminders to respond to request/complete work.
+
+
+
+
+ 6. collect all the assumptions made and the list of unknowns , or list of things that can go wrong, risks associated with current problem/proposed solution
+ 7. give an estimate on time required in terms of days/weeks/months 
+ 8. immediately inform the dependants if another adhoc problem takes away my time. 
+ 9. 
+
 
  #### Importance of Soft Skills!
 
