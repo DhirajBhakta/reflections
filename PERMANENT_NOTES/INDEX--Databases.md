@@ -184,3 +184,22 @@ https://use-the-index-luke.com/
 	- there is no concept of "global indexes" across paritions. you can only have a local index per parition.
 - Clear benefits of sharding is visible in leaderless replication (nosql like cassandra).
 
+
+---
+#### HBase
+_"Hadoop Database"_
+[[HBase]]
+[[HBase#HBase is an implementation of BigTable paper|BigTable implementation]]
+[[HBase#HBase is built on top of HDFS|Built on top of HDFS]] (Like BigTable on top of GFS/Colossus)
+
+
+---
+[[spark]]
+
+---
+
+# Paper Review
+
+#### Bigtable
+[[paper review—bigtable|bigtable]]
+

@@ -18,8 +18,8 @@ A --|> B   : A _is a_ B (inheritance)
 
 
 #### Association
-**no arrow** : birectional (A can call B, B can call A)
-**arrow**: unidirectional (A can call B, B cannot call A)
+**no arrow** : birectional (A can call B, B can call A) : A-----B
+**arrow**: unidirectional (A can call B, B cannot call A): A---->B
 
 #### Multiplicity
 `1 - 1`

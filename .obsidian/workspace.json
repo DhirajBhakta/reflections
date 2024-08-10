@@ -13,7 +13,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "PERMANENT_NOTES/INDEX--Clean Code.md",
+                "file": "PERMANENT_NOTES/SOLID principles.md",
                 "mode": "source",
                 "source": false
               }
@@ -56,6 +56,52 @@
             }
           },
           {
+            "id": "97594a92c987c8b0",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "PERMANENT_NOTES/spark.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "5a873d064c724845",
+            "type": "leaf",
+            "state": {
+              "type": "release-notes",
+              "state": {
+                "currentVersion": "1.6.7"
+              }
+            }
+          },
+          {
+            "id": "59369d5589686d26",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "PERMANENT_NOTES/paper review—bigtable.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "60e874512da8553b",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "PERMANENT_NOTES/HBase.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
             "id": "a7401da1b54feb9d",
             "type": "leaf",
             "state": {
@@ -91,8 +137,7 @@
               }
             }
           }
-        ],
-        "currentTab": 3
+        ]
       }
     ],
     "direction": "vertical"
@@ -159,7 +204,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "PERMANENT_NOTES/INDEX--Databases.md",
+                "file": "PERMANENT_NOTES/SOLID principles.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -176,7 +221,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "PERMANENT_NOTES/INDEX--Databases.md",
+                "file": "PERMANENT_NOTES/SOLID principles.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -199,7 +244,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "PERMANENT_NOTES/INDEX--Databases.md"
+                "file": "PERMANENT_NOTES/SOLID principles.md"
               }
             }
           }
@@ -220,14 +265,19 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "9b7c2ecccf37bb5e",
+  "active": "8ffc1cf40fd27437",
   "lastOpenFiles": [
-    "PERMANENT_NOTES/UML.md",
     "PERMANENT_NOTES/INDEX--Clean Code.md",
+    "PERMANENT_NOTES/UML.md",
+    "PERMANENT_NOTES/INDEX--Databases.md",
+    "PERMANENT_NOTES/spark.md",
+    "PERMANENT_NOTES/HBase.md",
+    "FLEETING_NOTES/assets/db-22.png",
+    "FLEETING_NOTES/assets/db-21.png",
+    "PERMANENT_NOTES/paper review—bigtable.md",
     "PERMANENT_NOTES/design patterns.md",
     "PERMANENT_NOTES/LLD examples.md",
     "PERMANENT_NOTES/graphDB.md",
-    "PERMANENT_NOTES/INDEX--Databases.md",
     "PERMANENT_NOTES/geospatial index.md",
     "PERMANENT_NOTES/INDEX--Linux.md",
     "PERMANENT_NOTES/TCP vs UDP.md",
@@ -252,12 +302,7 @@
     "FLEETING_NOTES/assets/lld-03.png",
     "FLEETING_NOTES/assets/lld-02.png",
     "FLEETING_NOTES/assets/lld-01.png",
-    "FLEETING_NOTES/assets/lld-00.jpg",
-    "FLEETING_NOTES/assets/lld-00.jpeg",
     "PERMANENT_NOTES/SOLID principles.md",
-    "PERMANENT_NOTES/use panic judiciously in go.md",
-    "PERMANENT_NOTES/consistency models.md",
-    "PERMANENT_NOTES/CAP theorem.md",
     "FLEETING_NOTES/Kafka",
     "FLEETING_NOTES/asse",
     "FLEETING_NOTES/ZooKeeper",
