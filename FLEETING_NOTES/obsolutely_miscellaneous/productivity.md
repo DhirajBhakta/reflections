@@ -96,6 +96,29 @@ The main objective is to “empty our minds” and have a trusted system to stor
 
 " Do not think about things more than once " - you need a system for this
 
+" Habit of CAPTURING every commitment/obligation you accept" - write down (inbox)
+    "Don't torture yourself to REMEMBER them all"
+
+2 minute rule : " if it takes 2 mins, do it immediately. "
+
+To improve clarity on a task/next action/project, anything.... ASK WHY are you doing this? how are you benefitting from this?
+most discussions get instantly clearer when someone asks "what are we really trying to accomplish here?" -- helps you plan out the next action far more clearly / helps you get more creative options for your next action. Asking WHY is essentially the first step in planning. Clearly visualize what "success" looks like for this particular project/next action. -- something automatic and extraordinary happens in your brain when you create and focus on a clear picture of what you want.
+
+Distributed Cognition: your mind starts giving you more and more ideas if it trusts you that you can store it durably OUTSIDE your mind and not let it go waste. MIND MAPS. 
+writing things on papers and laying them out on the floor to let a structure emerge.
+(good thinking can happen when youre on a computer document, while fleshing out its details.)
+
+How much planning do you need? : enough to get the project and next actions off your mind. 
+
+Natural Planning model 5 step: (Purpose, Outcome/Vision, Brainstorming, Organizing, Next Actions) : helps unstick stalled projects, resolves ambiguity, 
+
+Shifting Up the Planning Model for Clarity :: If you lack clarity, move UP the natural planning model: (next actions --> organising --> brainstorming --> outcome, vision --> purpose)
+Example: If brainstorming stalls, revisit the vision to unlock new ideas.
+
+Shifting Down the Model for Action :: If action is lacking, move down the model:
+: purpose -> outcome, vision -> brainstorming --> organizing --> next actions.
+
+
 > This  is  a  vaccination  against  day-to-day  fire-fighting  (the  so-called  urgent  and  crisis  demands  of  any  given  workday)  and  anantidote for the imbalance many people bring upon themselves.
 
 > You spend more time thinking about tasks, than actually doing it

@@ -47,7 +47,6 @@ Write once to the pane you want to send keys to and then write the keys you want
 ..later,
 `:setw synchronize-panes off`
 
-=======
 ## Sessions
 
 | shortcut   | :command | shell                         | description               |
@@ -91,7 +90,7 @@ bind-key -T copy-mode-vi V send -X select-line
 bind-key -T copy-mode-vi y send -X copy-pipe-and-cancel 'xclip -in -selection clip clipboard'
 # for macOS
 bind-key -T copy-mode-vi y send -X copy-pipe-and-cancel 'pbcopy'
->>>>>>> 16607dc (random push [2025] : git,cas)
+<<<<<<< HEAD
 ```
 
 ### 256-color $TERM
@@ -140,4 +139,3 @@ bind-key h split-window -h "htop"
 bind-key t split-window -h -c ~/ "vim todo.md"
 # or just
 bind-key t split-window -h "vim ~/todo.md"
-```

@@ -1,3 +1,5 @@
+https://blog.det.life/why-are-there-so-many-databases-87d334c5dce6
+
 TODO:
 1. mvcc
 2. version vectors (AND LAST WRITE WINS LWW):
@@ -195,6 +197,10 @@ _"Hadoop Database"_
 
 
 ---
+### Clickhouse
+
+[[Clickhouse]]
+---
 [[spark]]
 
 ---
@@ -204,3 +210,7 @@ _"Hadoop Database"_
 #### Bigtable
 [[paper review—bigtable|bigtable]]
 
+
+references:
+- https://ssdb.io/about/
+- 

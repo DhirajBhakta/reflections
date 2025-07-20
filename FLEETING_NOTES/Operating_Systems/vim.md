@@ -2,7 +2,7 @@
 - Insert Mode
 - Visual Mode
 - Visual Block Mode
--  
+
 Spend most of your time in **Normal Mode** and least in **Insert Mode**.
 **Visual Mode** is _okay_ but catch yourself when using it, and translate it to **Normal mode** keystrokes.
 
@@ -137,7 +137,6 @@ command! ShowConfig :e ~/.vimrc
 ### Random Tricks
 
 #### Surround a word with double quotes `ciw"< C-R >""`
->>>>>>> 16607dc (random push [2025] : git,cas)
 ```
 ciw    : change inner word, will delete it and place in default register (")
 "      : will just type " because.... youre still in insert mode.
@@ -148,9 +147,9 @@ ciw    : change inner word, will delete it and place in default register (")
  - ##### Surround 3 words with backticks  `c3w`< C-R >"`
  - ##### Surround 3 words with double quotes `c3w"< C-R >""`
 
-
----
 ### Folding: `zf` and `zo`
 `:set foldmethod=indent`
-kkkkkkkkkkkkkkkk
+
+---
+
 # How to search the manual

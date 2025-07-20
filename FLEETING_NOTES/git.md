@@ -110,7 +110,6 @@ Nvim:
 
 
 
-
 ## Bad commit messages
 
 1. You find a bug that is down to a rather obscure line of code
