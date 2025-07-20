@@ -161,6 +161,7 @@ Post this, learn how scylladb is benefitting by moving away from vnodes/LWT/Paxo
 - [Explaining The Postgres Meme (avestura.dev)](https://avestura.dev/blog/explaining-the-postgres-meme?utm_source=devopsbulletin&utm_id=newsletter) 
 
 ### RDBMS - SQL Query Performance(TODO)
+- [[SQL query execution order]]
 - [SQL Query Optimization: Understanding Key Principle (devforth.io)](https://devforth.io/blog/sql-query-optimization-understanding-key-principle/) 
 
 ### RDBMS - Indexing(TODO)

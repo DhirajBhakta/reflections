@@ -54,6 +54,8 @@ IPC
 [[what is a package]]
 [[what is a package manager]]
 TODO: [[building from source]]
+[[what is a Makefile]]
+[[what is cmake]]
 
 
 ### Miscellaneous 

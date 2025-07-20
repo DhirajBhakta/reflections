@@ -1,9 +1,9 @@
 #### Singleton Pattern
 _Create only **ONE** object of a class_
-_Noone should be able to call the constructor!_
+_No-one should be able to call the constructor!_
 _Eager Initialization_
 - Static object of the class = object of the same class. The Singleton
-- Return that object everytime someone asks for a object
+- Return that object every-time someone asks for a object
 > expose a `.getInstance()` method 
 
 ** Private Static Field to hold the singleton
@@ -11,10 +11,11 @@ _Eager Initialization_
 - the static `getInstance` method will still be able to access the `constructor`
 ** public static `getInstance` method . .. (Lazy initialization)
 
->  [[#Abstract Factory Pattern|Abstract Factories]], [[#Builder Pattern|Builders]] and [[#Prototype Pattern|Prototypes]] can all be implemented as [Singletons](https://refactoring.guru/design-patterns/singleton).
+>  [[#Abstract Factory Pattern|Abstract Factories]], [[#Builder Pattern|Builders]] and [[#Prototype Pattern|Prototypes]] can all be implemented as Singletons.
 
+**Why double locking?**
 What if two threads simultaneously call `.getInstance()`? 
-Use `synchronized`
+Use `synchronized` https://www.baeldung.com/java-synchronized
 ```java
 synchronized public static DBConnection getInstance(){
    if(conn == null){
@@ -25,7 +26,6 @@ synchronized public static DBConnection getInstance(){
 ```
 
 You need a "Double Locking" solution
-WHY? TODO
 ```java
 public static DBConnection getInstance(){
 	if(conn == null){
@@ -37,17 +37,35 @@ public static DBConnection getInstance(){
 	}
 }
 ```
-Issues with the above Double Locking Solution
-- Instruction Reordering
-- L1 cache (use volatile keyword)
-- 
+Issues with the above Double Locking Solution https://www.cs.umd.edu/~pugh/java/memoryModel/DoubleCheckedLocking.html
+- Instruction Reordering(assignment to reference happening before object construction) 
+	- (`helper` reference would be made non nil but object construction would not yet be finished, and another thread sees that `helper` is non nil, and returns that incomplete half baked reference!!!)
+- stale L1 cache (use `volatile` keyword: bypasses cpu caches and directly r/w on main memory)
+Solution?
+```java
+class HelperSingleton {
+  static Helper singleton = new Helper();
+}
+```
 
 
-TODO: What exactly is Java's synchronized keyword?
-TODO: What exactly is Volatile keyword?
+For golang...we use `sync.Once`
+```go
+var (
+    once sync.Once
+    database *db.MySql
+)
 
-
-
+func getDB() *db.MySql{
+    once.Do(func(){
+        database, err:= db.Connect()
+        if err!=nil{
+           log.Fatal("failed to connect to DB")
+        }
+    });
+    return database
+}
+```
 
 
 #### Factory Pattern
@@ -76,7 +94,6 @@ class UserFactory {
 }
 ```
 
-The following IS the real factory pattern, **inheritance well used on the CREATOR class**
 ```java
 abstract class Department {
     public abstract function createEmployee($id);
@@ -118,43 +135,80 @@ The Client doesn't care what type of factory it is using, nor does it care what 
 - All Factories must implement a AbstractFactory interface(or abc)
 
 ![[lld-00.png]]
+
+#### Null Object Pattern
+_To Avoid NullPointerException NPE_
+To avoid checking `if( obj != NULL)` again and again
+
+> In [[#Factory Pattern]] if  no SubClass/Class of Interface satisfies the given condition, instead of returning `null`, return a Null Object....avoid NPE
+
+
+#### Builder Pattern
+_To tackle very large constructor argument list ... Think 10-20 fields..._
+_Laborious Step-by-Step initialization of MANY fields, nested objects.._
+_Avoid ugly long constructor calls_
+_..... Step by Step Object Creation......._
+```c
+obj = House(foundations)
+      .addRoof(roof)
+      .addDoors(doors)
+      .addWindows(windows)
+      .build()
+```
+Has a **Build()** method at the end.
+
+> Each of those methods must return `self` or `this` to enable **chaining** 
+
+> Use Builder pattern to build [[#Composite Pattern|Composite]] Trees, object trees, or other complex objects
+
+A builder **doesn’t expose the unfinished product** while running construction steps. This prevents the client code from fetching an incomplete result.
+
+
 #### Object Pool Pattern
 _Pool of Objects. Use it, put it back into the pool_
 - reduces the overhead of creating and destroying costly resources
 - avoid added latency for the same ^
 - prevents memory leakage / resource exhaustion
 **Resource Pool Manager**
-- freeList, inUseList
+- `freeList`, `inUseList`
 - getResource()
 - releaseResource()
 >**Note**: The ResourcePoolManager HAS to be Singleton
->And Singleton comes with Thread Safety problems
+>And Singleton comes with Thread Safety problems, you need a lock (double locking)
 
 `ResourcePoolManager.getInstance()`  // cuz Singleton
+
 #### Strategy Pattern
+_Extract out shared behavior as a strategy_
+_Eliminate Inheritance...use Composition_
+_Sharing common behavior across sibling classes isn't possible via inheritance, use Strategy pattern instead_
+
 
 Make a "Strategy" Interface, accept that interface as a dep in the Constructor. **Constructor Injection**
-
-Strategy Pattern is useful when N subclasses **share the same code** NOT present in the parent class (base). You make a Strategy object(interface) and share the functionality among the classes that need it.
-![[lld-00.jpg]]
-Strategy Pattern opens up an alternative to mindless use of inheritance. 
-Consider this. You have a class and you DO NOT subclass it. All polymorphic behavior is injected to the objects of the SAME class by injecting different strategies. The objects of the same class now behave in different way without the need of subclassing the parent.
-
-Cons:
-- You still have a hierarchy to maintain. Even if you don't have the hierarchy of Actual Classes, you still have the hierarchy of Strategies.
-
 Usecases:
-- You have N classes implementing an interface, and most classes implement the same behavior for a particular method, or maybe extend on top of it. this **shared behavior** is now duplicated code. This **shared behavior** could be extracted out as a "strategy". Note that although all child classes obtain the reference to the parent's implementation of the said method, sharing common behavior across sibling classes isn't possible via inheritance, which is why you need Strategy Pattern.
+- **REDUCE CODE DUPLICATION**:
+	- _Extract out shared behavior as a strategy_
+	- N out of M subclasses **share the same code** NOT present in the base class.
+	- N out of M classes implementing the same interface **share the same code**.
+	- ==> you should make a strategy obj (interface) and share the functionality by injecting that obj into classes that need it
+- **ELIMINATE INHERITANCE**
+	- and use composition instead.
+	- Want to create N subclasses? instead create just one class and inject whichever strategy you wish and make it behave the way you want it to. Objects of the SAME class now behave in different ways.
+	- `Cons: You still have a hierarchy to maintain. Even if you don't have the hierarchy of Actual Classes, you still have the hierarchy of Strategies.`
+	- "_Strategy pattern helps you change the GUTS, while Adapter pattern helps change the SKIN_"
+![[lld-00.jpg]]
 
 
 
 #### Observer Pattern
-_Observable and Observer_
+_Observable and Observers_
+_One Observable has N observers_
 An Observable maintains a LIST of observers. And whenever the Observable state changes, it loops through this list and calls `notify()` method of the Observers.
+(if you want to notify price updates to a shirt to all interested customers, every `shirt` is an Observable)
 > Observable is also called "Subject"
 ![[lld-01.png]]
 
-Observervable Interface
+Observable Interface
 - _attach_ : add observer
 - _detach_: remove observer
 - _notifyAll_: loop through all observers and call their `notify` method
@@ -209,14 +263,69 @@ Why use Decorator Pattern?
 > Decorator changes the Skin of the object, [[#Strategy Pattern]] changes the Guts
 
 #### Chain Of Responsibility Pattern
-_Pass the request along a chain of Handlers._
+_Pass the request along a chain of Handlers UNTIL one of them handles it._
 ![](https://www.softwareideas.net/i/DirectImage/445/Chain-of-Responsibility)
+`Handle()` and `setNext()`
 Usecases:
 - ATM/Vending Machine
 - Logger
+```go
+type Handler interface{
+   execute(*obj)
+   setNext(Handler)
+}
+type ReceptionistHandler struct{
+   next Handler
+}
+type DoctorHandler struct{
+   next Handler
+}
+type PharmacyHandler struct{
+   next Handler
+}
+```
+
+
+#### Adapter Pattern
+_Existing Interface --> Expected Interface_
+_Adapter **IS-A** Expected Interface_ (Inheritance)
+_Adapter **HAS-A** Existing Interface_ (Composition)
+
+> Translator b/w current code and a Legacy class. 
+> (You badly want to use the functionality of the Legacy class)
+
+Usecases:
+- Socket Plug
+- XML <-> JSON
+- Several existing classes might be missing out on a common functionality .
+	- You could use Adapter and wrap that subclass and add the functionality
+	- [[#Decorator Pattern]] also works here
+
+The "Adapter" Interface exposes the methods expected by the Client.  
+(Client talks to the Adapter only)
+A Concrete Class Implements this Adapter Interface --> AdapterImpl
+This Concrete Class will **have an instance** of the Existing Interface
+(Adapter talks to the Existing Interface)
+
+Adapter usually wraps ONE object, whereas [[#Facade Pattern|Facade]] may wrap MULTIPLE objects to hide the complexity
+
+
+#### Facade Pattern
+_Hiding complexity from the Client_
+_Subsystem provides a million features when used together, but the Client needs just a few_
+_....avoid the Client having to interact with **Multiple Classes**......_
+_Facade Object **HAS-A** all the underlying classes that it abstracts away_
+
+
+Facade vs [[#Proxy Pattern]]
+- Proxy Pattern abstracts away just ONE object
+- Facade Pattern abstracts away multiple objects
+
+Facade vs [[#Adapter Pattern]]
+- TODO
 
 #### Proxy Pattern
-_Wrapper on a **client** which talks to an expensive resource._
+_Wrapper on a **client** which talks to an expensive resource._ _Preprocessing/PostProcessing_
 _Proxy **IS-A** client, AND Proxy **HAS-A** client_
 ![[lld-04.webp]]
 - A proxy **controls access to the original object**, 
@@ -235,13 +344,6 @@ You use a _Proxy Server_ for:
 > usually Proxy creates and handles the lifecycle of the inner object.
 > But you can pass it via constructor too.
 
-
-
-#### Null Object Pattern
-_To Avoid NullPointerException NPE_
-To avoid checking `if( obj != NULL)` again and again
-
-> In [[#Factory Pattern]] if  no SubClass/Class of Interface satisfies the given condition, instead of returning `null`, return a Null Object....avoid NPE
 
 
 #### State Pattern
@@ -335,66 +437,6 @@ func (f *File) getName() string {
 > [[#Visitor Pattern]] to execute operation on the entire Tree
 
 
-
-#### Adapter Pattern
-_Existing Interface --> Expected Interface_
-_Adapter **IS-A** Expected Interface_ (Inheritance)
-_Adapter **HAS-A** Existing Interface_ (Composition)
-
-> Translator b/w current code and a Legacy class. 
-> (You badly want to use the functionality of the Legacy class)
-
-Usecases:
-- Socket Plug
-- XML <-> JSON
-- Several existing classes might be missing out on a common functionality .
-	- You could use Adapter and wrap that subclass and add the functionality
-	- [[#Decorator Pattern]] also works here
-
-The "Adapter" Interface exposes the methods expected by the Client.  
-(Client talks to the Adapter only)
-A Concrete Class Implements this Adapter Interface --> AdapterImpl
-This Concrete Class will **have an instance** of the Existing Interface
-(Adapter talks to the Existing Interface)
-
-Adapter usually wraps ONE object, whereas [[#Facade Pattern|Facade]] may wrap MULTIPLE objects to hide the complexity
-
-
-#### Builder Pattern
-_To tackle very large constructor argument list_
-_Think 10-20 fields..._
-_Laborious Step-by-Step initialization of MANY fields, nested objects.._
-_Avoid ugly long constructor calls_
-_..... Step by Step Object Creation......._
-```c
-obj = House(foundations)
-      .addRoof(roof)
-      .addDoors(doors)
-      .addWindows(windows)
-      .build()
-```
-Has a **Build()** method at the end.
-
-> Each of those methods must return `self` or `this` to enable **chaining** 
-
-> Use Builder pattern to build [[#Composite Pattern|Composite]] Trees, object trees, or other complex objects
-
-A builder **doesn’t expose the unfinished product** while running construction steps. This prevents the client code from fetching an incomplete result.
-
-
-#### Facade Pattern
-_Hiding complexity from the Client_
-_Subsystem provides a million features when used together, but the Client needs just a few_
-_....avoid the Client having to interact with **Multiple Classes**......_
-_Facade Object **HAS-A** all the underlying classes that it abstracts away_
-
-
-Facade vs [[#Proxy Pattern]]
-- Proxy Pattern abstracts away just ONE object
-- Facade Pattern abstracts away multiple objects
-
-Facade vs [[#Adapter Pattern]]
-- TODO
 
 
 #### Bridge Pattern
@@ -504,6 +546,14 @@ Create a "Command" Interface
 - Create Concrete Commands
 Maintain a **Stack** for Command History.
 
+#### Memento Pattern
+_Snapshotting. Undo-Redo_
+Originator: = Current State
+- methods:
+	- createMemento
+	- restoreMemento
+Memento:
+History : = Stack of Mementos (snapshots)
 
 #### Iterator Pattern
 _Iterate through elements of a Collection sequentially without exposing underlying representation of the Collection_
@@ -516,6 +566,9 @@ Concrete Impl of the Iterator Interfact = Concrete Iterator
 - contains a ref to the underlying collection instance
 
 The Collection Class **_Creates_** an instance of the concrete Iterator.
+
+#### Template Pattern
+_Dictate high-level steps, but concrete classes can decide what to do in each of those steps._
 
 
 #### Mediator Pattern
@@ -530,20 +583,6 @@ Usecase:
 All bidders "register" themselves to the Mediator obj. And talk only to the Mediator obj. Mediator obj broadcasts the messages (or sends to appropriate bidders), notifies the relevant bidders.
 Mediator maintains a LIST of bidders.
 
-#### Memento Pattern
-_Snapshotting. Undo-Redo_
-Originator: = Current State
-- methods:
-	- createMemento
-	- restoreMemento
-Memento:
-History : = Stack of Mementos (snapshots)
-
-
-
-#### Template Pattern
-_Dictate high-level steps, but concrete classes can decide what to do in each of those steps._
-
 
 
 #### Interpreter Pattern
@@ -556,16 +595,21 @@ a*b = new  BinaryExpression( new TerminalExpression('a'), new TerminalExpression
 #### Visitor Pattern
 TODO: confusing!
 _Decouple the Operations from the object_
-Allows you to ADD new operations without changing the structure of the object.
+_Decouple algorithms from object hierarchies_
+Allows you to ADD new operations,algorithms without changing the structure of the object.
 
 > For Each operation, you create a Visitor
 
 - `Element` Class
 - `Visitor` Class
+	- has dedicated methods for each type of `Element` 
+	- ^ the above might be a _cons_ : for each new type of `Element` added, you will need to add a dedicated method for it in each `Visitor` Class.
 - `Element` "accepts" a `Visitor`
+	- And `Element` calls the visitor's dedicated method meant for that particular Element.
 
 **Double Dispatch**
-- ? TODO
+- = dynamic binding + method overloading !
+- at runtime you provide a visitor ... and at compile time you clearly specify the method of the visitor that the `Element` is concerned with. So two hops to reach the code. One hop to _choose_ the algorithm..next hop to _choose_ the dedicated method.
 
 ---
 #### Decorator vs Composite vs Adapter vs Proxy vs ChainOfResponsibility
